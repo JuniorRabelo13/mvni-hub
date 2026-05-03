@@ -25,29 +25,34 @@ export function PixPaymentDialog({ cobrancaId, onOpenChange, onSuccess }: PixPay
     }
   }, [cobrancaId]);
 
-  // Polling para verificar status
+  // Realtime subscription para verificar status
   useEffect(() => {
-    let interval: number;
-    if (cobrancaId && pixData && !checking) {
-      interval = window.setInterval(async () => {
-        const { data, error } = await supabase
-          .from("cobrancas")
-          .select("status")
-          .eq("id", cobrancaId)
-          .single();
+    if (!cobrancaId || !pixData) return;
 
-        if (data?.status === "pago") {
-          toast.success("Pagamento confirmado!");
-          onSuccess();
-          onOpenChange(false);
-          window.clearInterval(interval);
+    const channel = supabase
+      .channel(`cobranca-${cobrancaId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'cobrancas',
+          filter: `id=eq.${cobrancaId}`
+        },
+        (payload) => {
+          if (payload.new.status === 'pago') {
+            toast.success("Pagamento confirmado via Realtime!");
+            onSuccess();
+            onOpenChange(false);
+          }
         }
-      }, 5000);
-    }
+      )
+      .subscribe();
+
     return () => {
-      if (interval) window.clearInterval(interval);
+      supabase.removeChannel(channel);
     };
-  }, [cobrancaId, pixData, checking]);
+  }, [cobrancaId, pixData]);
 
   const generatePix = async () => {
     setLoading(true);
