@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,25 +17,34 @@ const nav = [
 export default function AppLayout() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkRole() {
+      if (user) {
+        const { data } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+        setIsAdmin(data?.role === "admin");
+      }
+    }
+    checkRole();
+  }, [user]);
+
+  const nav = [
+    { to: "/", label: "Painel", icon: LayoutDashboard, end: true },
+    { to: "/clientes", label: "Clientes", icon: Users },
+    { to: "/estrutura", label: "Estrutura", icon: Network },
+    { to: "/equipe", label: "Equipe", icon: Users },
+    { to: "/ganhos", label: "Ganhos", icon: Wallet },
+    { to: "/pagamentos", label: "Pagamentos", icon: Receipt },
+    { to: "/configuracoes", label: "Configurações", icon: Settings },
+  ];
+
+  if (isAdmin) {
+    nav.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
+  }
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth", { replace: true });
-  };
-
-  return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
-        <div className="flex items-center gap-2 px-6 py-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-gold">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold">MVNI Hub</p>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Pessoa Física</p>
-          </div>
-        </div>
-
+...
         <nav className="flex-1 space-y-1 px-3">
           {nav.map(({ to, label, icon: Icon, end }) => (
             <NavLink
