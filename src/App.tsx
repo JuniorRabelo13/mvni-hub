@@ -12,6 +12,7 @@ import Clientes from "./pages/Clientes";
 import Estrutura from "./pages/Estrutura";
 import Ganhos from "./pages/Ganhos";
 import Pagamentos from "./pages/Pagamentos";
+import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
