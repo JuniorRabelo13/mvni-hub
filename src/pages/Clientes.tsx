@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { Plus, CheckCircle2, Clock, Loader2, QrCode } from "lucide-react";
+import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 
 const clienteSchema = z.object({
   nome: z.string().trim().min(2).max(80),
@@ -38,6 +39,7 @@ export default function Clientes() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selectedCobranca, setSelectedCobranca] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
@@ -111,14 +113,8 @@ export default function Clientes() {
     load();
   };
 
-  const marcarPago = async (cobrancaId: string) => {
-    const { error } = await supabase.from("cobrancas").update({ status: "pago" }).eq("id", cobrancaId);
-    if (error) {
-      toast.error("Erro ao marcar como pago");
-      return;
-    }
-    toast.success("Pagamento confirmado — comissão gerada!");
-    load();
+  const pagarComPix = (cobrancaId: string) => {
+    setSelectedCobranca(cobrancaId);
   };
 
   return (
@@ -178,8 +174,8 @@ export default function Clientes() {
                   {pendentes.map((p) => (
                     <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
                       <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
-                      <Button size="sm" variant="outline" onClick={() => marcarPago(p.id)}>
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Marcar pago
+                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => pagarComPix(p.id)}>
+                        <QrCode className="h-3.5 w-3.5" /> Pagar com PIX
                       </Button>
                     </div>
                   ))}
@@ -192,6 +188,12 @@ export default function Clientes() {
           })}
         </div>
       )}
+
+      <PixPaymentDialog 
+        cobrancaId={selectedCobranca} 
+        onOpenChange={(open) => !open && setSelectedCobranca(null)}
+        onSuccess={load}
+      />
     </div>
   );
 }
