@@ -9,6 +9,7 @@ const nav = [
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/estrutura", label: "Estrutura", icon: Network },
   { to: "/ganhos", label: "Ganhos", icon: Wallet },
+  { to: "/pagamentos", label: "Pagamentos", icon: Receipt },
 ];
 
 export default function AppLayout() {
