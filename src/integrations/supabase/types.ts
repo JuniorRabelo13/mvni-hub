@@ -224,9 +224,11 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          gestor_id: string | null
           id: string
           indicador_id: string | null
           nome: string
+          role: string | null
           status: Database["public"]["Enums"]["user_status"]
           telefone: string | null
           updated_at: string
@@ -234,9 +236,11 @@ export type Database = {
         Insert: {
           created_at?: string
           email?: string | null
+          gestor_id?: string | null
           id: string
           indicador_id?: string | null
           nome: string
+          role?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           telefone?: string | null
           updated_at?: string
@@ -244,14 +248,23 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string | null
+          gestor_id?: string | null
           id?: string
           indicador_id?: string | null
           nome?: string
+          role?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           telefone?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_gestor_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_indicador_id_fkey"
             columns: ["indicador_id"]
