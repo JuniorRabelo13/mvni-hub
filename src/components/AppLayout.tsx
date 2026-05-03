@@ -10,6 +10,7 @@ const nav = [
   { to: "/estrutura", label: "Estrutura", icon: Network },
   { to: "/ganhos", label: "Ganhos", icon: Wallet },
   { to: "/pagamentos", label: "Pagamentos", icon: Receipt },
+  { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 export default function AppLayout() {
