@@ -39,6 +39,7 @@ export default function Clientes() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selectedCobranca, setSelectedCobranca] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
