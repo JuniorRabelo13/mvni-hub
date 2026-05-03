@@ -7,14 +7,30 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Webhook usually doesn't need CORS for the gateway to call it, but good to have
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const payload = await req.json()
-    console.log('Webhook recebido:', payload)
+    const signature = req.headers.get('asaas-signature')
+    const webhookSecret = Deno.env.get('ASAAS_WEBHOOK_SECRET')
+    
+    // Ler o corpo como texto primeiro para validar a assinatura
+    const rawBody = await req.text()
+    
+    // Validação de assinatura se o segredo estiver configurado
+    if (webhookSecret && webhookSecret !== 'mock') {
+      if (!signature || signature !== webhookSecret) {
+        console.error('Assinatura inválida ou ausente')
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        })
+      }
+    }
+
+    const payload = JSON.parse(rawBody)
+    console.log('Webhook validado e recebido:', payload)
 
     const event = payload.event
     const payment = payload.payment
