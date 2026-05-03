@@ -74,7 +74,7 @@ export default function AdminDashboard() {
         const { count: lineCount } = await supabase
           .from("linhas")
           .select("*", { count: 'exact', head: true })
-          .eq("status", "ativo");
+          .eq("status", "ativa");
 
         // 3. Faturamento Mês & Comissões
         const { data: payments } = await supabase
@@ -107,7 +107,7 @@ export default function AdminDashboard() {
               .from("linhas")
               .select("*", { count: 'exact', head: true })
               .eq("user_id", s.id)
-              .eq("status", "ativo");
+              .eq("status", "ativa");
 
             const { data: p } = await supabase
               .from("cobrancas")
