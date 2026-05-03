@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { Plus, CheckCircle2, Clock, Loader2, QrCode } from "lucide-react";
+import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 
 const clienteSchema = z.object({
   nome: z.string().trim().min(2).max(80),
