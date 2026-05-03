@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles } from "lucide-react";
+import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ const nav = [
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/estrutura", label: "Estrutura", icon: Network },
   { to: "/ganhos", label: "Ganhos", icon: Wallet },
+  { to: "/pagamentos", label: "Pagamentos", icon: Receipt },
 ];
 
 export default function AppLayout() {
