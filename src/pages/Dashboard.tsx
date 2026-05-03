@@ -17,7 +17,7 @@ type Stats = {
 };
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { effectiveUser: user } = useAuth();
   const [s, setS] = useState<Stats>({ clientesAtivos: 0, linhasAtivas: 0, ganhoMes: 0, ganhoTotal: 0, indicados: 0 });
   const [loading, setLoading] = useState(true);
 

@@ -16,7 +16,7 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 type Filter = "todos" | "ativos" | "inativos" | "pagantes";
 
 export default function Estrutura() {
-  const { user } = useAuth();
+  const { effectiveUser: user } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [stats, setStats] = useState<Record<string, Stats>>({});
   const [pagantes, setPagantes] = useState<Set<string>>(new Set());

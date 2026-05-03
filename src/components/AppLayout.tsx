@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Badge } from "@/components/ui/badge";
+import { EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AppLayout() {
-  const { user, signOut } = useAuth();
+  const { user, effectiveUser, signOut, viewAs, isViewingAs } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -114,6 +116,22 @@ export default function AppLayout() {
         </nav>
 
         <main className="flex-1 p-4 md:p-8">
+          {isViewingAs && (
+            <div className="mb-6 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4 animate-in fade-in slide-in-from-top-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-primary/20 p-2">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Modo Visualização Ativo</p>
+                  <p className="text-xs text-muted-foreground">Você está vendo o sistema como: {effectiveUser?.email}</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => viewAs(null)} className="gap-2">
+                <EyeOff className="h-4 w-4" /> Sair do modo visualização
+              </Button>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

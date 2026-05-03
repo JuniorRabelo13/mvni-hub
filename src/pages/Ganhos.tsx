@@ -8,7 +8,7 @@ type Comissao = { id: string; tipo: string; valor: number; created_at: string; c
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function Ganhos() {
-  const { user } = useAuth();
+  const { effectiveUser: user } = useAuth();
   const [items, setItems] = useState<Comissao[]>([]);
   const [loading, setLoading] = useState(true);
 

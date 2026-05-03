@@ -34,7 +34,7 @@ type Cliente = {
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function Clientes() {
-  const { user } = useAuth();
+  const { effectiveUser: user } = useAuth();
   const [items, setItems] = useState<Cliente[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
