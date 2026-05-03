@@ -14,16 +14,269 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clientes: {
+        Row: {
+          ativo: boolean
+          cpf: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cobrancas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          is_primeira: boolean
+          linha_id: string
+          pago_em: string | null
+          status: Database["public"]["Enums"]["cobranca_status"]
+          user_id: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          is_primeira?: boolean
+          linha_id: string
+          pago_em?: string | null
+          status?: Database["public"]["Enums"]["cobranca_status"]
+          user_id: string
+          valor?: number
+          vencimento: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          is_primeira?: boolean
+          linha_id?: string
+          pago_em?: string | null
+          status?: Database["public"]["Enums"]["cobranca_status"]
+          user_id?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobrancas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobrancas_linha_id_fkey"
+            columns: ["linha_id"]
+            isOneToOne: false
+            referencedRelation: "linhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comissoes: {
+        Row: {
+          cliente_id: string
+          cobranca_id: string
+          competencia: string
+          created_at: string
+          id: string
+          tipo: Database["public"]["Enums"]["comissao_tipo"]
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          cliente_id: string
+          cobranca_id: string
+          competencia?: string
+          created_at?: string
+          id?: string
+          tipo: Database["public"]["Enums"]["comissao_tipo"]
+          user_id: string
+          valor: number
+        }
+        Update: {
+          cliente_id?: string
+          cobranca_id?: string
+          competencia?: string
+          created_at?: string
+          id?: string
+          tipo?: Database["public"]["Enums"]["comissao_tipo"]
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comissoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comissoes_cobranca_id_fkey"
+            columns: ["cobranca_id"]
+            isOneToOne: false
+            referencedRelation: "cobrancas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      linhas: {
+        Row: {
+          ativada_em: string
+          cliente_id: string
+          created_at: string
+          id: string
+          msisdn: string | null
+          plano: string
+          status: Database["public"]["Enums"]["linha_status"]
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          ativada_em?: string
+          cliente_id: string
+          created_at?: string
+          id?: string
+          msisdn?: string | null
+          plano?: string
+          status?: Database["public"]["Enums"]["linha_status"]
+          user_id: string
+          valor?: number
+        }
+        Update: {
+          ativada_em?: string
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          msisdn?: string | null
+          plano?: string
+          status?: Database["public"]["Enums"]["linha_status"]
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linhas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          indicador_id: string | null
+          nome: string
+          status: Database["public"]["Enums"]["user_status"]
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          indicador_id?: string | null
+          nome: string
+          status?: Database["public"]["Enums"]["user_status"]
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          indicador_id?: string | null
+          nome?: string
+          status?: Database["public"]["Enums"]["user_status"]
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      cobranca_status: "pendente" | "pago" | "atrasado" | "cancelado"
+      comissao_tipo: "venda" | "recorrencia"
+      linha_status: "ativa" | "suspensa" | "cancelada"
+      user_status: "ativo" | "inativo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +403,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      cobranca_status: ["pendente", "pago", "atrasado", "cancelado"],
+      comissao_tipo: ["venda", "recorrencia"],
+      linha_status: ["ativa", "suspensa", "cancelada"],
+      user_status: ["ativo", "inativo"],
+    },
   },
 } as const
