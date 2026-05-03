@@ -36,7 +36,7 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 const dt = (d: string | null) => d ? new Date(d).toLocaleDateString("pt-BR") : "—";
 
 export default function Pagamentos() {
-  const { user } = useAuth();
+  const { effectiveUser: user } = useAuth();
   const [items, setItems] = useState<Pagamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
