@@ -8,6 +8,7 @@ const nav = [
   { to: "/", label: "Painel", icon: LayoutDashboard, end: true },
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/estrutura", label: "Estrutura", icon: Network },
+  { to: "/equipe", label: "Equipe", icon: Users },
   { to: "/ganhos", label: "Ganhos", icon: Wallet },
   { to: "/pagamentos", label: "Pagamentos", icon: Receipt },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
