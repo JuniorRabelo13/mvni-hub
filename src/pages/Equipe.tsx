@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,8 @@ import { Users, TrendingUp, DollarSign, ListChecks, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Equipe() {
-  const { user } = useAuth();
+  const { user, viewAs } = useAuth();
+  const navigate = useNavigate();
   const [equipe, setEquipe] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -73,9 +75,9 @@ export default function Equipe() {
   }, [user]);
 
   const handleVerComo = (memberId: string) => {
-    toast.info("Função 'Ver como usuário' em desenvolvimento. Isso simularia o contexto do vendedor.");
-    // Aqui poderíamos salvar o memberId no localStorage e recarregar a página 
-    // com um hook de auth que prioriza esse ID se for admin.
+    viewAs(memberId);
+    toast.success("Modo visualização ativado.");
+    navigate("/"); // Redireciona para o painel para ver os dados do usuário
   };
 
   if (userProfile?.role === "vendedor") {
