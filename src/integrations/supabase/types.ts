@@ -152,6 +152,30 @@ export type Database = {
           },
         ]
       }
+      configuracoes: {
+        Row: {
+          chave: string
+          descricao: string | null
+          id: string
+          updated_at: string | null
+          valor: string
+        }
+        Insert: {
+          chave: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string | null
+          valor: string
+        }
+        Update: {
+          chave?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string | null
+          valor?: string
+        }
+        Relationships: []
+      }
       linhas: {
         Row: {
           ativada_em: string

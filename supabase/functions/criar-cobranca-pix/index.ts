@@ -30,7 +30,21 @@ serve(async (req) => {
       throw new Error('Cobrança não encontrada')
     }
 
-    const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY')
+    // Buscar chave da API das configurações se não estiver no env
+    let ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY')
+    
+    if (!ASAAS_API_KEY || ASAAS_API_KEY === 'mock') {
+      const { data: config } = await supabase
+        .from('configuracoes')
+        .select('valor')
+        .eq('chave', 'asaas_api_key')
+        .single()
+      
+      if (config?.valor) {
+        ASAAS_API_KEY = config.valor
+      }
+    }
+
     const IS_MOCK = !ASAAS_API_KEY || ASAAS_API_KEY === 'mock'
 
     if (IS_MOCK) {
