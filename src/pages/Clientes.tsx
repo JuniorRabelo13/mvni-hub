@@ -188,6 +188,12 @@ export default function Clientes() {
           })}
         </div>
       )}
+
+      <PixPaymentDialog 
+        cobrancaId={selectedCobranca} 
+        onOpenChange={(open) => !open && setSelectedCobranca(null)}
+        onSuccess={load}
+      />
     </div>
   );
 }
