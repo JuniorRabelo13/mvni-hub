@@ -1,22 +1,39 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const nav = [
-  { to: "/", label: "Painel", icon: LayoutDashboard, end: true },
-  { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/estrutura", label: "Estrutura", icon: Network },
-  { to: "/equipe", label: "Equipe", icon: Users },
-  { to: "/ganhos", label: "Ganhos", icon: Wallet },
-  { to: "/pagamentos", label: "Pagamentos", icon: Receipt },
-  { to: "/configuracoes", label: "Configurações", icon: Settings },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AppLayout() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkRole() {
+      if (user) {
+        const { data } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+        setIsAdmin(data?.role === "admin");
+      }
+    }
+    checkRole();
+  }, [user]);
+
+  const navItems = [
+    { to: "/", label: "Painel", icon: LayoutDashboard, end: true },
+    { to: "/clientes", label: "Clientes", icon: Users },
+    { to: "/estrutura", label: "Estrutura", icon: Network },
+    { to: "/equipe", label: "Equipe", icon: Users },
+    { to: "/ganhos", label: "Ganhos", icon: Wallet },
+    { to: "/pagamentos", label: "Pagamentos", icon: Receipt },
+    { to: "/configuracoes", label: "Configurações", icon: Settings },
+  ];
+
+  if (isAdmin) {
+    navItems.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
+  }
 
   const handleSignOut = async () => {
     await signOut();
@@ -37,7 +54,7 @@ export default function AppLayout() {
         </div>
 
         <nav className="flex-1 space-y-1 px-3">
-          {nav.map(({ to, label, icon: Icon, end }) => (
+          {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -79,7 +96,7 @@ export default function AppLayout() {
         </header>
 
         <nav className="flex gap-1 overflow-x-auto border-b border-border bg-sidebar px-2 py-2 md:hidden">
-          {nav.map(({ to, label, icon: Icon, end }) => (
+          {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
