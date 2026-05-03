@@ -113,14 +113,8 @@ export default function Clientes() {
     load();
   };
 
-  const marcarPago = async (cobrancaId: string) => {
-    const { error } = await supabase.from("cobrancas").update({ status: "pago" }).eq("id", cobrancaId);
-    if (error) {
-      toast.error("Erro ao marcar como pago");
-      return;
-    }
-    toast.success("Pagamento confirmado — comissão gerada!");
-    load();
+  const pagarComPix = (cobrancaId: string) => {
+    setSelectedCobranca(cobrancaId);
   };
 
   return (
