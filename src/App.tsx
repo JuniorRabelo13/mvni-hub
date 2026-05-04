@@ -34,6 +34,11 @@ import SMSInbox from "./pages/sms/SMSInbox";
 import SMSApi from "./pages/sms/SMSApi";
 import SMSWebhooks from "./pages/sms/SMSWebhooks";
 import SMSConfiguracoes from "./pages/sms/SMSConfiguracoes";
+import AgenteDashboard from "./pages/whatsapp/AgenteDashboard";
+import AgenteLeads from "./pages/whatsapp/AgenteLeads";
+import AgenteConfig from "./pages/whatsapp/AgenteConfig";
+import AgenteMensagens from "./pages/whatsapp/AgenteMensagens";
+import AgenteAgentes from "./pages/whatsapp/AgenteAgentes";
 
 const queryClient = new QueryClient();
 
