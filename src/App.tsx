@@ -16,6 +16,7 @@ import Configuracoes from "./pages/Configuracoes";
 import Equipe from "./pages/Equipe";
 import Admin from "./pages/Admin";
 import AdminLogs from "./pages/AdminLogs";
+import SecurityLogs from "./pages/SecurityLogs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
