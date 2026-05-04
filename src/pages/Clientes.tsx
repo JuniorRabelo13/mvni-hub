@@ -115,7 +115,7 @@ export default function Clientes() {
     load();
   };
 
-  const pagarCom Pix = (cobrancaId: string) => {
+  const pagarComPix = (cobrancaId: string) => {
     setSelectedCobranca(cobrancaId);
   };
 
