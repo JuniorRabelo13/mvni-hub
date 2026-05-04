@@ -301,6 +301,30 @@ export type Database = {
           },
         ]
       }
+      security_logs: {
+        Row: {
+          campo_detectado: string | null
+          created_at: string
+          id: string
+          origem: string | null
+          user_id: string | null
+        }
+        Insert: {
+          campo_detectado?: string | null
+          created_at?: string
+          id?: string
+          origem?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          campo_detectado?: string | null
+          created_at?: string
+          id?: string
+          origem?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -327,6 +351,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_configuracoes_safe: {
+        Args: never
+        Returns: {
+          chave: string
+          created_at: string
+          id: string
+          updated_at: string
+          valor: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
