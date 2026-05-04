@@ -303,25 +303,28 @@ export type Database = {
       }
       security_logs: {
         Row: {
-          campo_detectado: string | null
+          campo_detectado: string
           created_at: string
+          hash_payload: string
           id: string
-          origem: string | null
-          user_id: string | null
+          origem: string
+          user_id: string
         }
         Insert: {
-          campo_detectado?: string | null
+          campo_detectado: string
           created_at?: string
+          hash_payload: string
           id?: string
-          origem?: string | null
-          user_id?: string | null
+          origem: string
+          user_id: string
         }
         Update: {
-          campo_detectado?: string | null
+          campo_detectado?: string
           created_at?: string
+          hash_payload?: string
           id?: string
-          origem?: string | null
-          user_id?: string | null
+          origem?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -367,6 +370,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_security_event: {
+        Args: {
+          p_campo: string
+          p_hash: string
+          p_origem: string
+          p_user: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

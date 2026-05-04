@@ -36,15 +36,27 @@ function maskValue(val: any): string | null {
 }
 
 /**
- * Registra uma detecção de segurança no banco
+ * Gera um hash SHA-256 de um valor para log seguro (sem PII)
  */
-async function logSecurityDetection(userId: string | undefined, field: string, origin: string) {
+async function generateHash(value: any): Promise<string> {
+  const msgUint8 = new TextEncoder().encode(JSON.stringify(value));
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Registra uma detecção de segurança no banco usando a função RPC segura
+ */
+async function logSecurityDetection(userId: string | undefined, field: string, origin: string, payload?: any) {
   if (!userId) return;
   try {
-    await supabase.from("security_logs").insert({
-      user_id: userId,
-      campo_detectado: field,
-      origem: origin,
+    const hash = await generateHash(payload || field);
+    await supabase.rpc("log_security_event", {
+      p_user: userId,
+      p_campo: field,
+      p_origem: origin,
+      p_hash: hash,
     });
   } catch (e) {
     console.error("Failed to log security detection", e);
@@ -67,7 +79,7 @@ export function sanitize<T>(data: T, origin: string = "frontend_sanitize", userI
       // 1. Validar pela chave
       if (isSensitiveKey(k)) {
         if (v !== null) {
-          logSecurityDetection(userId, k, origin);
+          logSecurityDetection(userId, k, origin, v);
           out[k] = maskValue(v);
         } else {
           out[k] = null;
@@ -77,7 +89,7 @@ export function sanitize<T>(data: T, origin: string = "frontend_sanitize", userI
       
       // 2. Validar pelo valor (se for string)
       if (typeof v === "string" && VALUE_TOKEN_PATTERN.test(v) && v.includes("_")) {
-         logSecurityDetection(userId, `${k} (value pattern)`, origin);
+         logSecurityDetection(userId, `${k} (value pattern)`, origin, v);
          out[k] = maskValue(v);
          continue;
       }
