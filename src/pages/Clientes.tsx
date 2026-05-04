@@ -35,7 +35,7 @@ type Cliente = {
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function Clientes() {
-  const { effectiveUser: user } = useAuth();
+  const { user, effectiveUser } = useAuth();
   const [items, setItems] = useState<Cliente[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -49,7 +49,8 @@ export default function Clientes() {
       .select("id, nome, cpf, telefone, ativo, created_at, linhas(id,status,msisdn), cobrancas(id,status,valor,vencimento)")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
-    setItems((data as any) ?? []);
+    
+    setItems(sanitize((data as any) ?? [], "clientes_list", user.id));
     setLoading(false);
   };
 
@@ -114,7 +115,7 @@ export default function Clientes() {
     load();
   };
 
-  const pagarComPix = (cobrancaId: string) => {
+  const pagarCom Pix = (cobrancaId: string) => {
     setSelectedCobranca(cobrancaId);
   };
 
