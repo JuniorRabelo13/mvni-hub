@@ -48,8 +48,10 @@ export function isSensitiveValue(val: any): boolean {
  */
 function maskValue(val: any): string | null {
   if (typeof val !== "string") return null;
-  if (val.length <= 8) return "****";
-  return `${val.slice(0, 4)}****${val.slice(-4)}`;
+  if (val.length <= 4) return "****";
+  // Manter últimos 3-4 chars conforme solicitado
+  const maskLength = Math.max(0, val.length - 4);
+  return `${"*".repeat(Math.min(4, maskLength))}${val.slice(-4)}`;
 }
 
 /**
