@@ -35,7 +35,7 @@ export default function AppLayout() {
   ];
 
   const waItems = [
-    { to: "/agente", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/agente", label: "Dashboard", icon: LayoutDashboard, end: true },
     { to: "/agente/leads", label: "Leads", icon: UserPlus },
     { to: "/agente/agentes", label: "Números", icon: PhoneCall },
     { to: "/agente/mensagens", label: "Mensagens", icon: History },
