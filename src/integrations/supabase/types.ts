@@ -488,6 +488,264 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_blacklist: {
+        Row: {
+          created_at: string | null
+          id: string
+          motivo: string | null
+          telefone: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          motivo?: string | null
+          telefone: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          motivo?: string | null
+          telefone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sms_campaigns: {
+        Row: {
+          agendado_para: string | null
+          created_at: string | null
+          entregues: number | null
+          falhas: number | null
+          id: string
+          list_id: string | null
+          mensagem: string
+          nome: string
+          status: string | null
+          total_envios: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          agendado_para?: string | null
+          created_at?: string | null
+          entregues?: number | null
+          falhas?: number | null
+          id?: string
+          list_id?: string | null
+          mensagem: string
+          nome: string
+          status?: string | null
+          total_envios?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          agendado_para?: string | null
+          created_at?: string | null
+          entregues?: number | null
+          falhas?: number | null
+          id?: string
+          list_id?: string | null
+          mensagem?: string
+          nome?: string
+          status?: string | null
+          total_envios?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_campaigns_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "sms_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_contacts: {
+        Row: {
+          created_at: string | null
+          id: string
+          list_id: string | null
+          nome: string | null
+          tags: string[] | null
+          telefone: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          list_id?: string | null
+          nome?: string | null
+          tags?: string[] | null
+          telefone: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          list_id?: string | null
+          nome?: string | null
+          tags?: string[] | null
+          telefone?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_contacts_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "sms_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_credits: {
+        Row: {
+          created_at: string | null
+          id: string
+          saldo: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          saldo?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          saldo?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sms_lists: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          total_contatos: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          total_contatos?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          total_contatos?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sms_messages: {
+        Row: {
+          campaign_id: string | null
+          created_at: string | null
+          direcao: string | null
+          erro: string | null
+          id: string
+          mensagem: string
+          preco: number | null
+          provider_id: string | null
+          status: Database["public"]["Enums"]["sms_status"] | null
+          telefone: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string | null
+          direcao?: string | null
+          erro?: string | null
+          id?: string
+          mensagem: string
+          preco?: number | null
+          provider_id?: string | null
+          status?: Database["public"]["Enums"]["sms_status"] | null
+          telefone: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string | null
+          direcao?: string | null
+          erro?: string | null
+          id?: string
+          mensagem?: string
+          preco?: number | null
+          provider_id?: string | null
+          status?: Database["public"]["Enums"]["sms_status"] | null
+          telefone?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "sms_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          labsmobile_token: string | null
+          labsmobile_username: string | null
+          limite_por_minuto: number | null
+          remetente: string | null
+          updated_at: string | null
+          user_id: string
+          webhook_secret: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          labsmobile_token?: string | null
+          labsmobile_username?: string | null
+          limite_por_minuto?: number | null
+          remetente?: string | null
+          updated_at?: string | null
+          user_id: string
+          webhook_secret?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          labsmobile_token?: string | null
+          labsmobile_username?: string | null
+          limite_por_minuto?: number | null
+          remetente?: string | null
+          updated_at?: string | null
+          user_id?: string
+          webhook_secret?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -584,12 +842,50 @@ export type Database = {
         Returns: undefined
       }
       resume_import_job: { Args: { p_job_id: string }; Returns: undefined }
+      sms_claim_messages: {
+        Args: { p_limit?: number }
+        Returns: {
+          campaign_id: string | null
+          created_at: string | null
+          direcao: string | null
+          erro: string | null
+          id: string
+          mensagem: string
+          preco: number | null
+          provider_id: string | null
+          status: Database["public"]["Enums"]["sms_status"] | null
+          telefone: string
+          updated_at: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sms_messages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      sms_deduct_credits: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: boolean
+      }
+      sms_trigger_campaign: {
+        Args: { p_campaign_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
       cobranca_status: "pendente" | "pago" | "atrasado" | "cancelado"
       comissao_tipo: "venda" | "recorrencia"
       linha_status: "ativa" | "suspensa" | "cancelada"
+      sms_status:
+        | "pending"
+        | "processing"
+        | "sent"
+        | "delivered"
+        | "failed"
+        | "blacklist"
       user_status: "ativo" | "inativo"
     }
     CompositeTypes: {
@@ -722,6 +1018,14 @@ export const Constants = {
       cobranca_status: ["pendente", "pago", "atrasado", "cancelado"],
       comissao_tipo: ["venda", "recorrencia"],
       linha_status: ["ativa", "suspensa", "cancelada"],
+      sms_status: [
+        "pending",
+        "processing",
+        "sent",
+        "delivered",
+        "failed",
+        "blacklist",
+      ],
       user_status: ["ativo", "inativo"],
     },
   },

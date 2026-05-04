@@ -20,6 +20,21 @@ import SecurityLogs from "./pages/SecurityLogs";
 import Importacoes from "./pages/Importacoes";
 import NotFound from "./pages/NotFound";
 
+// SMS Module Pages
+import SMSDashboard from "./pages/sms/SMSDashboard";
+import SMSDisparo from "./pages/sms/SMSDisparo";
+import SMSCampanhas from "./pages/sms/SMSCampanhas";
+import SMSListas from "./pages/sms/SMSListas";
+import SMSNovaLista from "./pages/sms/SMSNovaLista";
+import SMSBlacklist from "./pages/sms/SMSBlacklist";
+import SMSSaida from "./pages/sms/SMSSaida";
+import SMSLogs from "./pages/sms/SMSLogs";
+import SMSRelatorios from "./pages/sms/SMSRelatorios";
+import SMSInbox from "./pages/sms/SMSInbox";
+import SMSApi from "./pages/sms/SMSApi";
+import SMSWebhooks from "./pages/sms/SMSWebhooks";
+import SMSConfiguracoes from "./pages/sms/SMSConfiguracoes";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -43,6 +58,21 @@ const App = () => (
               <Route path="/admin/logs" element={<AdminLogs />} />
               <Route path="/admin/security" element={<SecurityLogs />} />
               <Route path="/admin/importacoes" element={<Importacoes />} />
+              
+              {/* SMS Module Routes */}
+              <Route path="/sms/dashboard" element={<SMSDashboard />} />
+              <Route path="/sms/disparo" element={<SMSDisparo />} />
+              <Route path="/sms/campanhas" element={<SMSCampanhas />} />
+              <Route path="/sms/listas" element={<SMSListas />} />
+              <Route path="/sms/listas/nova" element={<SMSNovaLista />} />
+              <Route path="/sms/blacklist" element={<SMSBlacklist />} />
+              <Route path="/sms/saida" element={<SMSSaida />} />
+              <Route path="/sms/logs" element={<SMSLogs />} />
+              <Route path="/sms/relatorios" element={<SMSRelatorios />} />
+              <Route path="/sms/inbox" element={<SMSInbox />} />
+              <Route path="/sms/api" element={<SMSApi />} />
+              <Route path="/sms/webhooks" element={<SMSWebhooks />} />
+              <Route path="/sms/configuracoes" element={<SMSConfiguracoes />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

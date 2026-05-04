@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings, ShieldCheck, ScrollText, ShieldAlert, FileUp } from "lucide-react";
+import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings, ShieldCheck, ScrollText, ShieldAlert, FileUp, MessageSquare } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { EyeOff } from "lucide-react";
@@ -31,6 +31,7 @@ export default function AppLayout() {
     { to: "/ganhos", label: "Ganhos", icon: Wallet },
     { to: "/pagamentos", label: "Pagamentos", icon: Receipt },
     { to: "/configuracoes", label: "Configurações", icon: Settings },
+    { to: "/sms/dashboard", label: "SMS Marketing", icon: MessageSquare },
   ];
 
   if (isAdmin) {
