@@ -63,6 +63,7 @@ export default function Importacoes() {
       const { error } = await supabase.rpc("cancel_import_job", { p_job_id: jobId });
       if (error) throw error;
       toast.success("Importação cancelada com sucesso");
+      fetchJobs();
     } catch (error: any) {
       toast.error("Erro ao cancelar importação: " + error.message);
     }
@@ -73,6 +74,7 @@ export default function Importacoes() {
       const { error } = await supabase.rpc("resume_import_job", { p_job_id: jobId });
       if (error) throw error;
       toast.success("Processamento retomado");
+      fetchJobs();
     } catch (error: any) {
       toast.error("Erro ao retomar importação: " + error.message);
     }
@@ -88,7 +90,7 @@ export default function Importacoes() {
         return;
       }
 
-      // Gerar CSV
+      // Gerar CSV conforme Etapa 2
       const headers = ["CNPJ", "Erro"];
       const rows = data.map((e: any) => [
         e.cnpj || "",
@@ -116,10 +118,11 @@ export default function Importacoes() {
   };
 
   const getStatusBadge = (status: string, cancelado: boolean) => {
-    if (cancelado) return <Badge variant="destructive">Cancelado</Badge>;
+    // Etapa 4 - Mapeamento de status detalhado
+    if (cancelado || status === 'canceled') return <Badge variant="destructive">Cancelado</Badge>;
     
     switch (status) {
-      case "pending": return <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" /> Pendente</Badge>;
+      case "pending": return <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" /> Aguardando</Badge>;
       case "processing": return <Badge variant="default" className="bg-blue-500 animate-pulse"><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Processando</Badge>;
       case "done": return <Badge variant="default" className="bg-emerald-500"><CheckCircle2 className="mr-1 h-3 w-3" /> Concluído</Badge>;
       case "failed": return <Badge variant="destructive"><AlertCircle className="mr-1 h-3 w-3" /> Falhou</Badge>;
@@ -167,9 +170,10 @@ export default function Importacoes() {
                       {format(new Date(job.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                     </TableCell>
                     <TableCell>
+                      {/* Etapa 3 - Resumo visual do progresso */}
                       <div className="space-y-1">
                         <div className="text-[10px] text-muted-foreground flex justify-between">
-                          <span>{job.linhas_processadas} de {job.total_linhas}</span>
+                          <span>{job.linhas_processadas} de {job.total_linhas} registros</span>
                           <span>{Math.round((job.linhas_processadas / (job.total_linhas || 1)) * 100)}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
@@ -183,6 +187,7 @@ export default function Importacoes() {
                     <TableCell>{getStatusBadge(job.status, job.cancelado)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {/* Etapa 1 - UI de cancelamento */}
                         {job.status === "processing" && !job.cancelado && (
                           <Button 
                             variant="outline" 
