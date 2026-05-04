@@ -68,7 +68,7 @@ export default function Equipe() {
             return { ...member, totalVendas, ganhos };
           })
         );
-        setEquipe(membersWithMetrics);
+        setEquipe(sanitize(membersWithMetrics, "equipe_list", user.id));
       }
       setLoading(false);
     }
