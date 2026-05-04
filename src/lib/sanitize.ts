@@ -16,13 +16,30 @@ const SENSITIVE_KEY_PATTERNS = [
   /webhook[_-]?secret/i,
   /jwt/i,
   /refresh[_-]?token/i,
+  /sk_[live|test]/i,
+  /rk_[live|test]/i,
+  /pk_[live|test]/i,
+  /client[_-]?secret/i,
+  /bearer/i,
+  /authorization/i,
 ];
 
-// Padrões de valores que parecem tokens ou chaves (longos e alfanuméricos)
-const VALUE_TOKEN_PATTERN = /^[a-zA-Z0-9_-]{24,256}$/;
+// Padrões de valores que parecem tokens ou chaves
+const VALUE_PATTERNS = [
+  /sk_(live|test)_[a-zA-Z0-9]{16,}/,
+  /rk_(live|test)_[a-zA-Z0-9]{16,}/,
+  /pk_(live|test)_[a-zA-Z0-9]{16,}/,
+  /bearer\s+[a-zA-Z0-9-._~+/]+=*/i,
+  /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9-_]+$/, // JWT
+];
 
 export function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERNS.some((re) => re.test(key));
+}
+
+export function isSensitiveValue(val: any): boolean {
+  if (typeof val !== "string") return false;
+  return VALUE_PATTERNS.some((re) => re.test(val));
 }
 
 /**
@@ -31,8 +48,10 @@ export function isSensitiveKey(key: string): boolean {
  */
 function maskValue(val: any): string | null {
   if (typeof val !== "string") return null;
-  if (val.length <= 8) return "****";
-  return `${val.slice(0, 4)}****${val.slice(-4)}`;
+  if (val.length <= 4) return "****";
+  // Manter últimos 3-4 chars conforme solicitado
+  const maskLength = Math.max(0, val.length - 4);
+  return `${"*".repeat(4)}${val.slice(-4)}`;
 }
 
 /**
@@ -88,7 +107,7 @@ export function sanitize<T>(data: T, origin: string = "frontend_sanitize", userI
       }
       
       // 2. Validar pelo valor (se for string)
-      if (typeof v === "string" && VALUE_TOKEN_PATTERN.test(v) && v.includes("_")) {
+      if (typeof v === "string" && isSensitiveValue(v)) {
          logSecurityDetection(userId, `${k} (value pattern)`, origin, v);
          out[k] = maskValue(v);
          continue;

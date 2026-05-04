@@ -25,15 +25,30 @@ const AuthCtx = createContext<Ctx>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
+  const [viewAsUserId, setViewAsUserId] = useState<string | null>(localStorage.getItem("view_as_user_id"));
 
   useEffect(() => {
     // 1) listener primeiro
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_e, s) => {
       setSession(s);
       setLoading(false);
-      if (!s) setViewAsUserId(null); // Limpa se deslogar
+      
+      if (!s) {
+        setViewAsUserId(null);
+        localStorage.removeItem("view_as_user_id");
+      } else {
+        // Validar se o usuário é admin se estiver no modo "ver como"
+        const storedViewAs = localStorage.getItem("view_as_user_id");
+        if (storedViewAs) {
+          const { data } = await supabase.from("profiles").select("role").eq("id", s.user.id).single();
+          if (data?.role !== "admin") {
+            setViewAsUserId(null);
+            localStorage.removeItem("view_as_user_id");
+          }
+        }
+      }
     });
+
     // 2) sessão inicial
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
@@ -46,7 +61,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
-  const viewAs = (userId: string | null) => {
+  const viewAs = async (userId: string | null) => {
+    if (userId) {
+      localStorage.setItem("view_as_user_id", userId);
+    } else {
+      localStorage.removeItem("view_as_user_id");
+    }
     setViewAsUserId(userId);
   };
 
