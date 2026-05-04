@@ -1077,21 +1077,24 @@ export type Database = {
       whatsapp_sessions: {
         Row: {
           agent_id: string | null
-          data: Json
           id: string
+          key_id: string | null
           updated_at: string | null
+          value: Json
         }
         Insert: {
           agent_id?: string | null
-          data: Json
           id?: string
+          key_id?: string | null
           updated_at?: string | null
+          value: Json
         }
         Update: {
           agent_id?: string | null
-          data?: Json
           id?: string
+          key_id?: string | null
           updated_at?: string | null
+          value?: Json
         }
         Relationships: [
           {
