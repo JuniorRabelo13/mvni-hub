@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Save, ShieldAlert, Settings as SettingsIcon } from "lucide-react";
+import { Loader2, Save, ShieldAlert } from "lucide-react";
 import { logAdminAction } from "@/lib/adminLog";
 import { sanitizeConfiguracoes } from "@/lib/sanitize";
 
@@ -41,14 +41,15 @@ export default function Configuracoes() {
     const isUserAdmin = !!roleData;
     setIsAdmin(isUserAdmin);
 
-    // Load configs
-    const { data: configData } = await supabase
-      .from("configuracoes")
-      .select("chave, valor, descricao");
+    // Load configs via safe RPC function
+    const { data: configData, error } = await supabase.rpc('get_configuracoes_safe');
 
-    if (configData) {
+    if (error) {
+      console.error("Error loading configs:", error);
+      toast.error("Erro ao carregar configurações");
+    } else if (configData) {
       // Defesa em profundidade: oculta chaves sensíveis se o usuário não for admin
-      setConfigs(isUserAdmin ? configData : sanitizeConfiguracoes(configData));
+      setConfigs(isUserAdmin ? (configData as any) : sanitizeConfiguracoes(configData as any, user.id));
     }
     setLoading(false);
   };

@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ShieldAlert, ScrollText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { sanitize } from "@/lib/sanitize";
 
 type LogRow = {
   id: string;
@@ -54,10 +55,11 @@ export default function AdminLogs() {
         .limit(200);
 
       const rows = (data || []) as LogRow[];
-      setLogs(rows);
+      const sanitizedRows = sanitize(rows, "admin_logs", user.id);
+      setLogs(sanitizedRows);
 
       const ids = Array.from(
-        new Set(rows.flatMap(r => [r.admin_id, r.target_user_id].filter(Boolean) as string[])),
+        new Set(sanitizedRows.flatMap(r => [r.admin_id, r.target_user_id].filter(Boolean) as string[])),
       );
       if (ids.length) {
         const { data: profs } = await supabase

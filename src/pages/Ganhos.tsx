@@ -3,12 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { sanitize } from "@/lib/sanitize";
 
 type Comissao = { id: string; tipo: string; valor: number; created_at: string; cliente_id: string };
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function Ganhos() {
-  const { effectiveUser: user } = useAuth();
+  const { user, effectiveUser } = useAuth();
   const [items, setItems] = useState<Comissao[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +21,7 @@ export default function Ganhos() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .then(({ data }) => {
-        setItems((data as any) ?? []);
+        setItems(sanitize((data as any) ?? [], "ganhos_list", user.id));
         setLoading(false);
       });
   }, [user]);

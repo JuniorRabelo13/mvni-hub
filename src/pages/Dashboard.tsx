@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Wallet, Activity, TrendingUp, ArrowRight, Network } from "lucide-react";
+import { sanitize } from "@/lib/sanitize";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -17,7 +18,7 @@ type Stats = {
 };
 
 export default function Dashboard() {
-  const { effectiveUser: user } = useAuth();
+  const { user, effectiveUser } = useAuth();
   const [s, setS] = useState<Stats>({ clientesAtivos: 0, linhasAtivas: 0, ganhoMes: 0, ganhoTotal: 0, indicados: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -36,13 +37,15 @@ export default function Dashboard() {
         supabase.from("profiles").select("id", { count: "exact", head: true }).eq("indicador_id", user.id),
       ]);
 
-      setS({
+      const stats = {
         clientesAtivos: clientes.count ?? 0,
         linhasAtivas: linhas.count ?? 0,
         ganhoMes: (comMes.data ?? []).reduce((a, b) => a + Number(b.valor), 0),
         ganhoTotal: (comTotal.data ?? []).reduce((a, b) => a + Number(b.valor), 0),
         indicados: indic.count ?? 0,
-      });
+      };
+
+      setS(sanitize(stats, "dashboard", user.id));
       setLoading(false);
     };
     load();

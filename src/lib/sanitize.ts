@@ -1,11 +1,7 @@
+import { supabase } from "@/integrations/supabase/client";
+
 /**
  * Camada de sanitização para dados retornados ao frontend.
- *
- * Usada principalmente no modo "Ver como usuário", onde um admin
- * navega como outro usuário. Mesmo que o RLS permita ao admin ver
- * tudo, nunca devemos vazar campos sensíveis na UI.
- *
- * Regra: NUNCA retornar senhas, tokens, secrets ou chaves de API.
  */
 
 const SENSITIVE_KEY_PATTERNS = [
@@ -22,45 +18,82 @@ const SENSITIVE_KEY_PATTERNS = [
   /refresh[_-]?token/i,
 ];
 
-/** Chaves específicas de configurações que nunca devem aparecer no modo view-as. */
-const SENSITIVE_CONFIG_KEYS = new Set([
-  "asaas_api_key",
-]);
+// Padrões de valores que parecem tokens ou chaves (longos e alfanuméricos)
+const VALUE_TOKEN_PATTERN = /^[a-zA-Z0-9_-]{24,256}$/;
 
 export function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERNS.some((re) => re.test(key));
 }
 
-export function isSensitiveConfigChave(chave: string): boolean {
-  return SENSITIVE_CONFIG_KEYS.has(chave) || isSensitiveKey(chave);
+/**
+ * Aplica máscara em strings sensíveis
+ * Ex: "sk_live_abc123" -> "sk_l****c123"
+ */
+function maskValue(val: any): string | null {
+  if (typeof val !== "string") return null;
+  if (val.length <= 8) return "****";
+  return `${val.slice(0, 4)}****${val.slice(-4)}`;
 }
 
 /**
- * Remove recursivamente quaisquer campos cujo nome bata com padrões sensíveis.
- * Substitui o valor por null para não quebrar componentes que esperam a chave.
+ * Registra uma detecção de segurança no banco
  */
-export function sanitize<T>(data: T): T {
-  if (data == null) return data;
-  if (Array.isArray(data)) {
-    return data.map((item) => sanitize(item)) as unknown as T;
+async function logSecurityDetection(userId: string | undefined, field: string, origin: string) {
+  if (!userId) return;
+  try {
+    await supabase.from("security_logs").insert({
+      user_id: userId,
+      campo_detectado: field,
+      origem: origin,
+    });
+  } catch (e) {
+    console.error("Failed to log security detection", e);
   }
+}
+
+/**
+ * Remove recursivamente campos sensíveis e aplica máscaras.
+ */
+export function sanitize<T>(data: T, origin: string = "frontend_sanitize", userId?: string): T {
+  if (data == null) return data;
+  
+  if (Array.isArray(data)) {
+    return data.map((item) => sanitize(item, origin, userId)) as unknown as T;
+  }
+  
   if (typeof data === "object") {
     const out: Record<string, any> = {};
     for (const [k, v] of Object.entries(data as Record<string, any>)) {
+      // 1. Validar pela chave
       if (isSensitiveKey(k)) {
-        out[k] = null;
+        if (v !== null) {
+          logSecurityDetection(userId, k, origin);
+          out[k] = maskValue(v);
+        } else {
+          out[k] = null;
+        }
         continue;
       }
-      out[k] = sanitize(v);
+      
+      // 2. Validar pelo valor (se for string)
+      if (typeof v === "string" && VALUE_TOKEN_PATTERN.test(v) && v.includes("_")) {
+         logSecurityDetection(userId, `${k} (value pattern)`, origin);
+         out[k] = maskValue(v);
+         continue;
+      }
+
+      out[k] = sanitize(v, origin, userId);
     }
     return out as T;
   }
   return data;
 }
 
-/** Filtra uma lista de configurações removendo entradas sensíveis. */
-export function sanitizeConfiguracoes<T extends { chave: string }>(rows: T[]): T[] {
-  return rows
-    .filter((r) => !isSensitiveConfigChave(r.chave))
-    .map((r) => sanitize(r));
+export function sanitizeConfiguracoes<T extends { chave: string, valor: any }>(rows: T[], userId?: string): T[] {
+  return rows.map((r) => {
+    if (isSensitiveKey(r.chave)) {
+      return { ...r, valor: maskValue(r.valor) };
+    }
+    return r;
+  });
 }
