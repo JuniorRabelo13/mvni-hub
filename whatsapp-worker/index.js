@@ -4,7 +4,10 @@ const {
     DisconnectReason, 
     fetchLatestBaileysVersion, 
     makeCacheableSignalKeyStore,
-    Browsers
+    Browsers,
+    initAuthState,
+    Curve,
+    generateRegistrationId
 } = require('@whiskeysockets/baileys');
 const { createClient } = require('@supabase/supabase-js');
 const pino = require('pino');
@@ -23,16 +26,49 @@ const supabase = createClient(
 const activeSessions = new Map();
 
 /**
+ * Inicializa um novo estado de credenciais se não existir
+ */
+function createNewCreds() {
+    const identityKey = Curve.generateKeyPair();
+    return {
+        noiseKey: Curve.generateKeyPair(),
+        signedIdentityKey: identityKey,
+        signedPreKey: {
+            keyPair: Curve.generateKeyPair(),
+            signature: Buffer.alloc(0), // Will be signed later
+            keyId: 1
+        },
+        registrationId: generateRegistrationId(),
+        advSecretKey: Buffer.alloc(0),
+        processedHistoryMessages: [],
+        nextPreKeyId: 1,
+        firstUnuploadedPreKeyId: 1,
+        accountSettings: { unarchiveChats: false },
+        registered: false,
+        pairingEphemeralKeyPair: Curve.generateKeyPair(),
+        myAppStateKeyId: undefined,
+        lastAccountSyncTimestamp: undefined,
+    };
+}
+
+/**
  * Provedor de estado de autenticação customizado para o Supabase
  */
 async function useSupabaseAuthState(agentId) {
     const writeData = async (data, key) => {
+        // Converter Buffers para base64 para salvar no JSONB se necessário
+        const replacer = (key, value) => {
+            if (value && value.type === 'Buffer') return Buffer.from(value.data).toString('base64');
+            if (Buffer.isBuffer(value)) return value.toString('base64');
+            return value;
+        };
+
         const { error } = await supabase
             .from('whatsapp_sessions')
             .upsert({ 
                 agent_id: agentId, 
                 key_id: key, 
-                value: data,
+                value: JSON.parse(JSON.stringify(data, replacer)),
                 updated_at: new Date().toISOString()
             }, { onConflict: 'agent_id,key_id' });
         
@@ -50,7 +86,22 @@ async function useSupabaseAuthState(agentId) {
         if (error && error.code !== 'PGRST116') {
             logger.error({ error, key }, 'Erro ao ler dados de sessão do Supabase');
         }
-        return data?.value || null;
+
+        if (!data?.value) return null;
+
+        // Reverter base64 para Buffer se necessário
+        const reviver = (key, value) => {
+            if (typeof value === 'string' && /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value) && value.length > 20) {
+                // Tentativa heurística de identificar base64 que deve ser Buffer
+                // Baileys usa buffers para chaves
+                if (key === 'public' || key === 'private' || key === 'iv' || key === 'data' || key === 'signature' || key === 'key') {
+                    return Buffer.from(value, 'base64');
+                }
+            }
+            return value;
+        };
+
+        return JSON.parse(JSON.stringify(data.value), reviver);
     };
 
     const removeData = async (key) => {
@@ -64,7 +115,13 @@ async function useSupabaseAuthState(agentId) {
     };
 
     // Baileys espera que 'creds' seja o estado inicial
-    const creds = await readData('creds') || {};
+    let creds = await readData('creds');
+    if (!creds) {
+        // Se não existir, Baileys vai gerar se passarmos o objeto correto
+        // Mas para garantir compatibilidade com o store customizado, vamos usar o padrão do Baileys
+        const { initAuthState } = require('@whiskeysockets/baileys');
+        creds = initAuthState().creds;
+    }
 
     return {
         state: {
@@ -75,9 +132,6 @@ async function useSupabaseAuthState(agentId) {
                     await Promise.all(
                         ids.map(async (id) => {
                             let value = await readData(`${type}-${id}`);
-                            if (type === 'app-state-sync-key' && value) {
-                                // Buffer serialization fix if needed
-                            }
                             data[id] = value;
                         })
                     );
@@ -104,7 +158,6 @@ async function useSupabaseAuthState(agentId) {
 
 async function startAgentSession(agentId) {
     if (activeSessions.has(agentId)) {
-        logger.info({ agentId }, 'Sessão já ativa para este agente');
         return;
     }
 
@@ -118,9 +171,10 @@ async function startAgentSession(agentId) {
             version,
             printQRInTerminal: false,
             auth: state,
-            logger: pino({ level: 'warn' }),
+            logger: pino({ level: 'error' }),
             browser: Browsers.macOS('Desktop'),
-            syncFullHistory: false
+            syncFullHistory: false,
+            markOnlineOnConnect: true,
         });
 
         activeSessions.set(agentId, sock);
