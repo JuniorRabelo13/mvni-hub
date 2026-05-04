@@ -37,13 +37,15 @@ export default function Dashboard() {
         supabase.from("profiles").select("id", { count: "exact", head: true }).eq("indicador_id", user.id),
       ]);
 
-      setS({
+      const stats = {
         clientesAtivos: clientes.count ?? 0,
         linhasAtivas: linhas.count ?? 0,
         ganhoMes: (comMes.data ?? []).reduce((a, b) => a + Number(b.valor), 0),
         ganhoTotal: (comTotal.data ?? []).reduce((a, b) => a + Number(b.valor), 0),
         indicados: indic.count ?? 0,
-      });
+      };
+
+      setS(sanitize(stats, "dashboard", user.id));
       setLoading(false);
     };
     load();
