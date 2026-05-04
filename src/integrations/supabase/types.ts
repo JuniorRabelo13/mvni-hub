@@ -802,6 +802,7 @@ export type Database = {
       }
       whatsapp_agents: {
         Row: {
+          conectado: boolean | null
           created_at: string
           id: string
           limite_diario: number
@@ -809,13 +810,20 @@ export type Database = {
           next_billing_at: string | null
           nivel_aquecimento: number
           numero_whatsapp: string
+          qr_code: string | null
+          session_id: string | null
           status: string
+          status_conexao:
+            | Database["public"]["Enums"]["whatsapp_connection_status"]
+            | null
           subscription_price: number | null
+          ultima_atividade: string | null
           ultima_mensagem_em: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          conectado?: boolean | null
           created_at?: string
           id?: string
           limite_diario?: number
@@ -823,13 +831,20 @@ export type Database = {
           next_billing_at?: string | null
           nivel_aquecimento?: number
           numero_whatsapp: string
+          qr_code?: string | null
+          session_id?: string | null
           status?: string
+          status_conexao?:
+            | Database["public"]["Enums"]["whatsapp_connection_status"]
+            | null
           subscription_price?: number | null
+          ultima_atividade?: string | null
           ultima_mensagem_em?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          conectado?: boolean | null
           created_at?: string
           id?: string
           limite_diario?: number
@@ -837,8 +852,14 @@ export type Database = {
           next_billing_at?: string | null
           nivel_aquecimento?: number
           numero_whatsapp?: string
+          qr_code?: string | null
+          session_id?: string | null
           status?: string
+          status_conexao?:
+            | Database["public"]["Enums"]["whatsapp_connection_status"]
+            | null
           subscription_price?: number | null
+          ultima_atividade?: string | null
           ultima_mensagem_em?: string | null
           updated_at?: string
           user_id?: string
@@ -1049,6 +1070,35 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_sessions: {
+        Row: {
+          agent_id: string | null
+          data: Json
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          data: Json
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          data?: Json
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_sessions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -1322,6 +1372,7 @@ export type Database = {
         | "failed"
         | "blacklist"
       user_status: "ativo" | "inativo"
+      whatsapp_connection_status: "qr" | "conectado" | "desconectado"
     }
     CompositeTypes: {
       http_header: {
@@ -1478,6 +1529,7 @@ export const Constants = {
         "blacklist",
       ],
       user_status: ["ativo", "inativo"],
+      whatsapp_connection_status: ["qr", "conectado", "desconectado"],
     },
   },
 } as const
