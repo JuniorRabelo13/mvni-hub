@@ -2,20 +2,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Phone, RefreshCw } from "lucide-react";
+import { Plus, Phone, RefreshCw, QrCode, Power, PowerOff, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect } from "react";
 
 export default function AgenteAgentes() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset } = useForm();
+  const [connectingAgentId, setConnectingAgentId] = useState<string | null>(null);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ["whatsapp-agents"],
@@ -40,11 +43,10 @@ export default function AgenteAgentes() {
       
       if (error) throw error;
 
-      // Criar estatísticas iniciais de aquecimento
       await supabase.from("whatsapp_number_stats").insert({
         agent_id: agent.id,
         warming_level: 1,
-        daily_volume_limit: 42 // Volume inicial automático do Dia 1
+        daily_volume_limit: 42
       });
     },
     onSuccess: () => {
@@ -56,6 +58,63 @@ export default function AgenteAgentes() {
       toast.error("Erro ao conectar: " + error.message);
     }
   });
+
+  const connectMutation = useMutation({
+    mutationFn: async (agentId: string) => {
+      setConnectingAgentId(agentId);
+      setIsQrModalOpen(true);
+      
+      const { data, error } = await supabase.functions.invoke("whatsapp-connect", {
+        body: { action: "connect", agentId }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onError: (error: any) => {
+      toast.error("Erro ao iniciar conexão: " + error.message);
+      setIsQrModalOpen(false);
+    }
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: async (agentId: string) => {
+      const { error } = await supabase.functions.invoke("whatsapp-connect", {
+        body: { action: "disconnect", agentId }
+      });
+      if (error) throw error;
+      
+      await supabase.from("whatsapp_agents").update({
+        conectado: false,
+        status_conexao: 'desconectado',
+        qr_code: null
+      }).eq('id', agentId);
+    },
+    onSuccess: () => {
+      toast.success("Desconectado com sucesso");
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
+    }
+  });
+
+  useEffect(() => {
+    let interval: any;
+    if (isQrModalOpen && connectingAgentId) {
+      interval = setInterval(() => {
+        queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isQrModalOpen, connectingAgentId, queryClient]);
+
+  const activeAgent = agents?.find(a => a.id === connectingAgentId);
+  
+  useEffect(() => {
+    if (activeAgent?.status_conexao === 'conectado' && isQrModalOpen) {
+      setIsQrModalOpen(false);
+      setConnectingAgentId(null);
+      toast.success("WhatsApp conectado com sucesso!");
+    }
+  }, [activeAgent, isQrModalOpen]);
 
   return (
     <div className="space-y-6">
@@ -100,15 +159,17 @@ export default function AgenteAgentes() {
                 <TableRow>
                   <TableHead>Número</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Status Segurança</TableHead>
+                  <TableHead>Status Conexão</TableHead>
+                  <TableHead>Segurança</TableHead>
                   <TableHead>Enviadas Hoje</TableHead>
                   <TableHead>Aquecimento</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">Carregando...</TableCell>
+                    <TableCell colSpan={7} className="text-center py-8">Carregando...</TableCell>
                   </TableRow>
                 ) : agents?.map((agent) => {
                   const stats = agent.whatsapp_number_stats?.[0];
@@ -124,22 +185,53 @@ export default function AgenteAgentes() {
                         </Badge>
                       </TableCell>
                       <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${agent.conectado ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <span className="text-xs font-medium uppercase">
+                            {agent.status_conexao || 'desconectado'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <Badge variant={stats?.safety_status === 'safe' ? 'outline' : 'destructive'}>
                           {stats?.safety_status === 'safe' ? 'Seguro' : stats?.safety_status === 'warning' ? 'Atenção' : 'Pausado'}
                         </Badge>
                       </TableCell>
                       <TableCell>{agent.mensagens_enviadas_hoje} / {stats?.daily_volume_limit || '--'}</TableCell>
-                      <TableCell>Automático (Nível {stats?.warming_level || 1})</TableCell>
+                      <TableCell className="text-xs">Automático (Nível {stats?.warming_level || 1})</TableCell>
+                      <TableCell className="text-right">
+                        {agent.conectado ? (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => disconnectMutation.mutate(agent.id)}
+                            disabled={disconnectMutation.isPending}
+                          >
+                            <PowerOff className="h-4 w-4 mr-1" /> Desconectar
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => connectMutation.mutate(agent.id)}
+                            disabled={connectMutation.isPending}
+                          >
+                            <QrCode className="h-4 w-4 mr-1" /> Conectar
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
                 {agents?.length === 0 && !isLoading && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       Nenhum número conectado.
                     </TableCell>
                   </TableRow>
-                )}
+                ) as any}
               </TableBody>
             </Table>
           </CardContent>
@@ -171,6 +263,44 @@ export default function AgenteAgentes() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={isQrModalOpen} onOpenChange={setIsQrModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conectar WhatsApp</DialogTitle>
+            <DialogDescription>
+              Escaneie o QR Code abaixo com o seu WhatsApp para ativar o agente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center p-6 space-y-4">
+            {activeAgent?.qr_code ? (
+              <div className="bg-white p-4 rounded-xl border-2 border-dashed border-muted-foreground/20">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(activeAgent.qr_code)}`} 
+                  alt="WhatsApp QR Code"
+                  className="w-[250px] h-[250px]"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[250px] w-[250px] space-y-2">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground animate-pulse">Gerando sessão...</p>
+              </div>
+            )}
+            
+            <div className="text-center">
+              <p className="text-sm font-medium">Status: {
+                activeAgent?.status_conexao === 'qr' ? 'Aguardando leitura...' : 
+                activeAgent?.status_conexao === 'conectado' ? 'Conectado!' : 
+                'Iniciando...'
+              }</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Vá em WhatsApp {'>'} Aparelhos Conectados {'>'} Conectar um Aparelho
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

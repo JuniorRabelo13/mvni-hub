@@ -20,37 +20,59 @@ serve(async (req) => {
 
     for (const item of queue) {
       const { userId } = item.payload
+      const leadPhone = item.leads?.telefone
       
-      // 2. Check config
+      if (!leadPhone) continue;
+
+      // 2. Global Anti-Spam Check (10 days rule)
+      const { data: canSend } = await supabase.rpc('check_and_register_whatsapp_send', {
+        target_phone: leadPhone
+      });
+
+      if (!canSend) {
+        console.log(`Lead ${leadPhone} bloqueado pela regra global de 10 dias.`);
+        await supabase.from('whatsapp_queue').update({ status: 'blocked_spam' }).eq('id', item.id);
+        continue;
+      }
+
+      // 3. Check config
       const { data: config } = await supabase.from('whatsapp_config').select('*').eq('user_id', userId).single()
       if (!config) continue
 
-      // 3. Check working hours
+      // 4. Check working hours
       const now = new Date()
       const currentTime = now.toLocaleTimeString('pt-BR', { hour12: false })
       if (currentTime < config.horario_inicio || currentTime > config.horario_fim) continue
 
-      // 4. Find active agent
+      // 5. Find active and CONNECTED agent
       const { data: agent } = await supabase
         .from('whatsapp_agents')
-        .select('*')
+        .select('*, whatsapp_number_stats(*)')
         .eq('user_id', userId)
         .eq('status', 'ativo')
-        .lt('mensagens_enviadas_hoje', 'limite_diario')
-        .order('ultima_mensagem_em', { ascending: true })
+        .eq('conectado', true) // Somente números conectados via QR
+        .order('ultima_atividade', { ascending: true })
         .limit(1)
         .single()
 
       if (!agent) {
-        console.log('Nenhum agente disponível ou limite atingido para usuário:', userId)
+        console.log('Nenhum agente conectado disponível para usuário:', userId)
         continue
       }
 
-      // 5. Process action
+      const stats = agent.whatsapp_number_stats?.[0]
+      if (agent.mensagens_enviadas_hoje >= (stats?.daily_volume_limit || 40)) {
+        console.log('Limite diário atingido para agente:', agent.id)
+        continue
+      }
+
+      // 6. Process action
       if (item.payload.action === 'new_lead') {
         const welcomeMsg = `Olá, ${item.leads.nome}! Tudo bem?\nVi que você demonstrou interesse em nossos serviços. Como posso te ajudar hoje?`
         
-        // Record message
+        // In a real scenario, here we would call the WhatsApp API (Baileys/Instance)
+        // For now, we record as "enviada"
+        
         await supabase.from('whatsapp_messages').insert({
           lead_id: item.lead_id,
           agente_id: agent.id,
@@ -62,7 +84,7 @@ serve(async (req) => {
         // Update stats
         await supabase.from('whatsapp_agents').update({
           mensagens_enviadas_hoje: agent.mensagens_enviadas_hoje + 1,
-          ultima_mensagem_em: new Date().toISOString()
+          ultima_atividade: new Date().toISOString()
         }).eq('id', agent.id)
 
         await supabase.from('leads').update({
@@ -73,9 +95,6 @@ serve(async (req) => {
 
       // Mark as processed
       await supabase.from('whatsapp_queue').update({ status: 'processed' }).eq('id', item.id)
-      
-      // Artificial human delay for next one in same user? 
-      // Actually the cron runs every minute, so we process few items per run.
     }
 
     return new Response('Processed')
