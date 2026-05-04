@@ -43,11 +43,10 @@ export default function AgenteAgentes() {
       
       if (error) throw error;
 
-      // Criar estatísticas iniciais de aquecimento
       await supabase.from("whatsapp_number_stats").insert({
         agent_id: agent.id,
         warming_level: 1,
-        daily_volume_limit: 42 // Volume inicial automático do Dia 1
+        daily_volume_limit: 42
       });
     },
     onSuccess: () => {
@@ -97,7 +96,6 @@ export default function AgenteAgentes() {
     }
   });
 
-  // Polling para status do QR Code quando o modal está aberto
   useEffect(() => {
     let interval: any;
     if (isQrModalOpen && connectingAgentId) {
@@ -117,6 +115,8 @@ export default function AgenteAgentes() {
       toast.success("WhatsApp conectado com sucesso!");
     }
   }, [activeAgent, isQrModalOpen]);
+
+  return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Números Conectados</h1>
@@ -169,7 +169,7 @@ export default function AgenteAgentes() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">Carregando...</TableCell>
+                    <TableCell colSpan={7} className="text-center py-8">Carregando...</TableCell>
                   </TableRow>
                 ) : agents?.map((agent) => {
                   const stats = agent.whatsapp_number_stats?.[0];
@@ -227,11 +227,11 @@ export default function AgenteAgentes() {
                 })}
                 {agents?.length === 0 && !isLoading && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       Nenhum número conectado.
                     </TableCell>
                   </TableRow>
-                )}
+                ) as any}
               </TableBody>
             </Table>
           </CardContent>
@@ -246,6 +246,22 @@ export default function AgenteAgentes() {
               <div className="flex justify-between mb-2">
                 <span>Números Conectados:</span>
                 <span className="font-bold">{agents?.length || 0}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span>Custo Mensal Estimado:</span>
+                <span className="font-bold text-green-600">
+                  R$ {((agents?.length || 0) * 49.90).toFixed(2)}
+                </span>
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground italic">
+              * Cobrança de R$ 49,90 por número ativo. O sistema gerencia o aquecimento e limites automaticamente.
+            </div>
+            <Button variant="outline" className="w-full gap-2">
+              <RefreshCw className="h-4 w-4" /> Resetar Contadores
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Dialog open={isQrModalOpen} onOpenChange={setIsQrModalOpen}>
@@ -285,22 +301,6 @@ export default function AgenteAgentes() {
           </div>
         </DialogContent>
       </Dialog>
-              <div className="flex justify-between border-t pt-2">
-                <span>Custo Mensal Estimado:</span>
-                <span className="font-bold text-green-600">
-                  R$ {((agents?.length || 0) * 49.90).toFixed(2)}
-                </span>
-              </div>
-            </div>
-            <div className="text-xs text-muted-foreground italic">
-              * Cobrança de R$ 49,90 por número ativo. O sistema gerencia o aquecimento e limites automaticamente.
-            </div>
-            <Button variant="outline" className="w-full gap-2">
-              <RefreshCw className="h-4 w-4" /> Resetar Contadores
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
