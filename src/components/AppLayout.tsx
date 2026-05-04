@@ -34,6 +34,14 @@ export default function AppLayout() {
     { to: "/sms/dashboard", label: "SMS Marketing", icon: MessageSquare },
   ];
 
+  const waItems = [
+    { to: "/agente", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/agente/leads", label: "Leads", icon: UserPlus },
+    { to: "/agente/agentes", label: "Números", icon: PhoneCall },
+    { to: "/agente/mensagens", label: "Mensagens", icon: History },
+    { to: "/agente/configuracoes", label: "Ajustes IA", icon: Settings2 },
+  ];
+
   if (isAdmin) {
     navItems.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
     navItems.push({ to: "/admin/logs", label: "Logs Admin", icon: ScrollText });
