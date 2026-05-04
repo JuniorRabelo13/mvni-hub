@@ -416,6 +416,30 @@ export type Database = {
           },
         ]
       }
+      rpc_logs: {
+        Row: {
+          created_at: string | null
+          function_name: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          function_name: string
+          id?: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          function_name?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rpc_usage_logs: {
         Row: {
           created_at: string | null
@@ -546,6 +570,10 @@ export type Database = {
         Returns: boolean
       }
       increment_job_progress: { Args: { p_job_id: string }; Returns: undefined }
+      log_rpc_call: {
+        Args: { p_function_name: string; p_status: string; p_user_id: string }
+        Returns: undefined
+      }
       log_security_event: {
         Args: {
           p_campo: string
