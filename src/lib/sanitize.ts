@@ -16,13 +16,30 @@ const SENSITIVE_KEY_PATTERNS = [
   /webhook[_-]?secret/i,
   /jwt/i,
   /refresh[_-]?token/i,
+  /sk_[live|test]/i,
+  /rk_[live|test]/i,
+  /pk_[live|test]/i,
+  /client[_-]?secret/i,
+  /bearer/i,
+  /authorization/i,
 ];
 
-// Padrões de valores que parecem tokens ou chaves (longos e alfanuméricos)
-const VALUE_TOKEN_PATTERN = /^[a-zA-Z0-9_-]{24,256}$/;
+// Padrões de valores que parecem tokens ou chaves
+const VALUE_PATTERNS = [
+  /sk_(live|test)_[a-zA-Z0-9]{16,}/,
+  /rk_(live|test)_[a-zA-Z0-9]{16,}/,
+  /pk_(live|test)_[a-zA-Z0-9]{16,}/,
+  /bearer\s+[a-zA-Z0-9-._~+/]+=*/i,
+  /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9-_]+$/, // JWT
+];
 
 export function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERNS.some((re) => re.test(key));
+}
+
+export function isSensitiveValue(val: any): boolean {
+  if (typeof val !== "string") return false;
+  return VALUE_PATTERNS.some((re) => re.test(val));
 }
 
 /**
