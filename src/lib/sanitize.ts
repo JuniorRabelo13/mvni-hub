@@ -107,7 +107,7 @@ export function sanitize<T>(data: T, origin: string = "frontend_sanitize", userI
       }
       
       // 2. Validar pelo valor (se for string)
-      if (typeof v === "string" && VALUE_TOKEN_PATTERN.test(v) && v.includes("_")) {
+      if (typeof v === "string" && isSensitiveValue(v)) {
          logSecurityDetection(userId, `${k} (value pattern)`, origin, v);
          out[k] = maskValue(v);
          continue;
