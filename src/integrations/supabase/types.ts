@@ -416,6 +416,27 @@ export type Database = {
           },
         ]
       }
+      rpc_usage_logs: {
+        Row: {
+          created_at: string | null
+          function_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          function_name: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          function_name?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       security_logs: {
         Row: {
           campo_detectado: string
@@ -470,6 +491,10 @@ export type Database = {
     }
     Functions: {
       cancel_import_job: { Args: { p_job_id: string }; Returns: undefined }
+      check_rpc_rate_limit: {
+        Args: { p_function_name: string; p_user_id: string }
+        Returns: undefined
+      }
       claim_next_import_chunk: {
         Args: never
         Returns: {
