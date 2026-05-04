@@ -229,25 +229,27 @@ async function startAgentSession(agentId) {
 async function pollForNewConnections() {
     const { data, error } = await supabase
         .from('whatsapp_agents')
-        .select('id')
-        .eq('status_conexao', 'iniciando');
+        .select('id, status_conexao')
+        .in('status_conexao', ['iniciando', 'conectado', 'qr', 'desconectado']);
 
     if (error) {
-        logger.error({ error }, 'Erro ao buscar agentes iniciando');
-    } else if (data && data.length > 0) {
-        for (const agent of data) {
-            startAgentSession(agent.id);
-        }
+        logger.error({ error }, 'Erro ao buscar agentes');
+        return;
     }
 
-    // Também verificar agentes que deveriam estar conectados mas o worker reiniciou
-    const { data: activeAgents } = await supabase
-        .from('whatsapp_agents')
-        .select('id')
-        .eq('conectado', true);
-    
-    if (activeAgents) {
-        for (const agent of activeAgents) {
+    for (const agent of data) {
+        if (agent.status_conexao === 'iniciando') {
+            startAgentSession(agent.id);
+        } else if (agent.status_conexao === 'desconectado') {
+            if (activeSessions.has(agent.id)) {
+                logger.info({ agentId: agent.id }, 'Encerrando sessão a pedido do sistema');
+                const sock = activeSessions.get(agent.id);
+                sock.ev.removeAllListeners();
+                sock.logout();
+                activeSessions.delete(agent.id);
+            }
+        } else if (agent.status_conexao === 'conectado' || agent.status_conexao === 'qr') {
+            // Se deveria estar ativo mas não está no worker (ex: reinício do worker)
             if (!activeSessions.has(agent.id)) {
                 startAgentSession(agent.id);
             }
