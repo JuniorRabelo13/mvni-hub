@@ -1375,7 +1375,11 @@ export type Database = {
         | "failed"
         | "blacklist"
       user_status: "ativo" | "inativo"
-      whatsapp_connection_status: "qr" | "conectado" | "desconectado"
+      whatsapp_connection_status:
+        | "qr"
+        | "conectado"
+        | "desconectado"
+        | "iniciando"
     }
     CompositeTypes: {
       http_header: {
@@ -1532,7 +1536,12 @@ export const Constants = {
         "blacklist",
       ],
       user_status: ["ativo", "inativo"],
-      whatsapp_connection_status: ["qr", "conectado", "desconectado"],
+      whatsapp_connection_status: [
+        "qr",
+        "conectado",
+        "desconectado",
+        "iniciando",
+      ],
     },
   },
 } as const

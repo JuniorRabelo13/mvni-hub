@@ -1,0 +1,1 @@
+ALTER TYPE whatsapp_connection_status ADD VALUE IF NOT EXISTS 'iniciando';
