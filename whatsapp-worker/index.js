@@ -117,10 +117,7 @@ async function useSupabaseAuthState(agentId) {
     // Baileys espera que 'creds' seja o estado inicial
     let creds = await readData('creds');
     if (!creds) {
-        // Se não existir, Baileys vai gerar se passarmos o objeto correto
-        // Mas para garantir compatibilidade com o store customizado, vamos usar o padrão do Baileys
-        const { initAuthState } = require('@whiskeysockets/baileys');
-        creds = initAuthState().creds;
+        creds = createNewCreds();
     }
 
     return {
