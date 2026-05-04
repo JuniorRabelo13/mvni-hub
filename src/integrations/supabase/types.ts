@@ -318,6 +318,39 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          status: string
+          telefone: string
+          ultimo_contato: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          status?: string
+          telefone: string
+          ultimo_contato?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          status?: string
+          telefone?: string
+          ultimo_contato?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       linhas: {
         Row: {
           ativada_em: string
@@ -766,6 +799,93 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      whatsapp_agents: {
+        Row: {
+          created_at: string
+          id: string
+          limite_diario: number
+          mensagens_enviadas_hoje: number
+          nivel_aquecimento: number
+          numero_whatsapp: string
+          status: string
+          ultima_mensagem_em: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          limite_diario?: number
+          mensagens_enviadas_hoje?: number
+          nivel_aquecimento?: number
+          numero_whatsapp: string
+          status?: string
+          ultima_mensagem_em?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          limite_diario?: number
+          mensagens_enviadas_hoje?: number
+          nivel_aquecimento?: number
+          numero_whatsapp?: string
+          status?: string
+          ultima_mensagem_em?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_messages: {
+        Row: {
+          agente_id: string | null
+          created_at: string
+          direcao: string
+          ia_resposta: boolean | null
+          id: string
+          lead_id: string
+          mensagem: string
+          status: string
+        }
+        Insert: {
+          agente_id?: string | null
+          created_at?: string
+          direcao: string
+          ia_resposta?: boolean | null
+          id?: string
+          lead_id: string
+          mensagem: string
+          status?: string
+        }
+        Update: {
+          agente_id?: string | null
+          created_at?: string
+          direcao?: string
+          ia_resposta?: boolean | null
+          id?: string
+          lead_id?: string
+          mensagem?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_agente_id_fkey"
+            columns: ["agente_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
