@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Save, ShieldAlert, Settings as SettingsIcon } from "lucide-react";
 import { logAdminAction } from "@/lib/adminLog";
+import { sanitizeConfiguracoes } from "@/lib/sanitize";
 
 type Config = {
   chave: string;
@@ -46,7 +47,8 @@ export default function Configuracoes() {
       .select("chave, valor, descricao");
 
     if (configData) {
-      setConfigs(configData);
+      // Defesa em profundidade: oculta chaves sensíveis se o usuário não for admin
+      setConfigs(isUserAdmin ? configData : sanitizeConfiguracoes(configData));
     }
     setLoading(false);
   };
