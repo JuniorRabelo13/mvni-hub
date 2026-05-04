@@ -45,7 +45,7 @@ export default function SMSRelatorios() {
               <CardTitle className="text-2xl font-bold">{m.value}%</CardTitle>
             </CardHeader>
             <CardContent>
-              <Progress value={m.value} className="h-2" indicatorClassName={m.color} />
+              <Progress value={m.value} className="h-2" />
             </CardContent>
           </Card>
         ))}
