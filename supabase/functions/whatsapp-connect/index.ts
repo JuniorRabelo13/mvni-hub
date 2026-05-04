@@ -2,13 +2,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import makeWASocket, { 
   DisconnectReason, 
-  useMultiFileAuthState, 
   fetchLatestBaileysVersion, 
-  makeCacheableSignalKeyStore,
   proto,
   initAuthCreds,
   BufferJSON
-} from 'npm:@whiskeysockets/baileys'
+} from 'https://esm.sh/@whiskeysockets/baileys@6.7.9'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
