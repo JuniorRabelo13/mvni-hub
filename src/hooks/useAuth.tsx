@@ -61,7 +61,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
-  const viewAs = (userId: string | null) => {
+  const viewAs = async (userId: string | null) => {
+    if (userId) {
+      localStorage.setItem("view_as_user_id", userId);
+    } else {
+      localStorage.removeItem("view_as_user_id");
+    }
     setViewAsUserId(userId);
   };
 
