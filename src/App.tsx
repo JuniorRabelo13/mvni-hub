@@ -58,6 +58,21 @@ const App = () => (
               <Route path="/admin/logs" element={<AdminLogs />} />
               <Route path="/admin/security" element={<SecurityLogs />} />
               <Route path="/admin/importacoes" element={<Importacoes />} />
+              
+              {/* SMS Module Routes */}
+              <Route path="/sms/dashboard" element={<SMSDashboard />} />
+              <Route path="/sms/disparo" element={<SMSDisparo />} />
+              <Route path="/sms/campanhas" element={<SMSCampanhas />} />
+              <Route path="/sms/listas" element={<SMSListas />} />
+              <Route path="/sms/listas/nova" element={<SMSNovaLista />} />
+              <Route path="/sms/blacklist" element={<SMSBlacklist />} />
+              <Route path="/sms/saida" element={<SMSSaida />} />
+              <Route path="/sms/logs" element={<SMSLogs />} />
+              <Route path="/sms/relatorios" element={<SMSRelatorios />} />
+              <Route path="/sms/inbox" element={<SMSInbox />} />
+              <Route path="/sms/api" element={<SMSApi />} />
+              <Route path="/sms/webhooks" element={<SMSWebhooks />} />
+              <Route path="/sms/configuracoes" element={<SMSConfiguracoes />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
