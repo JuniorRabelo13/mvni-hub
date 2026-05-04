@@ -839,6 +839,69 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_campaigns: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_config: {
+        Row: {
+          created_at: string
+          delay_max: number
+          delay_min: number
+          horario_fim: string
+          horario_inicio: string
+          id: string
+          prompt_ia: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delay_max?: number
+          delay_min?: number
+          horario_fim?: string
+          horario_inicio?: string
+          id?: string
+          prompt_ia?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delay_max?: number
+          delay_min?: number
+          horario_fim?: string
+          horario_inicio?: string
+          id?: string
+          prompt_ia?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_messages: {
         Row: {
           agente_id: string | null
