@@ -490,6 +490,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cleanup_import_data: { Args: never; Returns: undefined }
       cleanup_old_imports: { Args: never; Returns: undefined }
       fail_import_chunk: {
         Args: { p_chunk_id: string; p_erro: string }
@@ -510,7 +511,6 @@ export type Database = {
         Returns: {
           cnpj: string
           erro: string
-          payload: Json
         }[]
       }
       has_role: {
