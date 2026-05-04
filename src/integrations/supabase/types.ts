@@ -806,9 +806,11 @@ export type Database = {
           id: string
           limite_diario: number
           mensagens_enviadas_hoje: number
+          next_billing_at: string | null
           nivel_aquecimento: number
           numero_whatsapp: string
           status: string
+          subscription_price: number | null
           ultima_mensagem_em: string | null
           updated_at: string
           user_id: string
@@ -818,9 +820,11 @@ export type Database = {
           id?: string
           limite_diario?: number
           mensagens_enviadas_hoje?: number
+          next_billing_at?: string | null
           nivel_aquecimento?: number
           numero_whatsapp: string
           status?: string
+          subscription_price?: number | null
           ultima_mensagem_em?: string | null
           updated_at?: string
           user_id: string
@@ -830,9 +834,11 @@ export type Database = {
           id?: string
           limite_diario?: number
           mensagens_enviadas_hoje?: number
+          next_billing_at?: string | null
           nivel_aquecimento?: number
           numero_whatsapp?: string
           status?: string
+          subscription_price?: number | null
           ultima_mensagem_em?: string | null
           updated_at?: string
           user_id?: string
@@ -902,6 +908,21 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_global_sends: {
+        Row: {
+          last_sent_at: string | null
+          phone: string
+        }
+        Insert: {
+          last_sent_at?: string | null
+          phone: string
+        }
+        Update: {
+          last_sent_at?: string | null
+          phone?: string
+        }
+        Relationships: []
+      }
       whatsapp_messages: {
         Row: {
           agente_id: string | null
@@ -950,6 +971,53 @@ export type Database = {
           },
         ]
       }
+      whatsapp_number_stats: {
+        Row: {
+          agent_id: string | null
+          created_at: string | null
+          daily_volume_limit: number | null
+          id: string
+          last_recalculation_at: string | null
+          safety_status: string | null
+          total_errors: number | null
+          total_replies: number | null
+          total_sent: number | null
+          warming_level: number | null
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string | null
+          daily_volume_limit?: number | null
+          id?: string
+          last_recalculation_at?: string | null
+          safety_status?: string | null
+          total_errors?: number | null
+          total_replies?: number | null
+          total_sent?: number | null
+          warming_level?: number | null
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string | null
+          daily_volume_limit?: number | null
+          id?: string
+          last_recalculation_at?: string | null
+          safety_status?: string | null
+          total_errors?: number | null
+          total_replies?: number | null
+          total_sent?: number | null
+          warming_level?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_number_stats_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_queue: {
         Row: {
           created_at: string
@@ -991,7 +1059,15 @@ export type Database = {
     }
     Functions: {
       bytea_to_text: { Args: { data: string }; Returns: string }
+      calculate_next_day_volume: {
+        Args: { current_level: number; error_rate: number; reply_rate: number }
+        Returns: number
+      }
       cancel_import_job: { Args: { p_job_id: string }; Returns: undefined }
+      check_and_register_whatsapp_send: {
+        Args: { target_phone: string }
+        Returns: boolean
+      }
       check_rpc_rate_limit: {
         Args: { p_function_name: string; p_user_id: string }
         Returns: undefined
