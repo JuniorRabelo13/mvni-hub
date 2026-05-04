@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Save, ShieldAlert, Settings as SettingsIcon } from "lucide-react";
 import { logAdminAction } from "@/lib/adminLog";
+import { sanitizeConfiguracoes } from "@/lib/sanitize";
 
 type Config = {
   chave: string;
