@@ -79,7 +79,7 @@ export function sanitize<T>(data: T, origin: string = "frontend_sanitize", userI
       // 1. Validar pela chave
       if (isSensitiveKey(k)) {
         if (v !== null) {
-          logSecurityDetection(userId, k, origin);
+          logSecurityDetection(userId, k, origin, v);
           out[k] = maskValue(v);
         } else {
           out[k] = null;
