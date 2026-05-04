@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Save, ShieldAlert, Settings as SettingsIcon } from "lucide-react";
+import { logAdminAction } from "@/lib/adminLog";
 
 type Config = {
   chave: string;
@@ -70,6 +71,9 @@ export default function Configuracoes() {
         
         if (error) throw error;
       }
+      await logAdminAction("alterar_config", null, {
+        chaves: configs.map(c => c.chave),
+      });
       toast.success("Configurações salvas com sucesso!");
     } catch (error: any) {
       toast.error("Erro ao salvar: " + error.message);
