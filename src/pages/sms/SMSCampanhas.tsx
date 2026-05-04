@@ -1,0 +1,1 @@
+export default function SMSCampanhas() { return <div>Página de Campanhas SMS</div>; }
