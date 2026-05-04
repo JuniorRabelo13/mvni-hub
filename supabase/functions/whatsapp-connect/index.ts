@@ -6,7 +6,7 @@ import makeWASocket, {
   proto,
   initAuthCreds,
   BufferJSON
-} from 'https://esm.sh/@whiskeysockets/baileys@6.7.9'
+} from 'https://esm.sh/@whiskeysockets/baileys@6.5.0?no-check'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
