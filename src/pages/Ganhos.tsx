@@ -9,7 +9,7 @@ type Comissao = { id: string; tipo: string; valor: number; created_at: string; c
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function Ganhos() {
-  const { effectiveUser: user } = useAuth();
+  const { user, effectiveUser } = useAuth();
   const [items, setItems] = useState<Comissao[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,7 +21,7 @@ export default function Ganhos() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .then(({ data }) => {
-        setItems((data as any) ?? []);
+        setItems(sanitize((data as any) ?? [], "ganhos_list", user.id));
         setLoading(false);
       });
   }, [user]);
