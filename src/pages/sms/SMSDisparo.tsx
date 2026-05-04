@@ -1,0 +1,1 @@
+export default function SMSDisparo() { return <div>Página de Disparo SMS</div>; }
