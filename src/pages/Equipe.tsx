@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Users, TrendingUp, DollarSign, ListChecks, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { logAdminAction } from "@/lib/adminLog";
+import { sanitize } from "@/lib/sanitize";
 
 export default function Equipe() {
   const { user, viewAs } = useAuth();

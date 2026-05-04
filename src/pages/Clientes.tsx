@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { Plus, CheckCircle2, Clock, Loader2, QrCode } from "lucide-react";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
+import { sanitize } from "@/lib/sanitize";
 
 const clienteSchema = z.object({
   nome: z.string().trim().min(2).max(80),
