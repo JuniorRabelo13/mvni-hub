@@ -89,11 +89,10 @@ export default function Importacoes() {
       }
 
       // Gerar CSV
-      const headers = ["CNPJ", "Erro", "Payload"];
+      const headers = ["CNPJ", "Erro"];
       const rows = data.map((e: any) => [
         e.cnpj || "",
-        `"${e.erro?.replace(/"/g, '""') || ""}"`,
-        `"${JSON.stringify(e.payload).replace(/"/g, '""') || ""}"`
+        `"${e.erro?.replace(/"/g, '""') || ""}"`
       ]);
 
       const csvContent = [
