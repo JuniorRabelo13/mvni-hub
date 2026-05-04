@@ -203,6 +203,121 @@ export type Database = {
         }
         Relationships: []
       }
+      import_chunks: {
+        Row: {
+          created_at: string | null
+          erro: string | null
+          id: string
+          job_id: string | null
+          payload: Json
+          proxima_tentativa: string | null
+          status: string
+          tentativas: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          erro?: string | null
+          id?: string
+          job_id?: string | null
+          payload: Json
+          proxima_tentativa?: string | null
+          status?: string
+          tentativas?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          erro?: string | null
+          id?: string
+          job_id?: string | null
+          payload?: Json
+          proxima_tentativa?: string | null
+          status?: string
+          tentativas?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_chunks_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_jobs: {
+        Row: {
+          cancelado: boolean | null
+          created_at: string | null
+          id: string
+          linhas_processadas: number | null
+          nome: string
+          status: string
+          total_linhas: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cancelado?: boolean | null
+          created_at?: string | null
+          id?: string
+          linhas_processadas?: number | null
+          nome: string
+          status?: string
+          total_linhas?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cancelado?: boolean | null
+          created_at?: string | null
+          id?: string
+          linhas_processadas?: number | null
+          nome?: string
+          status?: string
+          total_linhas?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      import_logs: {
+        Row: {
+          cnpj: string | null
+          created_at: string | null
+          erro: string | null
+          id: string
+          job_id: string | null
+          payload: Json | null
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string | null
+          erro?: string | null
+          id?: string
+          job_id?: string | null
+          payload?: Json | null
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string | null
+          erro?: string | null
+          id?: string
+          job_id?: string | null
+          payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       linhas: {
         Row: {
           ativada_em: string
@@ -354,6 +469,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_import_job: { Args: { p_job_id: string }; Returns: undefined }
+      claim_next_import_chunk: {
+        Args: never
+        Returns: {
+          created_at: string | null
+          erro: string | null
+          id: string
+          job_id: string | null
+          payload: Json
+          proxima_tentativa: string | null
+          status: string
+          tentativas: number | null
+          updated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_chunks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cleanup_old_imports: { Args: never; Returns: undefined }
+      fail_import_chunk: {
+        Args: { p_chunk_id: string; p_erro: string }
+        Returns: undefined
+      }
       get_configuracoes_safe: {
         Args: never
         Returns: {
@@ -364,6 +505,14 @@ export type Database = {
           valor: string
         }[]
       }
+      get_import_errors: {
+        Args: { p_job_id: string }
+        Returns: {
+          cnpj: string
+          erro: string
+          payload: Json
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -371,6 +520,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_job_progress: { Args: { p_job_id: string }; Returns: undefined }
       log_security_event: {
         Args: {
           p_campo: string
@@ -380,6 +530,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      resume_import_job: { Args: { p_job_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

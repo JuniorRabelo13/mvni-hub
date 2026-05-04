@@ -17,6 +17,7 @@ import Equipe from "./pages/Equipe";
 import Admin from "./pages/Admin";
 import AdminLogs from "./pages/AdminLogs";
 import SecurityLogs from "./pages/SecurityLogs";
+import Importacoes from "./pages/Importacoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/logs" element={<AdminLogs />} />
               <Route path="/admin/security" element={<SecurityLogs />} />
+              <Route path="/admin/importacoes" element={<Importacoes />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
