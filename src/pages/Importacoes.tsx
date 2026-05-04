@@ -116,10 +116,10 @@ export default function Importacoes() {
   };
 
   const getStatusBadge = (status: string, cancelado: boolean) => {
-    if (cancelado) return <Badge variant="destructive">Cancelado</Badge>;
+    if (cancelado || status === 'canceled') return <Badge variant="destructive">Cancelado</Badge>;
     
     switch (status) {
-      case "pending": return <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" /> Pendente</Badge>;
+      case "pending": return <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" /> Aguardando</Badge>;
       case "processing": return <Badge variant="default" className="bg-blue-500 animate-pulse"><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Processando</Badge>;
       case "done": return <Badge variant="default" className="bg-emerald-500"><CheckCircle2 className="mr-1 h-3 w-3" /> Concluído</Badge>;
       case "failed": return <Badge variant="destructive"><AlertCircle className="mr-1 h-3 w-3" /> Falhou</Badge>;
