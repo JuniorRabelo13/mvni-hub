@@ -59,6 +59,12 @@ export default function Importacoes() {
   }, []);
 
   const handleCancel = async (jobId: string) => {
+    const confirm = window.confirm("Tem certeza que deseja cancelar esta importação? Esta ação interromperá o processamento atual.");
+    if (!confirm) return;
+
+    // Update otimista na UI
+    setJobs(prev => prev.map(j => j.id === jobId ? { ...j, cancelado: true, status: 'canceled' } : j));
+
     try {
       const { error } = await supabase.rpc("cancel_import_job", { p_job_id: jobId });
       if (error) throw error;
@@ -66,6 +72,7 @@ export default function Importacoes() {
       fetchJobs();
     } catch (error: any) {
       toast.error("Erro ao cancelar importação: " + error.message);
+      fetchJobs(); // Reverter se der erro
     }
   };
 
@@ -90,16 +97,20 @@ export default function Importacoes() {
         return;
       }
 
-      // Gerar CSV conforme Etapa 2
-      const headers = ["CNPJ", "Erro"];
-      const rows = data.map((e: any) => [
-        e.cnpj || "",
-        `"${e.erro?.replace(/"/g, '""') || ""}"`
-      ]);
+      // Gerar CSV conforme Etapa 5 (Sanitizado)
+      const headers = ["CNPJ;Erro"];
+      const rows = data.map((e: any) => {
+        const cnpj = (e.cnpj || "").replace(/;/g, ',');
+        const erro = (e.erro || "")
+          .replace(/;/g, ',')
+          .replace(/\n/g, ' ')
+          .replace(/\r/g, '');
+        return `${cnpj};${erro}`;
+      });
 
-      const csvContent = [
-        headers.join(","),
-        ...rows.map((r: any) => r.join(","))
+      const csvContent = "\uFEFF" + [
+        headers[0],
+        ...rows
       ].join("\n");
 
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
