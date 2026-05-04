@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, TrendingUp, DollarSign, ListChecks, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { logAdminAction } from "@/lib/adminLog";
 
 export default function Equipe() {
   const { user, viewAs } = useAuth();
@@ -76,8 +77,9 @@ export default function Equipe() {
 
   const handleVerComo = (memberId: string) => {
     viewAs(memberId);
+    logAdminAction("ver_como_usuario", memberId);
     toast.success("Modo visualização ativado.");
-    navigate("/"); // Redireciona para o painel para ver os dados do usuário
+    navigate("/");
   };
 
   if (userProfile?.role === "vendedor") {

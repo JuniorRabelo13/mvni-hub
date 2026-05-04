@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings, ShieldCheck, ScrollText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { EyeOff } from "lucide-react";
@@ -35,6 +35,7 @@ export default function AppLayout() {
 
   if (isAdmin) {
     navItems.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
+    navItems.push({ to: "/admin/logs", label: "Logs Admin", icon: ScrollText });
   }
 
   const handleSignOut = async () => {
