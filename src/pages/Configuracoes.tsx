@@ -47,7 +47,8 @@ export default function Configuracoes() {
       .select("chave, valor, descricao");
 
     if (configData) {
-      setConfigs(configData);
+      // Defesa em profundidade: oculta chaves sensíveis se o usuário não for admin
+      setConfigs(isUserAdmin ? configData : sanitizeConfiguracoes(configData));
     }
     setLoading(false);
   };
