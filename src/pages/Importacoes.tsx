@@ -20,10 +20,22 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+export type ImportJob = {
+  id: string;
+  nome: string;
+  status: 'pending' | 'processing' | 'done' | 'failed' | 'canceled';
+  total_linhas: number;
+  linhas_processadas: number;
+  cancelado: boolean;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+};
+
 export default function Importacoes() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [jobs, setJobs] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<ImportJob[]>([]);
 
   const fetchJobs = async () => {
     const { data, error } = await supabase
@@ -35,7 +47,7 @@ export default function Importacoes() {
       console.error("Erro ao carregar jobs:", error);
       toast.error("Erro ao carregar histórico de importações");
     } else {
-      setJobs(data || []);
+      setJobs((data as ImportJob[]) || []);
     }
     setLoading(false);
   };
