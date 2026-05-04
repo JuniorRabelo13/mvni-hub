@@ -520,6 +520,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_job_progress: { Args: { p_job_id: string }; Returns: undefined }
       log_security_event: {
         Args: {
           p_campo: string
