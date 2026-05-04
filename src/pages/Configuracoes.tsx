@@ -64,20 +64,36 @@ export default function Configuracoes() {
       return;
     }
 
+    // Validação básica de valores numéricos para chaves de comissão/valor
+    const invalidConfigs = configs.filter(c => 
+      c.chave !== 'asaas_api_key' && (isNaN(Number(c.valor)) || Number(c.valor) < 0)
+    );
+
+    if (invalidConfigs.length > 0) {
+      toast.error(`Valores inválidos detectados em: ${invalidConfigs.map(c => c.descricao).join(", ")}`);
+      return;
+    }
+
     setSaving(true);
     try {
-      for (const config of configs) {
-        const { error } = await supabase
+      // Usar Promise.all para maior performance (embora no Supabase isso não seja uma transação atômica)
+      // Idealmente usaríamos uma RPC para atualização em lote atômica
+      const updates = configs.map(config => 
+        supabase
           .from("configuracoes")
           .update({ valor: config.valor })
-          .eq("chave", config.chave);
-        
-        if (error) throw error;
-      }
+          .eq("chave", config.chave)
+      );
+      
+      const results = await Promise.all(updates);
+      const firstError = results.find(r => r.error);
+      if (firstError) throw firstError.error;
+
       await logAdminAction("alterar_config", null, {
         chaves: configs.map(c => c.chave),
       });
       toast.success("Configurações salvas com sucesso!");
+      await checkAdminAndLoad(); // Recarregar para garantir sincronia
     } catch (error: any) {
       toast.error("Erro ao salvar: " + error.message);
     } finally {
