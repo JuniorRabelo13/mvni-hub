@@ -56,9 +56,9 @@ export default function SMSCampanhas() {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon"><BarChart2 className="h-4 w-4" /></Button>
-                      {camp.status === 'scheduled' && <Button variant="ghost" size="icon text-green-500"><Play className="h-4 w-4" /></Button>}
-                      {camp.status === 'processing' && <Button variant="ghost" size="icon text-yellow-500"><Pause className="h-4 w-4" /></Button>}
-                      <Button variant="ghost" size="icon text-red-500"><Trash2 className="h-4 w-4" /></Button>
+                      {camp.status === 'scheduled' && <Button variant="ghost" size="icon" className="text-green-500"><Play className="h-4 w-4" /></Button>}
+                      {camp.status === 'processing' && <Button variant="ghost" size="icon" className="text-yellow-500"><Pause className="h-4 w-4" /></Button>}
+                      <Button variant="ghost" size="icon" className="text-red-500"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
