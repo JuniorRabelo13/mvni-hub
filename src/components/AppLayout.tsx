@@ -36,6 +36,7 @@ export default function AppLayout() {
   if (isAdmin) {
     navItems.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
     navItems.push({ to: "/admin/logs", label: "Logs Admin", icon: ScrollText });
+    navItems.push({ to: "/admin/security", label: "Logs Segurança", icon: ShieldAlert });
   }
 
   const handleSignOut = async () => {
