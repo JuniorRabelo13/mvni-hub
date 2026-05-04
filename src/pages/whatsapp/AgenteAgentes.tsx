@@ -48,14 +48,19 @@ export default function AgenteAgentes() {
         warming_level: 1,
         daily_volume_limit: 42
       });
+
+      return agent;
     },
-    onSuccess: () => {
-      toast.success("Agente conectado com sucesso!");
+    onSuccess: (agent) => {
+      toast.success("Agente criado! Iniciando conexão...");
       queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
       reset();
+      if (agent?.id) {
+        connectMutation.mutate(agent.id);
+      }
     },
     onError: (error) => {
-      toast.error("Erro ao conectar: " + error.message);
+      toast.error("Erro ao criar agente: " + error.message);
     }
   });
 
