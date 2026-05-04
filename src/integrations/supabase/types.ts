@@ -842,9 +842,36 @@ export type Database = {
         Returns: undefined
       }
       resume_import_job: { Args: { p_job_id: string }; Returns: undefined }
+      sms_claim_messages: {
+        Args: { p_limit?: number }
+        Returns: {
+          campaign_id: string | null
+          created_at: string | null
+          direcao: string | null
+          erro: string | null
+          id: string
+          mensagem: string
+          preco: number | null
+          provider_id: string | null
+          status: Database["public"]["Enums"]["sms_status"] | null
+          telefone: string
+          updated_at: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sms_messages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       sms_deduct_credits: {
         Args: { p_amount: number; p_user_id: string }
         Returns: boolean
+      }
+      sms_trigger_campaign: {
+        Args: { p_campaign_id: string }
+        Returns: undefined
       }
     }
     Enums: {
