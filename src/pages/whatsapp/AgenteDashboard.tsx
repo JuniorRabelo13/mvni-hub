@@ -41,7 +41,7 @@ export default function AgenteDashboard() {
     { title: "Números Conectados", value: stats?.connectedNumbers || 0, icon: Zap, color: "text-blue-500" },
     { title: "Nível Médio Aquecimento", value: `Nível ${stats?.avgWarming || 1}`, icon: Target, color: "text-orange-500" },
     { title: "Taxa de Resposta", value: stats?.totalLeads > 0 ? `${((stats.respondidos / stats.totalLeads) * 100).toFixed(1)}%` : "0%", icon: MessageSquare, color: "text-green-500" },
-    { title: "Taxa de Erro", value: `${stats?.errorRate || 0}%`, icon: Users, color: stats?.errorRate > 5 ? "text-red-500" : "text-muted-foreground" },
+    { title: "Taxa de Erro", value: `${stats?.errorRate || 0}%`, icon: Users, color: Number(stats?.errorRate || 0) > 5 ? "text-red-500" : "text-muted-foreground" },
   ];
 
   return (
