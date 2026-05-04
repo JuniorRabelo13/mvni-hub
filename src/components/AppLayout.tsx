@@ -37,6 +37,7 @@ export default function AppLayout() {
     navItems.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
     navItems.push({ to: "/admin/logs", label: "Logs Admin", icon: ScrollText });
     navItems.push({ to: "/admin/security", label: "Logs Segurança", icon: ShieldAlert });
+    navItems.push({ to: "/admin/importacoes", label: "Importações", icon: FileUp });
   }
 
   const handleSignOut = async () => {
