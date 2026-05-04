@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings, ShieldCheck, ScrollText, ShieldAlert, FileUp, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings, ShieldCheck, ScrollText, ShieldAlert, FileUp, MessageSquare, PhoneCall, History, Settings2, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { EyeOff } from "lucide-react";
@@ -34,6 +34,14 @@ export default function AppLayout() {
     { to: "/sms/dashboard", label: "SMS Marketing", icon: MessageSquare },
   ];
 
+  const waItems = [
+    { to: "/agente", label: "Dashboard", icon: LayoutDashboard, end: true },
+    { to: "/agente/leads", label: "Leads", icon: UserPlus },
+    { to: "/agente/agentes", label: "Números", icon: PhoneCall },
+    { to: "/agente/mensagens", label: "Mensagens", icon: History },
+    { to: "/agente/configuracoes", label: "Ajustes IA", icon: Settings2 },
+  ];
+
   if (isAdmin) {
     navItems.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
     navItems.push({ to: "/admin/logs", label: "Logs Admin", icon: ScrollText });
@@ -59,25 +67,50 @@ export default function AppLayout() {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-primary"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground",
-                )
-              }
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </NavLink>
-          ))}
+        <nav className="flex-1 space-y-4 px-3 overflow-y-auto pt-4">
+          <div className="space-y-1">
+            <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2">Sistema</p>
+            {navItems.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                    isActive
+                      ? "bg-sidebar-accent text-primary"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground",
+                  )
+                }
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </NavLink>
+            ))}
+          </div>
+
+          <div className="space-y-1">
+            <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2">Agente WhatsApp</p>
+            {waItems.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                    isActive
+                      ? "bg-sidebar-accent text-primary"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground",
+                  )
+                }
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </NavLink>
+            ))}
+          </div>
         </nav>
 
         <div className="border-t border-sidebar-border p-4">

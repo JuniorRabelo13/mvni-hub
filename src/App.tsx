@@ -35,6 +35,13 @@ import SMSApi from "./pages/sms/SMSApi";
 import SMSWebhooks from "./pages/sms/SMSWebhooks";
 import SMSConfiguracoes from "./pages/sms/SMSConfiguracoes";
 
+// WhatsApp Agent Module Pages
+import AgenteDashboard from "./pages/whatsapp/AgenteDashboard";
+import AgenteLeads from "./pages/whatsapp/AgenteLeads";
+import AgenteConfig from "./pages/whatsapp/AgenteConfig";
+import AgenteMensagens from "./pages/whatsapp/AgenteMensagens";
+import AgenteAgentes from "./pages/whatsapp/AgenteAgentes";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -73,6 +80,13 @@ const App = () => (
               <Route path="/sms/api" element={<SMSApi />} />
               <Route path="/sms/webhooks" element={<SMSWebhooks />} />
               <Route path="/sms/configuracoes" element={<SMSConfiguracoes />} />
+
+              {/* WhatsApp Agent Module Routes */}
+              <Route path="/agente" element={<AgenteDashboard />} />
+              <Route path="/agente/leads" element={<AgenteLeads />} />
+              <Route path="/agente/agentes" element={<AgenteAgentes />} />
+              <Route path="/agente/mensagens" element={<AgenteMensagens />} />
+              <Route path="/agente/configuracoes" element={<AgenteConfig />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
