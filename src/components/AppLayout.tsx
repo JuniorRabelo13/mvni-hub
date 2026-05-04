@@ -31,6 +31,7 @@ export default function AppLayout() {
     { to: "/ganhos", label: "Ganhos", icon: Wallet },
     { to: "/pagamentos", label: "Pagamentos", icon: Receipt },
     { to: "/configuracoes", label: "Configurações", icon: Settings },
+    { to: "/sms/dashboard", label: "SMS Marketing", icon: MessageSquare },
   ];
 
   if (isAdmin) {
