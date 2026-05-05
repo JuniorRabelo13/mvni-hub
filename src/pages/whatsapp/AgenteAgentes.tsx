@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function AgenteAgentes() {
   const { user } = useAuth();
@@ -19,6 +19,8 @@ export default function AgenteAgentes() {
   const { register, handleSubmit, reset } = useForm();
   const [connectingAgentId, setConnectingAgentId] = useState<string | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [qrBase64, setQrBase64] = useState<string | null>(null);
+  const qrIntervalRef = useRef<any>(null);
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ["whatsapp-agents"],
@@ -118,6 +120,33 @@ export default function AgenteAgentes() {
       queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
     }
   });
+
+  useEffect(() => {
+    if (isQrModalOpen) {
+      qrIntervalRef.current = setInterval(async () => {
+        const sessionId = (window as any).sessionId;
+        if (sessionId) {
+          try {
+            const response = await fetch(`http://155.133.23.9:3333/qr/${sessionId}`);
+            if (response.ok) {
+              const data = await response.json();
+              if (data.qr) {
+                setQrBase64(data.qr);
+              }
+            }
+          } catch (error) {
+            console.error("Erro ao buscar QR Code:", error);
+          }
+        }
+      }, 2000);
+    } else {
+      if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+      setQrBase64(null);
+    }
+    return () => {
+      if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+    };
+  }, [isQrModalOpen]);
 
   useEffect(() => {
     let interval: any;
@@ -296,20 +325,31 @@ export default function AgenteAgentes() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center p-6 space-y-4">
-            {activeAgent?.qr_code ? (
-              <div className="bg-white p-4 rounded-xl border-2 border-dashed border-muted-foreground/20">
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(activeAgent.qr_code)}`} 
-                  alt="WhatsApp QR Code"
-                  className="w-[250px] h-[250px]"
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-[250px] w-[250px] space-y-2">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground animate-pulse">Gerando sessão...</p>
-              </div>
-            )}
+            <div id="qr-container" className="flex flex-col items-center justify-center">
+              {qrBase64 ? (
+                <div className="bg-white p-4 rounded-xl border-2 border-dashed border-muted-foreground/20">
+                  <img 
+                    src={qrBase64} 
+                    alt="WhatsApp QR Code"
+                    className="w-[250px] h-[250px]"
+                    width="250"
+                  />
+                </div>
+              ) : activeAgent?.qr_code ? (
+                <div className="bg-white p-4 rounded-xl border-2 border-dashed border-muted-foreground/20">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(activeAgent.qr_code)}`} 
+                    alt="WhatsApp QR Code"
+                    className="w-[250px] h-[250px]"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[250px] w-[250px] space-y-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground animate-pulse">Gerando QR...</p>
+                </div>
+              )}
+            </div>
             
             <div className="text-center">
               <p className="text-sm font-medium">Status: {
