@@ -5,21 +5,26 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Mock do Supabase
-const mockSupabase = {
-  from: vi.fn().mockReturnThis(),
-  select: vi.fn().mockReturnThis(),
-  insert: vi.fn().mockReturnThis(),
-  update: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
-  functions: {
-    invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
-  },
-};
+vi.mock("@/integrations/supabase/client", () => {
+  const mock = {
+    from: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
+    functions: {
+      invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
+    },
+  };
+  return {
+    supabase: mock,
+  };
+});
 
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: mockSupabase,
-}));
+// Importar para poder manipular os mocks dentro dos testes
+import { supabase } from "@/integrations/supabase/client";
+const mockSupabase = supabase as any;
 
 // Mock do hook useAuth
 vi.mock("@/hooks/useAuth", () => ({
