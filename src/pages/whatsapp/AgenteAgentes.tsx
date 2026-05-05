@@ -260,7 +260,7 @@ export default function AgenteAgentes() {
 
       try {
         const pollStartTime = Date.now();
-        const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${connection.sessionId}`, {
+        const response = await fetch(`${API_BASE_URL}/qr/${connection.sessionId}`, {
           headers: { "X-Request-Id": connection.requestId || "" }
         });
         
