@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Progress } from "@/components/ui/progress";
+import { ConnectivityAssistant } from "./components/ConnectivityAssistant";
 
 export default function AgenteAgentes() {
   const { user } = useAuth();
