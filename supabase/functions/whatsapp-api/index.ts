@@ -87,6 +87,18 @@ serve(async (req) => {
           });
         }
 
+        const durationMs = Date.now() - startTime;
+        console.log(JSON.stringify({
+          timestamp: new Date().toISOString(),
+          level: "info",
+          event: "start_response_ok",
+          sessionId,
+          agentId,
+          requestId,
+          durationMs,
+          environment: Deno.env.get("ENVIRONMENT") || "production"
+        }));
+
         return new Response(JSON.stringify(data), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
