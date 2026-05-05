@@ -208,7 +208,12 @@ export default function AgenteAgentes() {
       }
 
       try {
-        const response = await fetch(buildApiUrl(`/qr/${connection.sessionId}`), {
+        const endpointPath = `/qr/${connection.sessionId}`;
+        const method = "GET";
+        const resolvedUrl = buildApiUrl(endpointPath);
+
+        const response = await fetch(resolvedUrl, {
+          method,
           headers: { "X-Request-Id": connection.requestId || "" }
         });
         
@@ -235,7 +240,8 @@ export default function AgenteAgentes() {
       } catch (error: any) {
         if (!isQrModalOpen || connectingAgentId !== agentId) return;
         const normalized = await normalizeConnectError(error, {
-          endpoint: `/qr/${connection.sessionId}`,
+          endpointPath: `/qr/${connection.sessionId}`,
+          method: "GET",
           sessionId: connection.sessionId,
           requestId: connection.requestId,
           agentId,
