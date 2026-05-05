@@ -4,27 +4,24 @@ import AgenteAgentes from "./AgenteAgentes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-// Define mocks first, inside the vi.mock factory to avoid hoisting issues
+// All logic inside vi.mock factory - avoid any external variable references
 vi.mock("@/integrations/supabase/client", () => {
-  const mock = {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
-    functions: {
-      invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
-    },
-  };
   return {
-    supabase: mock,
+    supabase: {
+      from: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
+      functions: {
+        invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      },
+    }
   };
 });
 
-// Import supabase after mock definition to get the mocked instance
 import { supabase } from "@/integrations/supabase/client";
-const mockSupabase = supabase as any;
 
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
@@ -68,7 +65,7 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
     );
 
   const setupMockAgents = (agents: any[]) => {
-    mockSupabase.from.mockImplementation(() => ({
+    (supabase.from as any).mockImplementation(() => ({
       select: vi.fn().mockImplementation(() => ({
         select: vi.fn().mockResolvedValue({ data: agents, error: null }),
         single: vi.fn().mockResolvedValue({ data: agents[0], error: null }),
