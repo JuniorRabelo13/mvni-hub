@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { logger } from "./utils/observability";
+import { normalizeConnectError, NormalizedError } from "./utils/error-handler";
 import { 
   CheckCircle2, 
   AlertCircle, 
