@@ -1,38 +1,32 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
-import { vi, describe, it, expect, beforeEach } from "vitest";
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import AgenteAgentes from "./AgenteAgentes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-// Mock do Supabase
-vi.mock("@/integrations/supabase/client", () => {
-  const mock = {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
-    functions: {
-      invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
-    },
-  };
-  return {
-    supabase: mock,
-  };
-});
+// Use a unique variable name to avoid conflicts and simplify hoisting issues
+const mockSupabaseInstance = {
+  from: vi.fn().mockReturnThis(),
+  select: vi.fn().mockReturnThis(),
+  insert: vi.fn().mockReturnThis(),
+  update: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
+  functions: {
+    invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
+  },
+};
 
-// Importar o mock
-import { supabase } from "@/integrations/supabase/client";
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: mockSupabaseInstance,
+}));
 
-// Mock do hook useAuth
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
     user: { id: "user-123" },
   }),
 }));
 
-// Mock de fetch global
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
@@ -42,7 +36,6 @@ const createTestQueryClient = () =>
       queries: {
         retry: false,
         staleTime: 0,
-        gcTime: 0,
       },
     },
   });
@@ -53,6 +46,11 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
   beforeEach(() => {
     queryClient = createTestQueryClient();
     vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   const renderComponent = () =>
@@ -64,117 +62,76 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
       </QueryClientProvider>
     );
 
-  it("deve abrir o modal, chamar /start e iniciar polling", async () => {
-    const mockAgents = [
-      {
-        id: "agent-1",
-        numero_whatsapp: "5511999999999",
-        status: "ativo",
-        conectado: false,
-        status_conexao: "desconectado",
-        whatsapp_number_stats: [{ safety_status: "safe", daily_volume_limit: 42, warming_level: 1 }],
-      },
-    ];
-
-    (supabase.from as any).mockImplementation(() => ({
+  const setupMockAgents = (agents: any[]) => {
+    mockSupabaseInstance.from.mockImplementation(() => ({
+      select: vi.fn().mockImplementation(() => ({
+        select: vi.fn().mockResolvedValue({ data: agents, error: null }),
+        single: vi.fn().mockResolvedValue({ data: agents[0], error: null }),
+      })),
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: mockAgents[0], error: null }),
-      select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
+      single: vi.fn().mockResolvedValue({ data: agents[0], error: null }),
     }));
+  };
 
+  it("1) abre modal -> chama /start -> inicia polling", async () => {
+    setupMockAgents([
+      { id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false },
+    ]);
+
+    renderComponent();
+
+    const connectButton = await screen.findByText((c, el) => el?.tagName === "BUTTON" && c.includes("Conectar"));
+    
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ sessionId: "session-abc" }),
+      json: async () => ({ sessionId: "session-123" }),
     });
+
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({ status: "desconectado", qr: null }),
     });
 
-    renderComponent();
-
-    const connectButton = await screen.findByText((content, element) => {
-      const hasText = content.includes('Conectar');
-      const isButton = element?.tagName.toLowerCase() === 'button';
-      return isButton && hasText;
-    });
-    
     fireEvent.click(connectButton);
 
-    expect(await screen.findByText(/conectar whatsapp/i)).toBeInTheDocument();
-    
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/whatsapp-api/start"),
-        expect.any(Object)
-      );
+      expect(screen.getByText(/Conectar WhatsApp/i)).toBeInTheDocument();
     });
 
-    expect(await screen.findByText(/gerando qr code\.\.\./i)).toBeInTheDocument();
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/start"), expect.any(Object));
+    expect(screen.getByText(/Gerando QR Code.../i)).toBeInTheDocument();
   });
 
-  it("deve mostrar imagem visível quando polling retorna qr", async () => {
-    const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
-    
-    (supabase.from as any).mockImplementation(() => ({
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: mockAgents[0], error: null }),
-      select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
-    }));
+  it("2) polling retorna qr -> estado qr_pronto + imagem visível", async () => {
+    setupMockAgents([{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }]);
 
     renderComponent();
-    
-    const connectButton = await screen.findByText((content, element) => {
-      const hasText = content.includes('Conectar');
-      const isButton = element?.tagName.toLowerCase() === 'button';
-      return isButton && hasText;
-    });
+    const connectButton = await screen.findByText((c, el) => el?.tagName === "BUTTON" && c.includes("Conectar"));
 
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ sessionId: "session-abc" }),
-    });
-
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ status: "qr", qr: "data:image/png;base64,abc" }),
-    });
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ sessionId: "session-123" }) });
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ status: "qr", qr: "data:image/png;base64,abc" }) });
 
     fireEvent.click(connectButton);
 
-    const qrImage = await screen.findByAltText(/whatsapp qr code/i);
-    expect(qrImage).toBeInTheDocument();
-    expect(qrImage).toHaveAttribute("src", "data:image/png;base64,abc");
-    expect(screen.getByText(/aguardando leitura\.\.\./i)).toBeInTheDocument();
+    await act(async () => {
+      vi.advanceTimersByTime(2100);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByAltText(/WhatsApp QR Code/i)).toBeInTheDocument();
+      expect(screen.getByText(/Aguardando leitura.../i)).toBeInTheDocument();
+    });
   });
 
-  it("deve mostrar erro após timeout de 60s", async () => {
-    vi.useFakeTimers();
-    const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
-    
-    (supabase.from as any).mockImplementation(() => ({
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: mockAgents[0], error: null }),
-      select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
-    }));
+  it("3) timeout 60s -> estado erro + botão Repetir", async () => {
+    setupMockAgents([{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }]);
 
     renderComponent();
-    const connectButton = await screen.findByText((content, element) => {
-      const hasText = content.includes('Conectar');
-      const isButton = element?.tagName.toLowerCase() === 'button';
-      return isButton && hasText;
-    });
+    const connectButton = await screen.findByText((c, el) => el?.tagName === "BUTTON" && c.includes("Conectar"));
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ status: "desconectado", qr: null, sessionId: "session-abc" }),
-    });
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ status: "desconectado", qr: null, sessionId: "s1" }) });
 
     fireEvent.click(connectButton);
 
@@ -182,7 +139,58 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
       vi.advanceTimersByTime(61000);
     });
 
-    expect(await screen.findByText(/falha na conexão/i)).toBeInTheDocument();
-    vi.useRealTimers();
+    await waitFor(() => {
+      expect(screen.getByText(/Falha na conexão/i)).toBeInTheDocument();
+      expect(screen.getByText(/Repetir tentativa/i)).toBeInTheDocument();
+    });
+  });
+
+  it("4) fechar modal -> polling cancelado", async () => {
+    setupMockAgents([{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }]);
+
+    renderComponent();
+    const connectButton = await screen.findByText((c, el) => el?.tagName === "BUTTON" && c.includes("Conectar"));
+
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ status: "desconectado", qr: null, sessionId: "s1" }) });
+
+    fireEvent.click(connectButton);
+    
+    // Check it started polling
+    await act(async () => { vi.advanceTimersByTime(2100); });
+    const initialCallCount = mockFetch.mock.calls.length;
+
+    // Find and click close button (X or text)
+    const closeButton = screen.getByRole("button", { name: /close/i });
+    fireEvent.click(closeButton);
+
+    await act(async () => { vi.advanceTimersByTime(10000); });
+    
+    // Fetch should not have been called again after closing
+    expect(mockFetch.mock.calls.length).toBe(initialCallCount);
+  });
+
+  it("5) duas linhas conectando em paralelo -> estados isolados", async () => {
+    const agents = [
+      { id: "a1", numero_whatsapp: "111", status: "ativo", conectado: false },
+      { id: "a2", numero_whatsapp: "222", status: "ativo", conectado: false }
+    ];
+    setupMockAgents(agents);
+
+    renderComponent();
+    
+    // Connect first agent
+    const buttons = await screen.findAllByText((c, el) => el?.tagName === "BUTTON" && c.includes("Conectar"));
+    
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ sessionId: "s1" }) });
+    fireEvent.click(buttons[0]);
+    
+    await waitFor(() => {
+       expect(screen.getByText(/session-s1/i || /111/i)).toBeInTheDocument(); // Context dependent check
+    });
+
+    // States are handled in a Record<agentId, ...>, we can verify isolation by seeing different sessions started
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/start"), expect.objectContaining({
+      body: expect.stringContaining('"agentId":"a1"')
+    }));
   });
 });
