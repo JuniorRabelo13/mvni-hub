@@ -36,6 +36,8 @@ setInterval(() => {
 }, 60000);
 
 serve(async (req) => {
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -46,6 +48,7 @@ serve(async (req) => {
   try {
     // Rota: POST /start
     if (path === '/start' && req.method === 'POST') {
+      const startTime = Date.now();
       const body = await req.json()
       const { sessionId, agentId } = body;
 
@@ -83,6 +86,18 @@ serve(async (req) => {
             updatedAt: Date.now()
           });
         }
+
+        const durationMs = Date.now() - startTime;
+        console.log(JSON.stringify({
+          timestamp: new Date().toISOString(),
+          level: "info",
+          event: "start_response_ok",
+          sessionId,
+          agentId,
+          requestId,
+          durationMs,
+          environment: Deno.env.get("ENVIRONMENT") || "production"
+        }));
 
         return new Response(JSON.stringify(data), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
