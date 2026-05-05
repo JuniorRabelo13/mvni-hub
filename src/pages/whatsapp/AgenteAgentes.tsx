@@ -34,6 +34,10 @@ export default function AgenteAgentes() {
   const { register, handleSubmit, reset } = useForm();
   const [connectingAgentId, setConnectingAgentId] = useState<string | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [healthTest, setHealthTest] = useState<{status?: number, duration?: number, message?: string, loading?: boolean} | null>(null);
+  
+  const isAdmin = user?.email?.includes('admin');
+  const API_BASE_URL = "https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api";
   
   // Isolated state per agent for concurrent or sequential connections
   const [agentConnections, setAgentConnections] = useState<Record<string, {
