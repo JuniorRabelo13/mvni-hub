@@ -325,7 +325,7 @@ export default function AgenteAgentes() {
           sessionId: connection.sessionId,
           requestId: connection.requestId,
           agentId,
-          attempt,
+          attempt: attempts,
           startTime: connection.startedAt
         });
 
