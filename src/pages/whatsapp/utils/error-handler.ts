@@ -117,7 +117,9 @@ export async function normalizeConnectError(
     status: normalized.httpStatus?.toString(),
     durationMs: elapsedMs,
     metadata: {
-      endpoint,
+      endpointPath,
+      resolvedUrl,
+      method,
       attempt,
       userMessage: normalized.userMessage,
       providerStatusCode: normalized.providerStatusCode,
