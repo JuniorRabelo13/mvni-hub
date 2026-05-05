@@ -34,6 +34,10 @@ export default function AgenteAgentes() {
   const { register, handleSubmit, reset } = useForm();
   const [connectingAgentId, setConnectingAgentId] = useState<string | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [healthTest, setHealthTest] = useState<{status?: number, duration?: number, message?: string, loading?: boolean} | null>(null);
+  
+  const isAdmin = user?.email?.includes('admin');
+  const API_BASE_URL = "https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api";
   
   // Isolated state per agent for concurrent or sequential connections
   const [agentConnections, setAgentConnections] = useState<Record<string, {
@@ -129,7 +133,7 @@ export default function AgenteAgentes() {
           requestId 
         });
 
-        const response = await fetch("https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/start", {
+        const response = await fetch(`${API_BASE_URL}/start`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -256,7 +260,7 @@ export default function AgenteAgentes() {
 
       try {
         const pollStartTime = Date.now();
-        const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${connection.sessionId}`, {
+        const response = await fetch(`${API_BASE_URL}/qr/${connection.sessionId}`, {
           headers: { "X-Request-Id": connection.requestId || "" }
         });
         
@@ -665,6 +669,78 @@ export default function AgenteAgentes() {
                 </div>
               )}
             </div>
+            
+            {isAdmin && (
+              <div className="w-full mt-2 border-t pt-4 space-y-3">
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                  <span>Debug Admin</span>
+                  <Activity className="h-3 w-3" />
+                </div>
+                
+                <div className="bg-slate-950/50 p-3 rounded border border-slate-800 text-[10px] font-mono space-y-2">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-blue-400">BASE_URL:</span>
+                    <span className="truncate">{API_BASE_URL}</span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-1">
+                    <span className="text-blue-400">LAST_ENDPOINT:</span>
+                    <span className="truncate">/start?agentId={connectingAgentId}</span>
+                  </div>
+
+                  {agentConnections[connectingAgentId!]?.normalizedError?.code === "NETWORK_ERROR" && (
+                    <div className="flex items-center gap-2 text-yellow-500 font-bold bg-yellow-500/10 p-1 rounded">
+                      <AlertCircle className="h-3 w-3" />
+                      NETWORK: {agentConnections[connectingAgentId!]?.normalizedError?.rawMessage.split(':')[0]}
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-slate-800">
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      className="h-7 text-[9px] w-full"
+                      disabled={healthTest?.loading}
+                      onClick={async () => {
+                        setHealthTest({ loading: true });
+                        const start = Date.now();
+                        try {
+                          const res = await fetch(`${API_BASE_URL.replace('whatsapp-api', 'whatsapp-api/health')}`);
+                          const duration = Date.now() - start;
+                          const data = await res.json().catch(() => ({}));
+                          setHealthTest({ 
+                            status: res.status, 
+                            duration, 
+                            message: data.message || (res.ok ? "OK" : "Error"),
+                            loading: false 
+                          });
+                        } catch (e: any) {
+                          setHealthTest({ 
+                            status: 0, 
+                            duration: Date.now() - start, 
+                            message: e.message,
+                            loading: false 
+                          });
+                        }
+                      }}
+                    >
+                      {healthTest?.loading ? "Testando..." : "Testar Conectividade (GET /health)"}
+                    </Button>
+                    
+                    {healthTest && !healthTest.loading && (
+                      <div className="mt-2 p-2 rounded bg-black/40 border border-slate-800 grid grid-cols-2 gap-x-2 gap-y-1">
+                        <span className="text-slate-500">Status:</span>
+                        <span className={healthTest.status === 200 ? "text-green-500" : "text-red-500"}>{healthTest.status}</span>
+                        <span className="text-slate-500">Latency:</span>
+                        <span>{healthTest.duration}ms</span>
+                        <span className="text-slate-500 col-span-2 mt-1">Message:</span>
+                        <span className="col-span-2 truncate text-slate-300">{healthTest.message}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             
             {(!connectingAgentId || (agentConnections[connectingAgentId]?.status !== "conectado" && agentConnections[connectingAgentId]?.status !== "erro")) && (
               <div className="text-center border-t border-border w-full pt-4">
