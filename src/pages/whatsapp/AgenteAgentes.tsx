@@ -69,12 +69,30 @@ export default function AgenteAgentes() {
       setConnectingAgentId(agentId);
       setIsQrModalOpen(true);
       
-      const { data, error } = await supabase.functions.invoke("whatsapp-connect", {
-        body: { action: "connect", agentId }
-      });
-      
-      if (error) throw error;
-      return data;
+      try {
+        const response = await fetch("http://155.133.23.9:3333/start", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        });
+
+        if (!response.ok) throw new Error("Falha ao iniciar sessão");
+
+        const data = await response.json();
+        
+        if (data.sessionId) {
+          (window as any).sessionId = data.sessionId;
+          alert("Sessão iniciada. Aguarde o QR Code.");
+        }
+
+        return data;
+      } catch (error) {
+        console.error("Erro na conexão externa:", error);
+        // Fallback para o comportamento original se necessário ou apenas erro
+        throw error;
+      }
     },
     onError: (error: any) => {
       toast.error("Erro ao iniciar conexão: " + error.message);
