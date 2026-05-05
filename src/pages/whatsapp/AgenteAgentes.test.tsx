@@ -90,7 +90,10 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
       }),
     });
 
-    renderComponent();
+    // Aguarda o fetch inicial de agentes
+    await waitFor(() => {
+      expect(screen.queryByText(/carregando/i)).not.toBeInTheDocument();
+    });
 
     // Encontra o botão de conectar na tabela
     const connectButton = await screen.findByRole("button", { name: /conectar/i });
@@ -108,6 +111,11 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
     });
 
     fireEvent.click(connectButton);
+
+    // Avança timers para o polling rodar se necessário
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+    });
 
     // Verifica se modal abriu
     expect(screen.getByText(/conectar whatsapp/i)).toBeInTheDocument();
