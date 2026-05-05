@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, XCircle, AlertCircle, Copy, Activity } from "lucide-react";
 import { logger } from "../utils/observability";
 import { toast } from "sonner";
+import { buildApiUrl } from "../utils/api-config";
 
 interface Step {
   id: string;
@@ -59,7 +60,7 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 2. Health check
       updateStep("health", { status: "loading" });
       try {
-        const res = await fetch(`${apiBaseUrl}/health`).catch(err => {
+        const res = await fetch(buildApiUrl("/health")).catch(err => {
           if (err.message.includes("SSL") || err.message.includes("cert")) {
              throw { cause: "SSL_INVALID", error: err };
           }
@@ -83,7 +84,7 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 3. Preflight OPTIONS
       updateStep("preflight", { status: "loading" });
       try {
-        const res = await fetch(`${apiBaseUrl}/start`, {
+        const res = await fetch(buildApiUrl("/start"), {
           method: "OPTIONS",
         });
         if (res.ok) {
@@ -106,7 +107,7 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 4. POST /start minimal
       updateStep("start", { status: "loading" });
       try {
-        const res = await fetch(`${apiBaseUrl}/start`, {
+        const res = await fetch(buildApiUrl("/start"), {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",

@@ -28,6 +28,8 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Progress } from "@/components/ui/progress";
 import { ConnectivityAssistant } from "./components/ConnectivityAssistant";
+import { getApiBaseUrl, buildApiUrl } from "./utils/api-config";
+
 
 export default function AgenteAgentes() {
   const { user } = useAuth();
@@ -37,7 +39,19 @@ export default function AgenteAgentes() {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   
   const isAdmin = user?.email?.includes('admin');
-  const API_BASE_URL = "https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api";
+  
+  const [resolvedBaseUrl, setResolvedBaseUrl] = useState<string>("");
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      setResolvedBaseUrl(getApiBaseUrl());
+      setUrlError(null);
+    } catch (e: any) {
+      setUrlError(e.message);
+    }
+  }, []);
+
   
   const [agentConnections, setAgentConnections] = useState<Record<string, {
     sessionId?: string;
@@ -115,7 +129,7 @@ export default function AgenteAgentes() {
       }));
 
       try {
-        const response = await fetch(`${API_BASE_URL}/start`, {
+        const response = await fetch(buildApiUrl("/start"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -183,7 +197,7 @@ export default function AgenteAgentes() {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/qr/${connection.sessionId}`, {
+        const response = await fetch(buildApiUrl(`/qr/${connection.sessionId}`), {
           headers: { "X-Request-Id": connection.requestId || "" }
         });
         
@@ -398,8 +412,16 @@ export default function AgenteAgentes() {
                   <span>Debug Admin</span> <Activity className="h-3 w-3" />
                 </div>
                 <div className="bg-slate-950/50 p-3 rounded border border-slate-800 text-[10px] font-mono space-y-2">
-                  <div><span className="text-blue-400">BASE_URL:</span> {API_BASE_URL}</div>
-                  <ConnectivityAssistant apiBaseUrl={API_BASE_URL} agentId={connectingAgentId} tenantId={user?.id} />
+                  <div><span className="text-blue-400">BASE_URL:</span> {urlError ? <span className="text-red-500 font-bold">API_URL_INVALID ({urlError})</span> : resolvedBaseUrl}</div>
+                  {!urlError && connectingAgentId && agentConnections[connectingAgentId]?.status === "iniciando" && (
+                    <div><span className="text-blue-400">CHAMANDO:</span> {buildApiUrl("/start")}</div>
+                  )}
+                  {!urlError && connectingAgentId && agentConnections[connectingAgentId]?.status === "gerando_qr" && (
+                    <div><span className="text-blue-400">CHAMANDO:</span> {buildApiUrl(`/qr/${agentConnections[connectingAgentId].sessionId}`)}</div>
+                  )}
+                  {!urlError && <ConnectivityAssistant apiBaseUrl={resolvedBaseUrl} agentId={connectingAgentId} tenantId={user?.id} />}
+
+
                 </div>
               </div>
             )}
