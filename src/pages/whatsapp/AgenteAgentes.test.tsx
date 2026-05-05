@@ -115,12 +115,14 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
     const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
     
     mockSupabase.from.mockImplementation(() => ({
-      select: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockImplementation(() => Promise.resolve({ data: mockAgents[0], error: null })),
-      select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
+      select: vi.fn().mockImplementation(() => ({
+        select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
+        single: vi.fn().mockResolvedValue({ data: mockAgents[0], error: null }),
+      })),
     }));
 
     renderComponent();
@@ -149,12 +151,14 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
     const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
     
     mockSupabase.from.mockImplementation(() => ({
-      select: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockImplementation(() => Promise.resolve({ data: mockAgents[0], error: null })),
-      select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
+      select: vi.fn().mockImplementation(() => ({
+        select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
+        single: vi.fn().mockResolvedValue({ data: mockAgents[0], error: null }),
+      })),
     }));
 
     renderComponent();
