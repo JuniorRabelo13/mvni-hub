@@ -129,8 +129,12 @@ export default function AgenteAgentes() {
       }));
 
       try {
-        const response = await fetch(buildApiUrl("/start"), {
-          method: "POST",
+        const endpointPath = "/start";
+        const method = "POST";
+        const resolvedUrl = buildApiUrl(endpointPath);
+
+        const response = await fetch(resolvedUrl, {
+          method,
           headers: {
             "Content-Type": "application/json",
             "X-Request-Id": requestId
@@ -141,10 +145,17 @@ export default function AgenteAgentes() {
         if (!response.ok) throw response;
         
         const data = await response.json();
-        logger.info({ event: "start_response_ok", agentId, sessionId, requestId, durationMs: Date.now() - startTime });
+        logger.info({ event: "start_response_ok", agentId, sessionId, requestId, durationMs: Date.now() - startTime, metadata: { resolvedUrl, method } });
         return data;
       } catch (error: any) {
-        const normalized = await normalizeConnectError(error, { endpoint: "/start", sessionId, requestId, agentId, startTime });
+        const normalized = await normalizeConnectError(error, { 
+          endpointPath: "/start", 
+          method: "POST",
+          sessionId, 
+          requestId, 
+          agentId, 
+          startTime 
+        });
         setAgentConnections(prev => ({
           ...prev,
           [agentId]: { ...prev[agentId], status: "erro", error: normalized.userMessage, normalizedError: normalized }
