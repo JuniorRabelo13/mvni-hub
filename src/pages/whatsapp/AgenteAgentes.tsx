@@ -390,10 +390,10 @@ export default function AgenteAgentes() {
           </DialogHeader>
           <div className="flex flex-col items-center justify-center p-6 space-y-4">
             <div id="qr-container" className="flex flex-col items-center justify-center">
-              {qrBase64 ? (
+              {connectingAgentId && agentConnections[connectingAgentId]?.qr ? (
                 <div className="bg-white p-4 rounded-xl border-2 border-dashed border-muted-foreground/20">
                   <img 
-                    src={qrBase64} 
+                    src={agentConnections[connectingAgentId].qr} 
                     alt="WhatsApp QR Code"
                     className="w-[250px] h-[250px]"
                     width="250"
@@ -410,14 +410,15 @@ export default function AgenteAgentes() {
             <div className="text-center">
               <p className="text-sm font-medium">
                 Status: {
-                  connectionStatus === "iniciando" ? "Iniciando..." :
-                  connectionStatus === "gerando_qr" ? "Gerando QR Code..." :
-                  connectionStatus === "qr_pronto" ? "Aguardando leitura..." :
-                  connectionStatus === "conectado" ? "Conectado com sucesso!" :
+                  !connectingAgentId ? "Iniciando..." :
+                  agentConnections[connectingAgentId]?.status === "iniciando" ? "Iniciando..." :
+                  agentConnections[connectingAgentId]?.status === "gerando_qr" ? "Gerando QR Code..." :
+                  agentConnections[connectingAgentId]?.status === "qr_pronto" ? "Aguardando leitura..." :
+                  agentConnections[connectingAgentId]?.status === "conectado" ? "Conectado com sucesso!" :
                   "Erro na conexão"
                 }
               </p>
-              {connectionStatus === "erro" && (
+              {connectingAgentId && agentConnections[connectingAgentId]?.status === "erro" && (
                 <p className="text-xs text-red-500 mt-1">Não foi possível gerar QR. Tente novamente.</p>
               )}
               <p className="text-xs text-muted-foreground mt-1">
