@@ -37,11 +37,13 @@ export default function AgenteAgentes() {
   // Isolated state per agent for concurrent or sequential connections
   const [agentConnections, setAgentConnections] = useState<Record<string, {
     sessionId?: string;
+    requestId?: string;
     status: "iniciando" | "gerando_qr" | "qr_pronto" | "conectado" | "erro";
     qr?: string | null;
     startedAt?: number;
     error?: string;
     attempts?: number;
+    lastPollStatus?: string;
   }>>({});
 
   const [, forceUpdate] = useState({});
@@ -97,38 +99,83 @@ export default function AgenteAgentes() {
       setIsQrModalOpen(true);
       
       const sessionId = crypto.randomUUID();
+      const requestId = crypto.randomUUID();
+      const startTime = Date.now();
       
+      logger.info({ 
+        event: "connect_click", 
+        agentId, 
+        sessionId, 
+        requestId 
+      });
+
       setAgentConnections(prev => ({
         ...prev,
         [agentId]: {
           sessionId,
+          requestId,
           status: "iniciando",
           startedAt: Date.now()
         }
       }));
 
       try {
+        logger.info({ 
+          event: "start_request_sent", 
+          agentId, 
+          sessionId, 
+          requestId 
+        });
+
         const response = await fetch("https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/start", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "X-Request-Id": requestId
           },
           body: JSON.stringify({ sessionId, agentId }),
         });
 
-        if (!response.ok) throw new Error("Falha ao iniciar sessão");
-        return await response.json();
-      } catch (error) {
+        const durationMs = Date.now() - startTime;
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          logger.error({ 
+            event: "start_response_error", 
+            agentId, 
+            sessionId, 
+            requestId, 
+            durationMs,
+            errorCode: response.status.toString(),
+            errorMessage: errorData.error || "Falha ao iniciar sessão",
+            backendReason: response.status === 405 ? "405" : undefined
+          });
+          throw new Error("Falha ao iniciar sessão");
+        }
+        
+        const data = await response.json();
+        logger.info({ 
+          event: "start_response_ok", 
+          agentId, 
+          sessionId, 
+          requestId, 
+          durationMs 
+        });
+        
+        return data;
+      } catch (error: any) {
         setAgentConnections(prev => ({
           ...prev,
-          [agentId]: { ...prev[agentId], status: "erro", error: "Falha ao iniciar sessão" }
+          [agentId]: { ...prev[agentId], status: "erro", error: error.message || "Falha ao iniciar sessão" }
         }));
-        console.error("Erro na conexão externa:", error);
         throw error;
       }
     },
     onError: (error: any, agentId: string) => {
-      toast.error("Erro ao iniciar conexão: " + error.message);
+      // Use toast only if it's not a duplicate within 2 seconds
+      toast.error("Erro ao iniciar conexão: " + error.message, {
+        id: `start-error-${agentId}`
+      });
     }
   });
 
@@ -161,24 +208,67 @@ export default function AgenteAgentes() {
 
     const poll = async (agentId: string) => {
       const connection = agentConnections[agentId];
-      if (!connection?.sessionId || !isQrModalOpen || connectingAgentId !== agentId) return;
+      if (!connection?.sessionId || !isQrModalOpen || connectingAgentId !== agentId) {
+        if (connection?.sessionId) {
+          logger.info({ 
+            event: "polling_cancelled", 
+            agentId, 
+            sessionId: connection.sessionId, 
+            requestId: connection.requestId 
+          });
+        }
+        return;
+      }
 
-      const attempts = connection.attempts || 0;
+      const attempts = (connection.attempts || 0) + 1;
       const elapsedTime = (Date.now() - (connection.startedAt || Date.now())) / 1000;
+
+      if (attempts === 1) {
+        logger.info({ 
+          event: "qr_poll_started", 
+          agentId, 
+          sessionId: connection.sessionId, 
+          requestId: connection.requestId 
+        });
+      }
 
       if (elapsedTime > 60) {
         setAgentConnections(prev => ({
           ...prev,
           [agentId]: { ...prev[agentId], status: "erro" }
         }));
-        toast.error("Tempo limite excedido. Não foi possível gerar QR. Tente novamente.");
+        logger.error({ 
+          event: "qr_timeout", 
+          agentId, 
+          sessionId: connection.sessionId, 
+          requestId: connection.requestId,
+          durationMs: elapsedTime * 1000
+        });
+        toast.error("Tempo limite excedido. Não foi possível gerar QR. Tente novamente.", {
+          id: `timeout-${agentId}`
+        });
         return;
       }
 
       try {
-        const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${connection.sessionId}`);
+        const pollStartTime = Date.now();
+        const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${connection.sessionId}`, {
+          headers: { "X-Request-Id": connection.requestId || "" }
+        });
         
         if (!isQrModalOpen || connectingAgentId !== agentId) return;
+
+        const durationMs = Date.now() - pollStartTime;
+        
+        logger.info({ 
+          event: "qr_poll_tick", 
+          agentId, 
+          sessionId: connection.sessionId, 
+          requestId: connection.requestId,
+          status: response.status.toString(),
+          durationMs,
+          metadata: { attempts }
+        });
 
         if (response.ok) {
           const data = await response.json();
@@ -186,15 +276,27 @@ export default function AgenteAgentes() {
           if (data.qr) {
             setAgentConnections(prev => ({
               ...prev,
-              [agentId]: { ...prev[agentId], status: "qr_pronto", qr: data.qr }
+              [agentId]: { ...prev[agentId], status: "qr_pronto", qr: data.qr, lastPollStatus: "qr_recebido" }
             }));
-            // Stop polling if we have a QR code
+            logger.info({ 
+              event: "qr_received", 
+              agentId, 
+              sessionId: connection.sessionId, 
+              requestId: connection.requestId,
+              durationMs: Date.now() - (connection.startedAt || 0)
+            });
             return;
           } else if (data.status === "conectado") {
             setAgentConnections(prev => ({
               ...prev,
-              [agentId]: { ...prev[agentId], status: "conectado", qr: null }
+              [agentId]: { ...prev[agentId], status: "conectado", qr: null, lastPollStatus: "conectado" }
             }));
+            logger.info({ 
+              event: "connection_open", 
+              agentId, 
+              sessionId: connection.sessionId, 
+              requestId: connection.requestId 
+            });
             toast.success("WhatsApp conectado com sucesso!");
             setTimeout(() => {
               setIsQrModalOpen(false);
@@ -202,19 +304,27 @@ export default function AgenteAgentes() {
               queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
             }, 2000);
             return;
-          } else if (data.status === "desconectado" && !data.qr) {
+          } else {
             setAgentConnections(prev => ({
               ...prev,
-              [agentId]: { ...prev[agentId], status: "gerando_qr", attempts: attempts + 1 }
+              [agentId]: { ...prev[agentId], status: "gerando_qr", attempts, lastPollStatus: data.status }
             }));
           }
+        } else {
+           setAgentConnections(prev => ({
+            ...prev,
+            [agentId]: { ...prev[agentId], attempts, lastPollStatus: `Error ${response.status}` }
+          }));
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Erro ao buscar QR Code:", error);
+        setAgentConnections(prev => ({
+          ...prev,
+          [agentId]: { ...prev[agentId], attempts, lastPollStatus: `Fetch Error: ${error.message}` }
+        }));
       }
 
-      // Schedule next poll if not stopped
-      const nextInterval = getNextInterval(attempts + 1);
+      const nextInterval = getNextInterval(attempts);
       qrTimeoutRef.current[agentId] = setTimeout(() => poll(agentId), nextInterval);
     };
 
