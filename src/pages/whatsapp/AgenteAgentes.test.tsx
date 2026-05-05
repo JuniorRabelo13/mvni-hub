@@ -78,14 +78,11 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockImplementation(() => {
-        // Quando chama supabase.from(...).select(...).single() ou similar
         return Promise.resolve({ data: mockAgents[0], error: null });
       }),
-      // Para o select inicial na lista
       select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
     }));
 
-    // Mock fetch responses
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ sessionId: "session-abc" }),
@@ -111,16 +108,18 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
 
     expect(await screen.findByText(/gerando qr code\.\.\./i)).toBeInTheDocument();
   });
-});
 
   it("deve mostrar imagem visível quando polling retorna qr", async () => {
     const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
     
-    mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
-      }),
-    });
+    mockSupabase.from.mockImplementation(() => ({
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockImplementation(() => Promise.resolve({ data: mockAgents[0], error: null })),
+      select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
+    }));
 
     renderComponent();
     const connectButton = await screen.findByRole("button", { name: /conectar/i });
@@ -147,11 +146,14 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
     vi.useFakeTimers();
     const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
     
-    mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
-      }),
-    });
+    mockSupabase.from.mockImplementation(() => ({
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockImplementation(() => Promise.resolve({ data: mockAgents[0], error: null })),
+      select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
+    }));
 
     renderComponent();
     const connectButton = await screen.findByRole("button", { name: /conectar/i });
