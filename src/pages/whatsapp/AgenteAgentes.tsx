@@ -30,6 +30,7 @@ export default function AgenteAgentes() {
     attempts?: number;
   }>>({});
 
+  const [, forceUpdate] = useState({});
   const qrTimeoutRef = useRef<Record<string, any>>({});
 
   const { data: agents, isLoading } = useQuery({
@@ -206,10 +207,21 @@ export default function AgenteAgentes() {
     if (isQrModalOpen && connectingAgentId) {
       const agentId = connectingAgentId;
       
+      // Update timer UI every second
+      const timerInterval = setInterval(() => forceUpdate({}), 1000);
+
       // Initial poll
       if (!qrTimeoutRef.current[agentId]) {
         poll(agentId);
       }
+
+      return () => {
+        clearInterval(timerInterval);
+        if (qrTimeoutRef.current[agentId]) {
+          clearTimeout(qrTimeoutRef.current[agentId]);
+          delete qrTimeoutRef.current[agentId];
+        }
+      };
     } else if (!isQrModalOpen && connectingAgentId) {
       const agentId = connectingAgentId;
       if (qrTimeoutRef.current[agentId]) {
@@ -401,42 +413,78 @@ export default function AgenteAgentes() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center p-6 space-y-4">
-            <div id="qr-container" className="flex flex-col items-center justify-center">
-              {connectingAgentId && agentConnections[connectingAgentId]?.qr ? (
-                <div className="bg-white p-4 rounded-xl border-2 border-dashed border-muted-foreground/20">
-                  <img 
-                    src={agentConnections[connectingAgentId].qr} 
-                    alt="WhatsApp QR Code"
-                    className="w-[250px] h-[250px]"
-                    width="250"
-                  />
+            <div id="qr-container" className="flex flex-col items-center justify-center min-h-[300px] w-full">
+              {connectingAgentId && agentConnections[connectingAgentId]?.status === "conectado" ? (
+                <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300">
+                  <div className="h-16 w-16 bg-green-500/10 rounded-full flex items-center justify-center">
+                    <Power className="h-8 w-8 text-green-500" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-green-500">Conectado com sucesso!</h3>
+                  <p className="text-sm text-muted-foreground text-center">Seu WhatsApp está pronto para uso.</p>
+                  <Button onClick={() => setIsQrModalOpen(false)} className="mt-4">Fechar</Button>
+                </div>
+              ) : connectingAgentId && agentConnections[connectingAgentId]?.status === "erro" ? (
+                <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300">
+                  <div className="h-16 w-16 bg-red-500/10 rounded-full flex items-center justify-center">
+                    <PowerOff className="h-8 w-8 text-red-500" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-red-500">Falha na conexão</h3>
+                  <p className="text-sm text-muted-foreground text-center">Não foi possível gerar o código. Verifique sua conexão.</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => connectingAgentId && connectMutation.mutate(connectingAgentId)}
+                    className="mt-4 gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" /> Repetir tentativa
+                  </Button>
+                </div>
+              ) : connectingAgentId && agentConnections[connectingAgentId]?.status === "qr_pronto" && agentConnections[connectingAgentId]?.qr ? (
+                <div className="flex flex-col items-center space-y-4 animate-in fade-in zoom-in duration-300">
+                  <div className="bg-white p-4 rounded-xl shadow-xl border-2 border-primary/20">
+                    <img 
+                      src={agentConnections[connectingAgentId].qr} 
+                      alt="WhatsApp QR Code"
+                      className="w-[250px] h-[250px]"
+                      width="250"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 text-primary font-medium">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Aguardando leitura...</span>
+                  </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-[250px] w-[250px] space-y-2">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground animate-pulse">Gerando QR...</p>
+                <div className="flex flex-col items-center justify-center space-y-6">
+                  <div className="relative flex items-center justify-center">
+                    <Loader2 className="h-16 w-16 animate-spin text-primary opacity-20" />
+                    <Loader2 className="absolute h-10 w-10 animate-spin text-primary" />
+                  </div>
+                  <div className="text-center space-y-2">
+                    <p className="text-lg font-medium animate-pulse">
+                      {connectingAgentId && agentConnections[connectingAgentId]?.status === "gerando_qr" 
+                        ? "Gerando QR Code..." 
+                        : "Iniciando conexão..."}
+                    </p>
+                    {connectingAgentId && agentConnections[connectingAgentId]?.startedAt && (
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider">Tempo restante</span>
+                        <span className="text-2xl font-mono font-bold text-primary">
+                          {Math.max(0, 60 - Math.floor((Date.now() - agentConnections[connectingAgentId].startedAt!) / 1000))}s
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
             
-            <div className="text-center">
-              <p className="text-sm font-medium">
-                Status: {
-                  !connectingAgentId ? "Iniciando..." :
-                  agentConnections[connectingAgentId]?.status === "iniciando" ? "Iniciando..." :
-                  agentConnections[connectingAgentId]?.status === "gerando_qr" ? "Gerando QR Code..." :
-                  agentConnections[connectingAgentId]?.status === "qr_pronto" ? "Aguardando leitura..." :
-                  agentConnections[connectingAgentId]?.status === "conectado" ? "Conectado com sucesso!" :
-                  "Erro na conexão"
-                }
-              </p>
-              {connectingAgentId && agentConnections[connectingAgentId]?.status === "erro" && (
-                <p className="text-xs text-red-500 mt-1">Não foi possível gerar QR. Tente novamente.</p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                Vá em WhatsApp {'>'} Aparelhos Conectados {'>'} Conectar um Aparelho
-              </p>
-            </div>
+            {(!connectingAgentId || (agentConnections[connectingAgentId]?.status !== "conectado" && agentConnections[connectingAgentId]?.status !== "erro")) && (
+              <div className="text-center border-t border-border w-full pt-4">
+                <p className="text-xs text-muted-foreground">
+                  Vá em WhatsApp {'>'} Aparelhos Conectados {'>'} Conectar um Aparelho
+                </p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
