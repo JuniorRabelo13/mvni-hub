@@ -19,6 +19,8 @@ export default function AgenteAgentes() {
   const { register, handleSubmit, reset } = useForm();
   const [connectingAgentId, setConnectingAgentId] = useState<string | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [qrBase64, setQrBase64] = useState<string | null>(null);
+  const qrIntervalRef = useRef<any>(null);
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ["whatsapp-agents"],
