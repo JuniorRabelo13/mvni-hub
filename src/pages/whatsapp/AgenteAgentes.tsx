@@ -129,8 +129,12 @@ export default function AgenteAgentes() {
       }));
 
       try {
-        const response = await fetch(buildApiUrl("/start"), {
-          method: "POST",
+        const endpointPath = "/start";
+        const method = "POST";
+        const resolvedUrl = buildApiUrl(endpointPath);
+
+        const response = await fetch(resolvedUrl, {
+          method,
           headers: {
             "Content-Type": "application/json",
             "X-Request-Id": requestId
@@ -141,10 +145,17 @@ export default function AgenteAgentes() {
         if (!response.ok) throw response;
         
         const data = await response.json();
-        logger.info({ event: "start_response_ok", agentId, sessionId, requestId, durationMs: Date.now() - startTime });
+        logger.info({ event: "start_response_ok", agentId, sessionId, requestId, durationMs: Date.now() - startTime, metadata: { resolvedUrl, method } });
         return data;
       } catch (error: any) {
-        const normalized = await normalizeConnectError(error, { endpoint: "/start", sessionId, requestId, agentId, startTime });
+        const normalized = await normalizeConnectError(error, { 
+          endpointPath: "/start", 
+          method: "POST",
+          sessionId, 
+          requestId, 
+          agentId, 
+          startTime 
+        });
         setAgentConnections(prev => ({
           ...prev,
           [agentId]: { ...prev[agentId], status: "erro", error: normalized.userMessage, normalizedError: normalized }
@@ -197,7 +208,12 @@ export default function AgenteAgentes() {
       }
 
       try {
-        const response = await fetch(buildApiUrl(`/qr/${connection.sessionId}`), {
+        const endpointPath = `/qr/${connection.sessionId}`;
+        const method = "GET";
+        const resolvedUrl = buildApiUrl(endpointPath);
+
+        const response = await fetch(resolvedUrl, {
+          method,
           headers: { "X-Request-Id": connection.requestId || "" }
         });
         
@@ -224,7 +240,8 @@ export default function AgenteAgentes() {
       } catch (error: any) {
         if (!isQrModalOpen || connectingAgentId !== agentId) return;
         const normalized = await normalizeConnectError(error, {
-          endpoint: `/qr/${connection.sessionId}`,
+          endpointPath: `/qr/${connection.sessionId}`,
+          method: "GET",
           sessionId: connection.sessionId,
           requestId: connection.requestId,
           agentId,
@@ -413,16 +430,32 @@ export default function AgenteAgentes() {
                 </div>
                 <div className="bg-slate-950/50 p-3 rounded border border-slate-800 text-[10px] font-mono space-y-2">
                   <div><span className="text-blue-400">BASE_URL:</span> {urlError ? <span className="text-red-500 font-bold">API_URL_INVALID ({urlError})</span> : resolvedBaseUrl}</div>
-                  {!urlError && connectingAgentId && agentConnections[connectingAgentId]?.status === "iniciando" && (
-                    <div><span className="text-blue-400">CHAMANDO:</span> {buildApiUrl("/start")}</div>
+                  
+                  {connectingAgentId && agentConnections[connectingAgentId] && (
+                    <>
+                      <div>
+                        <span className="text-blue-400">ENDPOINT:</span> {
+                          agentConnections[connectingAgentId].status === "iniciando" ? "/start" :
+                          agentConnections[connectingAgentId].status === "gerando_qr" || agentConnections[connectingAgentId].status === "qr_pronto" ? `/qr/${agentConnections[connectingAgentId].sessionId}` : "N/A"
+                        }
+                      </div>
+                      <div>
+                        <span className="text-blue-400">RESOLVED_URL:</span> {
+                          agentConnections[connectingAgentId].status === "iniciando" ? buildApiUrl("/start") :
+                          agentConnections[connectingAgentId].status === "gerando_qr" || agentConnections[connectingAgentId].status === "qr_pronto" ? buildApiUrl(`/qr/${agentConnections[connectingAgentId].sessionId}`) : "N/A"
+                        }
+                      </div>
+                      <div>
+                        <span className="text-blue-400">METHOD:</span> {
+                          agentConnections[connectingAgentId].status === "iniciando" ? "POST" : "GET"
+                        }
+                      </div>
+                    </>
                   )}
-                  {!urlError && connectingAgentId && agentConnections[connectingAgentId]?.status === "gerando_qr" && (
-                    <div><span className="text-blue-400">CHAMANDO:</span> {buildApiUrl(`/qr/${agentConnections[connectingAgentId].sessionId}`)}</div>
-                  )}
-                  {!urlError && <ConnectivityAssistant apiBaseUrl={resolvedBaseUrl} agentId={connectingAgentId} tenantId={user?.id} />}
 
-
+                  {!urlError && <ConnectivityAssistant apiBaseUrl={resolvedBaseUrl} agentId={connectingAgentId || undefined} tenantId={user?.id} />}
                 </div>
+
               </div>
             )}
           </div>

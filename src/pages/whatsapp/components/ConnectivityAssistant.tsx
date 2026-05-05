@@ -60,7 +60,8 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 2. Health check
       updateStep("health", { status: "loading" });
       try {
-        const res = await fetch(buildApiUrl("/health")).catch(err => {
+        const healthUrl = buildApiUrl("/health");
+        const res = await fetch(healthUrl).catch(err => {
           if (err.message.includes("SSL") || err.message.includes("cert")) {
              throw { cause: "SSL_INVALID", error: err };
           }
@@ -84,7 +85,8 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 3. Preflight OPTIONS
       updateStep("preflight", { status: "loading" });
       try {
-        const res = await fetch(buildApiUrl("/start"), {
+        const startUrl = buildApiUrl("/start");
+        const res = await fetch(startUrl, {
           method: "OPTIONS",
         });
         if (res.ok) {
@@ -107,7 +109,8 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 4. POST /start minimal
       updateStep("start", { status: "loading" });
       try {
-        const res = await fetch(buildApiUrl("/start"), {
+        const testStartUrl = buildApiUrl("/start");
+        const res = await fetch(testStartUrl, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",

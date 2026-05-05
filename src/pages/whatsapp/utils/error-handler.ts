@@ -1,12 +1,15 @@
 import { LogEntry, logger } from "./observability";
 
-export type ErrorCode = "NETWORK_ERROR" | "BACKEND_HTTP_ERROR" | "PROVIDER_CONNECTION_ERROR" | "UNKNOWN_ERROR";
+export type ErrorCode = "NETWORK_ERROR" | "BACKEND_HTTP_ERROR" | "PROVIDER_CONNECTION_ERROR" | "UNKNOWN_ERROR" | "API_URL_INVALID";
 
 export interface NormalizedError {
   code: ErrorCode;
   userMessage: string;
   adminMessage: string;
-  endpoint: string;
+  endpointPath: string; // ex: /start
+  resolvedUrl: string;  // ex: https://api.com/start
+  baseUrl: string;      // ex: https://api.com
+  method: string;
   httpStatus?: number;
   providerStatusCode?: number;
   providerReason?: string;
@@ -18,7 +21,8 @@ export interface NormalizedError {
 export async function normalizeConnectError(
   err: any,
   context: {
-    endpoint: string;
+    endpointPath: string;
+    method: string;
     sessionId?: string;
     requestId?: string;
     agentId?: string;
@@ -26,18 +30,34 @@ export async function normalizeConnectError(
     startTime?: number;
   }
 ): Promise<NormalizedError> {
-  const { endpoint, sessionId, requestId, agentId, attempt, startTime } = context;
+  const { endpointPath, method, sessionId, requestId, agentId, attempt, startTime } = context;
   const elapsedMs = startTime ? Date.now() - startTime : undefined;
   
+  let baseUrl = "";
+  let resolvedUrl = "";
+  
+  try {
+    baseUrl = import.meta.env.VITE_WHATSAPP_API_URL || "https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api";
+    const cleanBase = baseUrl.replace(/\/$/, "");
+    const cleanPath = endpointPath.startsWith("/") ? endpointPath : `/${endpointPath}`;
+    resolvedUrl = `${cleanBase}${cleanPath}`;
+  } catch (e) {
+    // URL invalid already handled by buildApiUrl usually
+  }
+
   let normalized: NormalizedError = {
-    code: "UNKNOWN_ERROR",
-    userMessage: "Ocorreu um erro inesperado. Tente novamente.",
+    code: err.code === "API_URL_INVALID" ? "API_URL_INVALID" : "UNKNOWN_ERROR",
+    userMessage: err.code === "API_URL_INVALID" ? "Configuração de API inválida." : "Ocorreu um erro inesperado. Tente novamente.",
     adminMessage: err.message || "Unknown error",
-    endpoint,
+    endpointPath,
+    resolvedUrl,
+    baseUrl,
+    method,
     rawMessage: err.message || String(err),
     sessionId,
     requestId
   };
+
 
   // Case A: NETWORK_ERROR
   if (err.name === "TypeError" && (err.message.includes("fetch") || err.message.includes("NetworkError") || err.message.includes("Failed to fetch"))) {
@@ -97,7 +117,9 @@ export async function normalizeConnectError(
     status: normalized.httpStatus?.toString(),
     durationMs: elapsedMs,
     metadata: {
-      endpoint,
+      endpointPath,
+      resolvedUrl,
+      method,
       attempt,
       userMessage: normalized.userMessage,
       providerStatusCode: normalized.providerStatusCode,
