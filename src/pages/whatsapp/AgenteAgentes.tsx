@@ -697,37 +697,12 @@ export default function AgenteAgentes() {
                   )}
 
                   <div className="pt-2 border-t border-slate-800">
-                    <Button 
-                      size="sm" 
-                      variant="secondary" 
-                      className="h-7 text-[9px] w-full"
-                      disabled={healthTest?.loading}
-                      onClick={async () => {
-                        setHealthTest({ loading: true });
-                        const start = Date.now();
-                        try {
-                          const res = await fetch(`${API_BASE_URL.replace('whatsapp-api', 'whatsapp-api/health')}`);
-                          const duration = Date.now() - start;
-                          const data = await res.json().catch(() => ({}));
-                          setHealthTest({ 
-                            status: res.status, 
-                            duration, 
-                            message: data.message || (res.ok ? "OK" : "Error"),
-                            loading: false 
-                          });
-                        } catch (e: any) {
-                          setHealthTest({ 
-                            status: 0, 
-                            duration: Date.now() - start, 
-                            message: e.message,
-                            loading: false 
-                          });
-                        }
-                      }}
-                    >
-                      {healthTest?.loading ? "Testando..." : "Testar Conectividade (GET /health)"}
-                    </Button>
-                    
+                    <ConnectivityAssistant 
+                      apiBaseUrl={API_BASE_URL} 
+                      agentId={connectingAgentId!}
+                      tenantId={user?.id}
+                    />
+
                     {healthTest && !healthTest.loading && (
                       <div className="mt-2 p-2 rounded bg-black/40 border border-slate-800 grid grid-cols-2 gap-x-2 gap-y-1">
                         <span className="text-slate-500">Status:</span>
