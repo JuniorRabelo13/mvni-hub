@@ -43,6 +43,7 @@ export default function AgenteAgentes() {
     qr?: string | null;
     startedAt?: number;
     error?: string;
+    normalizedError?: NormalizedError;
     attempts?: number;
     lastPollStatus?: string;
   }>>({});
