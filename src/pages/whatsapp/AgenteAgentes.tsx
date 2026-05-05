@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { logger } from "./utils/observability";
+import { normalizeConnectError, NormalizedError } from "./utils/error-handler";
 import { 
   CheckCircle2, 
   AlertCircle, 
@@ -42,6 +43,7 @@ export default function AgenteAgentes() {
     qr?: string | null;
     startedAt?: number;
     error?: string;
+    normalizedError?: NormalizedError;
     attempts?: number;
     lastPollStatus?: string;
   }>>({});
@@ -139,18 +141,7 @@ export default function AgenteAgentes() {
         const durationMs = Date.now() - startTime;
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          logger.error({ 
-            event: "start_response_error", 
-            agentId, 
-            sessionId, 
-            requestId, 
-            durationMs,
-            errorCode: response.status.toString(),
-            errorMessage: errorData.error || "Falha ao iniciar sessão",
-            backendReason: response.status === 405 ? "405" : undefined
-          });
-          throw new Error("Falha ao iniciar sessão");
+          throw response; // Throwing the response to be handled by normalizeConnectError
         }
         
         const data = await response.json();
@@ -164,9 +155,22 @@ export default function AgenteAgentes() {
         
         return data;
       } catch (error: any) {
+        const normalized = await normalizeConnectError(error, {
+          endpoint: "/start",
+          sessionId,
+          requestId,
+          agentId,
+          startTime
+        });
+
         setAgentConnections(prev => ({
           ...prev,
-          [agentId]: { ...prev[agentId], status: "erro", error: error.message || "Falha ao iniciar sessão" }
+          [agentId]: { 
+            ...prev[agentId], 
+            status: "erro", 
+            error: normalized.userMessage,
+            normalizedError: normalized
+          }
         }));
         throw error;
       }
@@ -311,16 +315,35 @@ export default function AgenteAgentes() {
             }));
           }
         } else {
-           setAgentConnections(prev => ({
-            ...prev,
-            [agentId]: { ...prev[agentId], attempts, lastPollStatus: `Error ${response.status}` }
-          }));
+           throw response;
         }
       } catch (error: any) {
-        console.error("Erro ao buscar QR Code:", error);
+        if (!isQrModalOpen || connectingAgentId !== agentId) return;
+        
+        const normalized = await normalizeConnectError(error, {
+          endpoint: `/qr/${connection.sessionId}`,
+          sessionId: connection.sessionId,
+          requestId: connection.requestId,
+          agentId,
+          attempt: attempts,
+          startTime: connection.startedAt
+        });
+
+        // Deduplicate toast using sessionId + code
+        toast.error(normalized.userMessage, {
+          id: `qr-poll-error-${connection.sessionId}-${normalized.code}`
+        });
+
         setAgentConnections(prev => ({
           ...prev,
-          [agentId]: { ...prev[agentId], attempts, lastPollStatus: `Fetch Error: ${error.message}` }
+          [agentId]: { 
+            ...prev[agentId], 
+            status: "erro", 
+            attempts, 
+            error: normalized.userMessage,
+            normalizedError: normalized,
+            lastPollStatus: `Error ${normalized.code}` 
+          }
         }));
       }
 
@@ -548,16 +571,57 @@ export default function AgenteAgentes() {
                   <Button onClick={() => setIsQrModalOpen(false)} className="mt-4">Fechar</Button>
                 </div>
               ) : connectingAgentId && agentConnections[connectingAgentId]?.status === "erro" ? (
-                <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300">
+                <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300 w-full max-w-sm">
                   <div className="h-16 w-16 bg-red-500/10 rounded-full flex items-center justify-center">
-                    <PowerOff className="h-8 w-8 text-red-500" />
+                    <XCircle className="h-8 w-8 text-red-500" />
                   </div>
-                  <h3 className="text-xl font-semibold text-red-500">Falha na conexão</h3>
-                  <p className="text-sm text-muted-foreground text-center">Não foi possível gerar o código. Verifique sua conexão.</p>
+                  <h3 className="text-xl font-semibold text-red-500 text-center">Falha na conexão</h3>
+                  <p className="text-sm text-muted-foreground text-center px-4">
+                    {agentConnections[connectingAgentId]?.error || "Não foi possível gerar o código. Verifique sua conexão."}
+                  </p>
+                  
+                  {agentConnections[connectingAgentId]?.normalizedError && (
+                    <Collapsible className="w-full border rounded-md mt-2">
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="w-full flex justify-between px-3 text-[10px] text-muted-foreground uppercase tracking-widest">
+                          Detalhes Técnicos
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="p-3 bg-muted/30 text-[10px] font-mono space-y-2 overflow-x-auto">
+                        <div className="grid grid-cols-2 gap-1">
+                          <span className="text-muted-foreground">Código:</span>
+                          <span className="font-bold">{agentConnections[connectingAgentId].normalizedError?.code}</span>
+                          <span className="text-muted-foreground">HTTP:</span>
+                          <span>{agentConnections[connectingAgentId].normalizedError?.httpStatus || "N/A"}</span>
+                          <span className="text-muted-foreground">Endpoint:</span>
+                          <span>{agentConnections[connectingAgentId].normalizedError?.endpoint}</span>
+                          <span className="text-muted-foreground">SessionID:</span>
+                          <span>{agentConnections[connectingAgentId].sessionId?.slice(0, 8)}...</span>
+                        </div>
+                        <div className="border-t pt-2 mt-2">
+                          <p className="text-muted-foreground mb-1">Log do Erro:</p>
+                          <p className="break-all">{agentConnections[connectingAgentId].normalizedError?.adminMessage}</p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 text-[9px] w-full gap-1 mt-2"
+                          onClick={() => {
+                            navigator.clipboard.writeText(JSON.stringify(agentConnections[connectingAgentId].normalizedError, null, 2));
+                            toast.success("Copiado!");
+                          }}
+                        >
+                          <Copy className="h-3 w-3" /> Copiar JSON para Suporte
+                        </Button>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+
                   <Button 
                     variant="outline" 
                     onClick={() => connectingAgentId && connectMutation.mutate(connectingAgentId)}
-                    className="mt-4 gap-2"
+                    className="mt-4 gap-2 w-full"
                   >
                     <RefreshCw className="h-4 w-4" /> Repetir tentativa
                   </Button>
