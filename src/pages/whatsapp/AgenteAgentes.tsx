@@ -703,21 +703,6 @@ export default function AgenteAgentes() {
                       tenantId={user?.id}
                     />
 
-                    {healthTest && !healthTest.loading && (
-                      <div className="mt-2 p-2 rounded bg-black/40 border border-slate-800 grid grid-cols-2 gap-x-2 gap-y-1">
-                        <span className="text-slate-500">Status:</span>
-                        <span className={healthTest.status === 200 ? "text-green-500" : "text-red-500"}>{healthTest.status}</span>
-                        <span className="text-slate-500">Latency:</span>
-                        <span>{healthTest.duration}ms</span>
-                        <span className="text-slate-500 col-span-2 mt-1">Message:</span>
-                        <span className="col-span-2 truncate text-slate-300">{healthTest.message}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-            
             {(!connectingAgentId || (agentConnections[connectingAgentId]?.status !== "conectado" && agentConnections[connectingAgentId]?.status !== "erro")) && (
               <div className="text-center border-t border-border w-full pt-4">
                 <p className="text-xs text-muted-foreground">
