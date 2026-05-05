@@ -109,7 +109,8 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 4. POST /start minimal
       updateStep("start", { status: "loading" });
       try {
-        const res = await fetch(buildApiUrl("/start"), {
+        const testStartUrl = buildApiUrl("/start");
+        const res = await fetch(testStartUrl, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
