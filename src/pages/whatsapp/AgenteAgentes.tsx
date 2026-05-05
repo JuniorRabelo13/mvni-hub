@@ -19,11 +19,17 @@ export default function AgenteAgentes() {
   const { register, handleSubmit, reset } = useForm();
   const [connectingAgentId, setConnectingAgentId] = useState<string | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [qrBase64, setQrBase64] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<"iniciando" | "gerando_qr" | "qr_pronto" | "conectado" | "erro">("iniciando");
-  const qrIntervalRef = useRef<any>(null);
-  const pollingTimeoutRef = useRef<any>(null);
-  const pollingStartTimeRef = useRef<number>(0);
+  
+  // Isolated state per agent for concurrent or sequential connections
+  const [agentConnections, setAgentConnections] = useState<Record<string, {
+    sessionId?: string;
+    status: "iniciando" | "gerando_qr" | "qr_pronto" | "conectado" | "erro";
+    qr?: string | null;
+    startedAt?: number;
+    error?: string;
+  }>>({});
+
+  const qrIntervalRef = useRef<Record<string, any>>({});
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ["whatsapp-agents"],
