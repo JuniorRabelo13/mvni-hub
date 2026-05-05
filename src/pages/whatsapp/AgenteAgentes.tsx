@@ -430,16 +430,32 @@ export default function AgenteAgentes() {
                 </div>
                 <div className="bg-slate-950/50 p-3 rounded border border-slate-800 text-[10px] font-mono space-y-2">
                   <div><span className="text-blue-400">BASE_URL:</span> {urlError ? <span className="text-red-500 font-bold">API_URL_INVALID ({urlError})</span> : resolvedBaseUrl}</div>
-                  {!urlError && connectingAgentId && agentConnections[connectingAgentId]?.status === "iniciando" && (
-                    <div><span className="text-blue-400">CHAMANDO:</span> {buildApiUrl("/start")}</div>
+                  
+                  {connectingAgentId && agentConnections[connectingAgentId] && (
+                    <>
+                      <div>
+                        <span className="text-blue-400">ENDPOINT:</span> {
+                          agentConnections[connectingAgentId].status === "iniciando" ? "/start" :
+                          agentConnections[connectingAgentId].status === "gerando_qr" || agentConnections[connectingAgentId].status === "qr_pronto" ? `/qr/${agentConnections[connectingAgentId].sessionId}` : "N/A"
+                        }
+                      </div>
+                      <div>
+                        <span className="text-blue-400">RESOLVED_URL:</span> {
+                          agentConnections[connectingAgentId].status === "iniciando" ? buildApiUrl("/start") :
+                          agentConnections[connectingAgentId].status === "gerando_qr" || agentConnections[connectingAgentId].status === "qr_pronto" ? buildApiUrl(`/qr/${agentConnections[connectingAgentId].sessionId}`) : "N/A"
+                        }
+                      </div>
+                      <div>
+                        <span className="text-blue-400">METHOD:</span> {
+                          agentConnections[connectingAgentId].status === "iniciando" ? "POST" : "GET"
+                        }
+                      </div>
+                    </>
                   )}
-                  {!urlError && connectingAgentId && agentConnections[connectingAgentId]?.status === "gerando_qr" && (
-                    <div><span className="text-blue-400">CHAMANDO:</span> {buildApiUrl(`/qr/${agentConnections[connectingAgentId].sessionId}`)}</div>
-                  )}
-                  {!urlError && <ConnectivityAssistant apiBaseUrl={resolvedBaseUrl} agentId={connectingAgentId} tenantId={user?.id} />}
 
-
+                  {!urlError && <ConnectivityAssistant apiBaseUrl={resolvedBaseUrl} agentId={connectingAgentId || undefined} tenantId={user?.id} />}
                 </div>
+
               </div>
             )}
           </div>
