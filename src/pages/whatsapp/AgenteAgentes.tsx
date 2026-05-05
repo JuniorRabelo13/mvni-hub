@@ -124,6 +124,10 @@ export default function AgenteAgentes() {
     if (isQrModalOpen) {
       pollingStartTimeRef.current = Date.now();
       setQrBase64(null);
+      // Ensure status is reset to "iniciando" if it was something else (like "erro")
+      if (connectionStatus === "erro") {
+        setConnectionStatus("iniciando");
+      }
       
       qrIntervalRef.current = setInterval(async () => {
         const sessionId = (window as any).sessionId;
@@ -139,6 +143,10 @@ export default function AgenteAgentes() {
         if (sessionId) {
           try {
             const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${sessionId}`);
+            
+            // Check if modal is still open before processing response
+            if (!isQrModalOpen) return;
+
             if (response.ok) {
               const data = await response.json();
               
@@ -164,11 +172,22 @@ export default function AgenteAgentes() {
         }
       }, 2000);
     } else {
-      if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+      // Cleanup on modal close
+      if (qrIntervalRef.current) {
+        clearInterval(qrIntervalRef.current);
+        qrIntervalRef.current = null;
+      }
       setQrBase64(null);
+      setConnectionStatus("iniciando");
+      // Clean up sessionId to prevent accidental polling if re-opened
+      delete (window as any).sessionId;
     }
+    
     return () => {
-      if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+      if (qrIntervalRef.current) {
+        clearInterval(qrIntervalRef.current);
+        qrIntervalRef.current = null;
+      }
     };
   }, [isQrModalOpen, queryClient]);
 
