@@ -78,11 +78,18 @@ export default function AgenteAgentes() {
   const connectMutation = useMutation({
     mutationFn: async (agentId: string) => {
       setConnectingAgentId(agentId);
-      setConnectionStatus("iniciando");
       setIsQrModalOpen(true);
       
       const sessionId = crypto.randomUUID();
-      (window as any).sessionId = sessionId;
+      
+      setAgentConnections(prev => ({
+        ...prev,
+        [agentId]: {
+          sessionId,
+          status: "iniciando",
+          startedAt: Date.now()
+        }
+      }));
 
       try {
         const response = await fetch("https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/start", {
@@ -96,14 +103,16 @@ export default function AgenteAgentes() {
         if (!response.ok) throw new Error("Falha ao iniciar sessão");
         return await response.json();
       } catch (error) {
-        setConnectionStatus("erro");
+        setAgentConnections(prev => ({
+          ...prev,
+          [agentId]: { ...prev[agentId], status: "erro", error: "Falha ao iniciar sessão" }
+        }));
         console.error("Erro na conexão externa:", error);
         throw error;
       }
     },
-    onError: (error: any) => {
+    onError: (error: any, agentId: string) => {
       toast.error("Erro ao iniciar conexão: " + error.message);
-      setConnectionStatus("erro");
     }
   });
 
@@ -127,75 +136,81 @@ export default function AgenteAgentes() {
   });
 
   useEffect(() => {
-    if (isQrModalOpen) {
-      pollingStartTimeRef.current = Date.now();
-      setQrBase64(null);
-      // Ensure status is reset to "iniciando" if it was something else (like "erro")
-      if (connectionStatus === "erro") {
-        setConnectionStatus("iniciando");
-      }
+    // Only handle polling for the currently active modal agent
+    if (isQrModalOpen && connectingAgentId) {
+      const agentId = connectingAgentId;
       
-      qrIntervalRef.current = setInterval(async () => {
-        const sessionId = (window as any).sessionId;
-        const elapsedTime = (Date.now() - pollingStartTimeRef.current) / 1000;
+      // Cleanup existing interval for this agent if any
+      if (qrIntervalRef.current[agentId]) {
+        clearInterval(qrIntervalRef.current[agentId]);
+      }
+
+      qrIntervalRef.current[agentId] = setInterval(async () => {
+        const connection = agentConnections[agentId];
+        if (!connection?.sessionId) return;
+
+        const elapsedTime = (Date.now() - (connection.startedAt || Date.now())) / 1000;
 
         if (elapsedTime > 60) {
-          if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
-          setConnectionStatus("erro");
+          clearInterval(qrIntervalRef.current[agentId]);
+          setAgentConnections(prev => ({
+            ...prev,
+            [agentId]: { ...prev[agentId], status: "erro" }
+          }));
           toast.error("Tempo limite excedido. Não foi possível gerar QR. Tente novamente.");
           return;
         }
 
-        if (sessionId) {
-          try {
-            const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${sessionId}`);
-            
-            // Check if modal is still open before processing response
-            if (!isQrModalOpen) return;
+        try {
+          const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${connection.sessionId}`);
+          
+          if (!isQrModalOpen || connectingAgentId !== agentId) return;
 
-            if (response.ok) {
-              const data = await response.json();
-              
-              if (data.qr) {
-                setQrBase64(data.qr);
-                setConnectionStatus("qr_pronto");
-              } else if (data.status === "conectado") {
-                setConnectionStatus("conectado");
-                setQrBase64(null);
-                if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
-                toast.success("WhatsApp conectado com sucesso!");
-                setTimeout(() => {
-                  setIsQrModalOpen(false);
-                  queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
-                }, 2000);
-              } else if (data.status === "desconectado" && !data.qr) {
-                setConnectionStatus("gerando_qr");
-              }
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.qr) {
+              setAgentConnections(prev => ({
+                ...prev,
+                [agentId]: { ...prev[agentId], status: "qr_pronto", qr: data.qr }
+              }));
+            } else if (data.status === "conectado") {
+              setAgentConnections(prev => ({
+                ...prev,
+                [agentId]: { ...prev[agentId], status: "conectado", qr: null }
+              }));
+              clearInterval(qrIntervalRef.current[agentId]);
+              toast.success("WhatsApp conectado com sucesso!");
+              setTimeout(() => {
+                setIsQrModalOpen(false);
+                setConnectingAgentId(null);
+                queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
+              }, 2000);
+            } else if (data.status === "desconectado" && !data.qr) {
+              setAgentConnections(prev => ({
+                ...prev,
+                [agentId]: { ...prev[agentId], status: "gerando_qr" }
+              }));
             }
-          } catch (error) {
-            console.error("Erro ao buscar QR Code:", error);
           }
+        } catch (error) {
+          console.error("Erro ao buscar QR Code:", error);
         }
       }, 2000);
-    } else {
-      // Cleanup on modal close
-      if (qrIntervalRef.current) {
-        clearInterval(qrIntervalRef.current);
-        qrIntervalRef.current = null;
+    } else if (!isQrModalOpen && connectingAgentId) {
+      // Cleanup interval when modal closes
+      const agentId = connectingAgentId;
+      if (qrIntervalRef.current[agentId]) {
+        clearInterval(qrIntervalRef.current[agentId]);
+        delete qrIntervalRef.current[agentId];
       }
-      setQrBase64(null);
-      setConnectionStatus("iniciando");
-      // Clean up sessionId to prevent accidental polling if re-opened
-      delete (window as any).sessionId;
+      setConnectingAgentId(null);
     }
-    
+
     return () => {
-      if (qrIntervalRef.current) {
-        clearInterval(qrIntervalRef.current);
-        qrIntervalRef.current = null;
-      }
+      Object.values(qrIntervalRef.current).forEach(interval => clearInterval(interval));
     };
-  }, [isQrModalOpen, queryClient]);
+  }, [isQrModalOpen, connectingAgentId, queryClient]);
 
   useEffect(() => {
     let interval: any;
