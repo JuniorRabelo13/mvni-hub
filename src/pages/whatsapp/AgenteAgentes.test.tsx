@@ -4,22 +4,26 @@ import AgenteAgentes from "./AgenteAgentes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-// Definir o mock fora da função factory do vitest para evitar problemas de hoisting
-const mockSupabase = {
-  from: vi.fn().mockReturnThis(),
-  select: vi.fn().mockReturnThis(),
-  insert: vi.fn().mockReturnThis(),
-  update: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
-  functions: {
-    invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
-  },
-};
+// Mock do Supabase movendo toda a lógica para dentro do factory
+vi.mock("@/integrations/supabase/client", () => {
+  const mock = {
+    from: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
+    functions: {
+      invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
+    },
+  };
+  return {
+    supabase: mock,
+  };
+});
 
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: mockSupabase,
-}));
+// Importar o mock para configurar nos testes
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock do hook useAuth
 vi.mock("@/hooks/useAuth", () => ({
@@ -72,14 +76,14 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
       },
     ];
 
-    mockSupabase.from.mockImplementation(() => ({
+    (supabase.from as any).mockImplementation(() => ({
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockImplementation(() => {
         return Promise.resolve({ data: mockAgents[0], error: null });
       }),
-      select: vi.fn().mockImplementation((_query) => ({
+      select: vi.fn().mockImplementation(() => ({
         select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
         single: vi.fn().mockResolvedValue({ data: mockAgents[0], error: null }),
       })),
@@ -114,7 +118,7 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
   it("deve mostrar imagem visível quando polling retorna qr", async () => {
     const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
     
-    mockSupabase.from.mockImplementation(() => ({
+    (supabase.from as any).mockImplementation(() => ({
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -150,7 +154,7 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
     vi.useFakeTimers();
     const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
     
-    mockSupabase.from.mockImplementation(() => ({
+    (supabase.from as any).mockImplementation(() => ({
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
