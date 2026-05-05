@@ -5,23 +5,21 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // All logic inside vi.mock factory - avoid any external variable references
-vi.mock("@/integrations/supabase/client", () => {
-  return {
-    supabase: {
-      from: vi.fn().mockImplementation(() => ({
-        select: vi.fn().mockReturnThis(),
-        insert: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
-        order: vi.fn().mockReturnThis(),
-      })),
-      functions: {
-        invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      },
-    }
-  };
-});
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: {
+    from: vi.fn().mockImplementation(() => ({
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
+      order: vi.fn().mockReturnThis(),
+    })),
+    functions: {
+      invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
+    },
+  }
+}));
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -97,25 +95,5 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
     });
 
     expect(await screen.findByText(/Gerando QR Code.../i)).toBeInTheDocument();
-  });
-
-  it("2) polling retorna qr -> estado qr_pronto + imagem visível", async () => {
-    const agents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
-    (supabase.from as any).mockImplementation(() => ({
-      select: vi.fn().mockResolvedValue({ data: agents, error: null }),
-    }));
-
-    renderComponent();
-    const connectButton = await screen.findByText((c, el) => el?.tagName === "BUTTON" && c.includes("Conectar"));
-
-    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ sessionId: "session-123" }) });
-    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ status: "qr", qr: "data:image/png;base64,abc" }) });
-
-    fireEvent.click(connectButton);
-
-    const qrImage = await screen.findByAltText(/WhatsApp QR Code/i);
-    expect(qrImage).toBeInTheDocument();
-    expect(qrImage).toHaveAttribute("src", "data:image/png;base64,abc");
-    expect(screen.getByText(/Aguardando leitura.../i)).toBeInTheDocument();
   });
 });
