@@ -133,7 +133,7 @@ export default function AgenteAgentes() {
           requestId 
         });
 
-        const response = await fetch("https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/start", {
+        const response = await fetch(`${API_BASE_URL}/start`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
