@@ -325,20 +325,31 @@ export default function AgenteAgentes() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center p-6 space-y-4">
-            {activeAgent?.qr_code ? (
-              <div className="bg-white p-4 rounded-xl border-2 border-dashed border-muted-foreground/20">
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(activeAgent.qr_code)}`} 
-                  alt="WhatsApp QR Code"
-                  className="w-[250px] h-[250px]"
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-[250px] w-[250px] space-y-2">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground animate-pulse">Gerando sessão...</p>
-              </div>
-            )}
+            <div id="qr-container" className="flex flex-col items-center justify-center">
+              {qrBase64 ? (
+                <div className="bg-white p-4 rounded-xl border-2 border-dashed border-muted-foreground/20">
+                  <img 
+                    src={qrBase64} 
+                    alt="WhatsApp QR Code"
+                    className="w-[250px] h-[250px]"
+                    width="250"
+                  />
+                </div>
+              ) : activeAgent?.qr_code ? (
+                <div className="bg-white p-4 rounded-xl border-2 border-dashed border-muted-foreground/20">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(activeAgent.qr_code)}`} 
+                    alt="WhatsApp QR Code"
+                    className="w-[250px] h-[250px]"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[250px] w-[250px] space-y-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground animate-pulse">Gerando QR...</p>
+                </div>
+              )}
+            </div>
             
             <div className="text-center">
               <p className="text-sm font-medium">Status: {
