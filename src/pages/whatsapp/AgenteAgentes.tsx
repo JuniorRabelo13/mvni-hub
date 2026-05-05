@@ -30,6 +30,7 @@ export default function AgenteAgentes() {
     attempts?: number;
   }>>({});
 
+  const [, forceUpdate] = useState({});
   const qrTimeoutRef = useRef<Record<string, any>>({});
 
   const { data: agents, isLoading } = useQuery({
@@ -206,10 +207,21 @@ export default function AgenteAgentes() {
     if (isQrModalOpen && connectingAgentId) {
       const agentId = connectingAgentId;
       
+      // Update timer UI every second
+      const timerInterval = setInterval(() => forceUpdate({}), 1000);
+
       // Initial poll
       if (!qrTimeoutRef.current[agentId]) {
         poll(agentId);
       }
+
+      return () => {
+        clearInterval(timerInterval);
+        if (qrTimeoutRef.current[agentId]) {
+          clearTimeout(qrTimeoutRef.current[agentId]);
+          delete qrTimeoutRef.current[agentId];
+        }
+      };
     } else if (!isQrModalOpen && connectingAgentId) {
       const agentId = connectingAgentId;
       if (qrTimeoutRef.current[agentId]) {
