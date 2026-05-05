@@ -20,8 +20,10 @@ export default function AgenteAgentes() {
   const [connectingAgentId, setConnectingAgentId] = useState<string | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [qrBase64, setQrBase64] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<string>("Iniciando...");
+  const [connectionStatus, setConnectionStatus] = useState<"iniciando" | "gerando_qr" | "qr_pronto" | "conectado" | "erro">("iniciando");
   const qrIntervalRef = useRef<any>(null);
+  const pollingTimeoutRef = useRef<any>(null);
+  const pollingStartTimeRef = useRef<number>(0);
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ["whatsapp-agents"],
@@ -70,34 +72,32 @@ export default function AgenteAgentes() {
   const connectMutation = useMutation({
     mutationFn: async (agentId: string) => {
       setConnectingAgentId(agentId);
+      setConnectionStatus("iniciando");
       setIsQrModalOpen(true);
       
+      const sessionId = crypto.randomUUID();
+      (window as any).sessionId = sessionId;
+
       try {
         const response = await fetch("https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/start", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ agentId }),
+          body: JSON.stringify({ sessionId, agentId }),
         });
 
         if (!response.ok) throw new Error("Falha ao iniciar sessão");
-
-        const data = await response.json();
-        
-        if (data.sessionId) {
-          (window as any).sessionId = data.sessionId;
-        }
-
-        return data;
+        return await response.json();
       } catch (error) {
+        setConnectionStatus("erro");
         console.error("Erro na conexão externa:", error);
         throw error;
       }
     },
     onError: (error: any) => {
       toast.error("Erro ao iniciar conexão: " + error.message);
-      setIsQrModalOpen(false);
+      setConnectionStatus("erro");
     }
   });
 
@@ -122,20 +122,31 @@ export default function AgenteAgentes() {
 
   useEffect(() => {
     if (isQrModalOpen) {
-      setConnectionStatus("Iniciando...");
+      pollingStartTimeRef.current = Date.now();
+      setQrBase64(null);
+      
       qrIntervalRef.current = setInterval(async () => {
         const sessionId = (window as any).sessionId;
+        const elapsedTime = (Date.now() - pollingStartTimeRef.current) / 1000;
+
+        if (elapsedTime > 60) {
+          if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+          setConnectionStatus("erro");
+          toast.error("Tempo limite excedido. Não foi possível gerar QR. Tente novamente.");
+          return;
+        }
+
         if (sessionId) {
           try {
             const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${sessionId}`);
             if (response.ok) {
               const data = await response.json();
               
-              if (data.status === "qr" && data.qr) {
+              if (data.qr) {
                 setQrBase64(data.qr);
-                setConnectionStatus("Aguardando leitura...");
+                setConnectionStatus("qr_pronto");
               } else if (data.status === "conectado") {
-                setConnectionStatus("Conectado com sucesso");
+                setConnectionStatus("conectado");
                 setQrBase64(null);
                 if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
                 toast.success("WhatsApp conectado com sucesso!");
@@ -143,9 +154,8 @@ export default function AgenteAgentes() {
                   setIsQrModalOpen(false);
                   queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
                 }, 2000);
-              } else if (data.status === "desconectado") {
-                setConnectionStatus("Aguardando geração do QR...");
-                setQrBase64(null);
+              } else if (data.status === "desconectado" && !data.qr) {
+                setConnectionStatus("gerando_qr");
               }
             }
           } catch (error) {
@@ -156,7 +166,6 @@ export default function AgenteAgentes() {
     } else {
       if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
       setQrBase64(null);
-      setConnectionStatus("Iniciando...");
     }
     return () => {
       if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
@@ -359,7 +368,18 @@ export default function AgenteAgentes() {
             </div>
             
             <div className="text-center">
-              <p className="text-sm font-medium">Status: {connectionStatus}</p>
+              <p className="text-sm font-medium">
+                Status: {
+                  connectionStatus === "iniciando" ? "Iniciando..." :
+                  connectionStatus === "gerando_qr" ? "Gerando QR Code..." :
+                  connectionStatus === "qr_pronto" ? "Aguardando leitura..." :
+                  connectionStatus === "conectado" ? "Conectado com sucesso!" :
+                  "Erro na conexão"
+                }
+              </p>
+              {connectionStatus === "erro" && (
+                <p className="text-xs text-red-500 mt-1">Não foi possível gerar QR. Tente novamente.</p>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
                 Vá em WhatsApp {'>'} Aparelhos Conectados {'>'} Conectar um Aparelho
               </p>
