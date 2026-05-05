@@ -5,7 +5,6 @@ import { logger } from "../utils/observability";
 import { toast } from "sonner";
 import { buildApiUrl } from "../utils/api-config";
 
-
 interface Step {
   id: string;
   label: string;
@@ -85,7 +84,7 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 3. Preflight OPTIONS
       updateStep("preflight", { status: "loading" });
       try {
-        const res = await fetch(`${apiBaseUrl}/start`, {
+        const res = await fetch(buildApiUrl("/start"), {
           method: "OPTIONS",
         });
         if (res.ok) {
@@ -108,7 +107,7 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 4. POST /start minimal
       updateStep("start", { status: "loading" });
       try {
-        const res = await fetch(`${apiBaseUrl}/start`, {
+        const res = await fetch(buildApiUrl("/start"), {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
