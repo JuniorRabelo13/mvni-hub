@@ -20,6 +20,7 @@ export default function AgenteAgentes() {
   const [connectingAgentId, setConnectingAgentId] = useState<string | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [qrBase64, setQrBase64] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<string>("Iniciando...");
   const qrIntervalRef = useRef<any>(null);
 
   const { data: agents, isLoading } = useQuery({
@@ -77,7 +78,7 @@ export default function AgenteAgentes() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ agentId }),
         });
 
         if (!response.ok) throw new Error("Falha ao iniciar sessão");
@@ -86,13 +87,11 @@ export default function AgenteAgentes() {
         
         if (data.sessionId) {
           (window as any).sessionId = data.sessionId;
-          alert("Sessão iniciada. Aguarde o QR Code.");
         }
 
         return data;
       } catch (error) {
         console.error("Erro na conexão externa:", error);
-        // Fallback para o comportamento original se necessário ou apenas erro
         throw error;
       }
     },
@@ -123,6 +122,7 @@ export default function AgenteAgentes() {
 
   useEffect(() => {
     if (isQrModalOpen) {
+      setConnectionStatus("Iniciando...");
       qrIntervalRef.current = setInterval(async () => {
         const sessionId = (window as any).sessionId;
         if (sessionId) {
@@ -130,8 +130,22 @@ export default function AgenteAgentes() {
             const response = await fetch(`http://155.133.23.9:3333/qr/${sessionId}`);
             if (response.ok) {
               const data = await response.json();
-              if (data.qr) {
+              
+              if (data.status === "qr" && data.qr) {
                 setQrBase64(data.qr);
+                setConnectionStatus("Aguardando leitura...");
+              } else if (data.status === "conectado") {
+                setConnectionStatus("Conectado com sucesso");
+                setQrBase64(null);
+                if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+                toast.success("WhatsApp conectado com sucesso!");
+                setTimeout(() => {
+                  setIsQrModalOpen(false);
+                  queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
+                }, 2000);
+              } else if (data.status === "desconectado") {
+                setConnectionStatus("Aguardando geração do QR...");
+                setQrBase64(null);
               }
             }
           } catch (error) {
@@ -142,11 +156,12 @@ export default function AgenteAgentes() {
     } else {
       if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
       setQrBase64(null);
+      setConnectionStatus("Iniciando...");
     }
     return () => {
       if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
     };
-  }, [isQrModalOpen]);
+  }, [isQrModalOpen, queryClient]);
 
   useEffect(() => {
     let interval: any;
@@ -335,14 +350,6 @@ export default function AgenteAgentes() {
                     width="250"
                   />
                 </div>
-              ) : activeAgent?.qr_code ? (
-                <div className="bg-white p-4 rounded-xl border-2 border-dashed border-muted-foreground/20">
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(activeAgent.qr_code)}`} 
-                    alt="WhatsApp QR Code"
-                    className="w-[250px] h-[250px]"
-                  />
-                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-[250px] w-[250px] space-y-2">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -352,11 +359,7 @@ export default function AgenteAgentes() {
             </div>
             
             <div className="text-center">
-              <p className="text-sm font-medium">Status: {
-                activeAgent?.status_conexao === 'qr' ? 'Aguardando leitura...' : 
-                activeAgent?.status_conexao === 'conectado' ? 'Conectado!' : 
-                'Iniciando...'
-              }</p>
+              <p className="text-sm font-medium">Status: {connectionStatus}</p>
               <p className="text-xs text-muted-foreground mt-1">
                 Vá em WhatsApp {'>'} Aparelhos Conectados {'>'} Conectar um Aparelho
               </p>
