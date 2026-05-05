@@ -315,16 +315,35 @@ export default function AgenteAgentes() {
             }));
           }
         } else {
-           setAgentConnections(prev => ({
-            ...prev,
-            [agentId]: { ...prev[agentId], attempts, lastPollStatus: `Error ${response.status}` }
-          }));
+           throw response;
         }
       } catch (error: any) {
-        console.error("Erro ao buscar QR Code:", error);
+        if (!isQrModalOpen || connectingAgentId !== agentId) return;
+        
+        const normalized = await normalizeConnectError(error, {
+          endpoint: `/qr/${connection.sessionId}`,
+          sessionId: connection.sessionId,
+          requestId: connection.requestId,
+          agentId,
+          attempt,
+          startTime: connection.startedAt
+        });
+
+        // Deduplicate toast using sessionId + code
+        toast.error(normalized.userMessage, {
+          id: `qr-poll-error-${connection.sessionId}-${normalized.code}`
+        });
+
         setAgentConnections(prev => ({
           ...prev,
-          [agentId]: { ...prev[agentId], attempts, lastPollStatus: `Fetch Error: ${error.message}` }
+          [agentId]: { 
+            ...prev[agentId], 
+            status: "erro", 
+            attempts, 
+            error: normalized.userMessage,
+            normalizedError: normalized,
+            lastPollStatus: `Error ${normalized.code}` 
+          }
         }));
       }
 
