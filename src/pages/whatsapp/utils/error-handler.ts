@@ -40,12 +40,23 @@ export async function normalizeConnectError(
   };
 
   // Case A: NETWORK_ERROR
-  if (err.name === "TypeError" && (err.message.includes("fetch") || err.message.includes("NetworkError"))) {
+  if (err.name === "TypeError" && (err.message.includes("fetch") || err.message.includes("NetworkError") || err.message.includes("Failed to fetch"))) {
+    let subCode = "UNKNOWN_NETWORK";
+    
+    if (!window.navigator.onLine) {
+      subCode = "OFFLINE";
+    } else if (err.message.includes("CORS")) {
+      subCode = "CORS_BLOCKED";
+    } else if (err.stack?.includes("SSL") || err.message.includes("SSL")) {
+      subCode = "SSL_ERROR";
+    }
+
     normalized = {
       ...normalized,
       code: "NETWORK_ERROR",
       userMessage: "Não foi possível alcançar o servidor de conexão. Verifique internet/configuração.",
-      adminMessage: `Failed to fetch: ${err.message}. Possible CORS, DNS, SSL, or offline.`,
+      adminMessage: `Network Failure (${subCode}): ${err.message}.`,
+      rawMessage: `${subCode}: ${err.message}`
     };
   } 
   // Case B & C: Check if we have a response object (backend error)
