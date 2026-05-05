@@ -5,27 +5,20 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Mock do Supabase
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        select: vi.fn(() => Promise.resolve({ data: [], error: null })),
-        eq: vi.fn(() => Promise.resolve({ data: [], error: null })),
-        single: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      })),
-      insert: vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ data: { id: "agent-1" }, error: null })),
-        })),
-      })),
-      update: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      })),
-    })),
-    functions: {
-      invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
-    },
+const mockSupabase = {
+  from: vi.fn().mockReturnThis(),
+  select: vi.fn().mockReturnThis(),
+  insert: vi.fn().mockReturnThis(),
+  update: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
+  functions: {
+    invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
   },
+};
+
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: mockSupabase,
 }));
 
 // Mock do hook useAuth
@@ -44,6 +37,7 @@ const createTestQueryClient = () =>
     defaultOptions: {
       queries: {
         retry: false,
+        staleTime: 0,
       },
     },
   });
@@ -54,7 +48,6 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
   beforeEach(() => {
     queryClient = createTestQueryClient();
     vi.clearAllMocks();
-    // NÃO usar fake timers globalmente se estiver dando timeout, ou gerenciar cuidadosamente
   });
 
   const renderComponent = () =>
@@ -78,8 +71,7 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
       },
     ];
 
-    const { supabase } = await import("@/integrations/supabase/client");
-    (supabase.from as any).mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
       }),
@@ -94,7 +86,6 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
       json: async () => ({ sessionId: "session-abc" }),
     });
 
-    // Mock do poll inicial
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({ status: "desconectado", qr: null }),
@@ -109,15 +100,15 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
         expect.stringContaining("/whatsapp-api/start"),
         expect.any(Object)
       );
-    });
+    }, { timeout: 3000 });
 
     expect(await screen.findByText(/gerando qr code\.\.\./i)).toBeInTheDocument();
   });
 
   it("deve mostrar imagem visível quando polling retorna qr", async () => {
     const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
-    const { supabase } = await import("@/integrations/supabase/client");
-    (supabase.from as any).mockReturnValue({
+    
+    mockSupabase.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
       }),
@@ -131,7 +122,6 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
       json: async () => ({ sessionId: "session-abc" }),
     });
 
-    // Mock polling
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({ status: "qr", qr: "data:image/png;base64,abc" }),
@@ -148,8 +138,8 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
   it("deve mostrar erro após timeout de 60s", async () => {
     vi.useFakeTimers();
     const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
-    const { supabase } = await import("@/integrations/supabase/client");
-    (supabase.from as any).mockReturnValue({
+    
+    mockSupabase.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
       }),
