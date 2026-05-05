@@ -36,6 +36,8 @@ setInterval(() => {
 }, 60000);
 
 serve(async (req) => {
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -46,6 +48,7 @@ serve(async (req) => {
   try {
     // Rota: POST /start
     if (path === '/start' && req.method === 'POST') {
+      const startTime = Date.now();
       const body = await req.json()
       const { sessionId, agentId } = body;
 

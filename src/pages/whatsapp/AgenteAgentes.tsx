@@ -11,7 +11,21 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { logger } from "./utils/observability";
+import { 
+  CheckCircle2, 
+  AlertCircle, 
+  XCircle, 
+  BarChart3, 
+  Activity, 
+  ClipboardCheck,
+  ChevronDown,
+  ChevronUp,
+  Copy
+} from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Progress } from "@/components/ui/progress";
 
 export default function AgenteAgentes() {
   const { user } = useAuth();
