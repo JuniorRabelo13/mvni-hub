@@ -141,18 +141,7 @@ export default function AgenteAgentes() {
         const durationMs = Date.now() - startTime;
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          logger.error({ 
-            event: "start_response_error", 
-            agentId, 
-            sessionId, 
-            requestId, 
-            durationMs,
-            errorCode: response.status.toString(),
-            errorMessage: errorData.error || "Falha ao iniciar sessão",
-            backendReason: response.status === 405 ? "405" : undefined
-          });
-          throw new Error("Falha ao iniciar sessão");
+          throw response; // Throwing the response to be handled by normalizeConnectError
         }
         
         const data = await response.json();
@@ -166,9 +155,22 @@ export default function AgenteAgentes() {
         
         return data;
       } catch (error: any) {
+        const normalized = await normalizeConnectError(error, {
+          endpoint: "/start",
+          sessionId,
+          requestId,
+          agentId,
+          startTime
+        });
+
         setAgentConnections(prev => ({
           ...prev,
-          [agentId]: { ...prev[agentId], status: "erro", error: error.message || "Falha ao iniciar sessão" }
+          [agentId]: { 
+            ...prev[agentId], 
+            status: "erro", 
+            error: normalized.userMessage,
+            normalizedError: normalized
+          }
         }));
         throw error;
       }
