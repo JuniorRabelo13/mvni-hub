@@ -571,16 +571,57 @@ export default function AgenteAgentes() {
                   <Button onClick={() => setIsQrModalOpen(false)} className="mt-4">Fechar</Button>
                 </div>
               ) : connectingAgentId && agentConnections[connectingAgentId]?.status === "erro" ? (
-                <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300">
+                <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in zoom-in duration-300 w-full max-w-sm">
                   <div className="h-16 w-16 bg-red-500/10 rounded-full flex items-center justify-center">
-                    <PowerOff className="h-8 w-8 text-red-500" />
+                    <XCircle className="h-8 w-8 text-red-500" />
                   </div>
-                  <h3 className="text-xl font-semibold text-red-500">Falha na conexão</h3>
-                  <p className="text-sm text-muted-foreground text-center">Não foi possível gerar o código. Verifique sua conexão.</p>
+                  <h3 className="text-xl font-semibold text-red-500 text-center">Falha na conexão</h3>
+                  <p className="text-sm text-muted-foreground text-center px-4">
+                    {agentConnections[connectingAgentId]?.error || "Não foi possível gerar o código. Verifique sua conexão."}
+                  </p>
+                  
+                  {agentConnections[connectingAgentId]?.normalizedError && (
+                    <Collapsible className="w-full border rounded-md mt-2">
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="w-full flex justify-between px-3 text-[10px] text-muted-foreground uppercase tracking-widest">
+                          Detalhes Técnicos
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="p-3 bg-muted/30 text-[10px] font-mono space-y-2 overflow-x-auto">
+                        <div className="grid grid-cols-2 gap-1">
+                          <span className="text-muted-foreground">Código:</span>
+                          <span className="font-bold">{agentConnections[connectingAgentId].normalizedError?.code}</span>
+                          <span className="text-muted-foreground">HTTP:</span>
+                          <span>{agentConnections[connectingAgentId].normalizedError?.httpStatus || "N/A"}</span>
+                          <span className="text-muted-foreground">Endpoint:</span>
+                          <span>{agentConnections[connectingAgentId].normalizedError?.endpoint}</span>
+                          <span className="text-muted-foreground">SessionID:</span>
+                          <span>{agentConnections[connectingAgentId].sessionId?.slice(0, 8)}...</span>
+                        </div>
+                        <div className="border-t pt-2 mt-2">
+                          <p className="text-muted-foreground mb-1">Log do Erro:</p>
+                          <p className="break-all">{agentConnections[connectingAgentId].normalizedError?.adminMessage}</p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 text-[9px] w-full gap-1 mt-2"
+                          onClick={() => {
+                            navigator.clipboard.writeText(JSON.stringify(agentConnections[connectingAgentId].normalizedError, null, 2));
+                            toast.success("Copiado!");
+                          }}
+                        >
+                          <Copy className="h-3 w-3" /> Copiar JSON para Suporte
+                        </Button>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+
                   <Button 
                     variant="outline" 
                     onClick={() => connectingAgentId && connectMutation.mutate(connectingAgentId)}
-                    className="mt-4 gap-2"
+                    className="mt-4 gap-2 w-full"
                   >
                     <RefreshCw className="h-4 w-4" /> Repetir tentativa
                   </Button>
