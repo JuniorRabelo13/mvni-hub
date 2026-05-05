@@ -185,7 +185,7 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
     fireEvent.click(buttons[0]);
     
     await waitFor(() => {
-       expect(screen.getByText(/session-s1/i || /111/i)).toBeInTheDocument(); // Context dependent check
+       expect(screen.getByText(/111/i)).toBeInTheDocument();
     });
 
     // States are handled in a Record<agentId, ...>, we can verify isolation by seeing different sessions started
