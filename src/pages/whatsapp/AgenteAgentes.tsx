@@ -27,9 +27,10 @@ export default function AgenteAgentes() {
     qr?: string | null;
     startedAt?: number;
     error?: string;
+    attempts?: number;
   }>>({});
 
-  const qrIntervalRef = useRef<Record<string, any>>({});
+  const qrTimeoutRef = useRef<Record<string, any>>({});
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ["whatsapp-agents"],
@@ -136,81 +137,92 @@ export default function AgenteAgentes() {
   });
 
   useEffect(() => {
-    // Only handle polling for the currently active modal agent
+    // Helper to calculate next polling interval based on attempts
+    const getNextInterval = (attempts: number) => {
+      if (attempts <= 10) return 2000;
+      if (attempts <= 20) return 3000;
+      return 5000;
+    };
+
+    const poll = async (agentId: string) => {
+      const connection = agentConnections[agentId];
+      if (!connection?.sessionId || !isQrModalOpen || connectingAgentId !== agentId) return;
+
+      const attempts = connection.attempts || 0;
+      const elapsedTime = (Date.now() - (connection.startedAt || Date.now())) / 1000;
+
+      if (elapsedTime > 60) {
+        setAgentConnections(prev => ({
+          ...prev,
+          [agentId]: { ...prev[agentId], status: "erro" }
+        }));
+        toast.error("Tempo limite excedido. Não foi possível gerar QR. Tente novamente.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${connection.sessionId}`);
+        
+        if (!isQrModalOpen || connectingAgentId !== agentId) return;
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.qr) {
+            setAgentConnections(prev => ({
+              ...prev,
+              [agentId]: { ...prev[agentId], status: "qr_pronto", qr: data.qr }
+            }));
+            // Stop polling if we have a QR code
+            return;
+          } else if (data.status === "conectado") {
+            setAgentConnections(prev => ({
+              ...prev,
+              [agentId]: { ...prev[agentId], status: "conectado", qr: null }
+            }));
+            toast.success("WhatsApp conectado com sucesso!");
+            setTimeout(() => {
+              setIsQrModalOpen(false);
+              setConnectingAgentId(null);
+              queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
+            }, 2000);
+            return;
+          } else if (data.status === "desconectado" && !data.qr) {
+            setAgentConnections(prev => ({
+              ...prev,
+              [agentId]: { ...prev[agentId], status: "gerando_qr", attempts: attempts + 1 }
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar QR Code:", error);
+      }
+
+      // Schedule next poll if not stopped
+      const nextInterval = getNextInterval(attempts + 1);
+      qrTimeoutRef.current[agentId] = setTimeout(() => poll(agentId), nextInterval);
+    };
+
     if (isQrModalOpen && connectingAgentId) {
       const agentId = connectingAgentId;
       
-      // Cleanup existing interval for this agent if any
-      if (qrIntervalRef.current[agentId]) {
-        clearInterval(qrIntervalRef.current[agentId]);
+      // Initial poll
+      if (!qrTimeoutRef.current[agentId]) {
+        poll(agentId);
       }
-
-      qrIntervalRef.current[agentId] = setInterval(async () => {
-        const connection = agentConnections[agentId];
-        if (!connection?.sessionId) return;
-
-        const elapsedTime = (Date.now() - (connection.startedAt || Date.now())) / 1000;
-
-        if (elapsedTime > 60) {
-          clearInterval(qrIntervalRef.current[agentId]);
-          setAgentConnections(prev => ({
-            ...prev,
-            [agentId]: { ...prev[agentId], status: "erro" }
-          }));
-          toast.error("Tempo limite excedido. Não foi possível gerar QR. Tente novamente.");
-          return;
-        }
-
-        try {
-          const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${connection.sessionId}`);
-          
-          if (!isQrModalOpen || connectingAgentId !== agentId) return;
-
-          if (response.ok) {
-            const data = await response.json();
-            
-            if (data.qr) {
-              setAgentConnections(prev => ({
-                ...prev,
-                [agentId]: { ...prev[agentId], status: "qr_pronto", qr: data.qr }
-              }));
-            } else if (data.status === "conectado") {
-              setAgentConnections(prev => ({
-                ...prev,
-                [agentId]: { ...prev[agentId], status: "conectado", qr: null }
-              }));
-              clearInterval(qrIntervalRef.current[agentId]);
-              toast.success("WhatsApp conectado com sucesso!");
-              setTimeout(() => {
-                setIsQrModalOpen(false);
-                setConnectingAgentId(null);
-                queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
-              }, 2000);
-            } else if (data.status === "desconectado" && !data.qr) {
-              setAgentConnections(prev => ({
-                ...prev,
-                [agentId]: { ...prev[agentId], status: "gerando_qr" }
-              }));
-            }
-          }
-        } catch (error) {
-          console.error("Erro ao buscar QR Code:", error);
-        }
-      }, 2000);
     } else if (!isQrModalOpen && connectingAgentId) {
-      // Cleanup interval when modal closes
       const agentId = connectingAgentId;
-      if (qrIntervalRef.current[agentId]) {
-        clearInterval(qrIntervalRef.current[agentId]);
-        delete qrIntervalRef.current[agentId];
+      if (qrTimeoutRef.current[agentId]) {
+        clearTimeout(qrTimeoutRef.current[agentId]);
+        delete qrTimeoutRef.current[agentId];
       }
       setConnectingAgentId(null);
     }
 
     return () => {
-      Object.values(qrIntervalRef.current).forEach(interval => clearInterval(interval));
+      Object.values(qrTimeoutRef.current).forEach(timeout => clearTimeout(timeout));
     };
-  }, [isQrModalOpen, connectingAgentId, queryClient]);
+  }, [isQrModalOpen, connectingAgentId, queryClient, agentConnections]);
 
   useEffect(() => {
     let interval: any;
