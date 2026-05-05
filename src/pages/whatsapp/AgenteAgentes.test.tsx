@@ -95,7 +95,12 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
 
     renderComponent();
 
-    const connectButton = await screen.findByText(/conectar/i, { selector: 'button span' });
+    const connectButton = await screen.findByText((content, element) => {
+      const hasText = content.includes('Conectar');
+      const isButton = element?.tagName.toLowerCase() === 'button';
+      return isButton && hasText;
+    });
+    
     fireEvent.click(connectButton);
 
     expect(await screen.findByText(/conectar whatsapp/i)).toBeInTheDocument();
@@ -122,7 +127,12 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
     }));
 
     renderComponent();
-    const connectButton = await screen.findByText(/conectar/i, { selector: 'button span' });
+    
+    const connectButton = await screen.findByText((content, element) => {
+      const hasText = content.includes('Conectar');
+      const isButton = element?.tagName.toLowerCase() === 'button';
+      return isButton && hasText;
+    });
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -140,5 +150,39 @@ describe("AgenteAgentes - Fluxo do Modal WhatsApp", () => {
     expect(qrImage).toBeInTheDocument();
     expect(qrImage).toHaveAttribute("src", "data:image/png;base64,abc");
     expect(screen.getByText(/aguardando leitura\.\.\./i)).toBeInTheDocument();
+  });
+
+  it("deve mostrar erro após timeout de 60s", async () => {
+    vi.useFakeTimers();
+    const mockAgents = [{ id: "agent-1", numero_whatsapp: "5511999999999", status: "ativo", conectado: false }];
+    
+    (supabase.from as any).mockImplementation(() => ({
+      insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: mockAgents[0], error: null }),
+      select: vi.fn().mockResolvedValue({ data: mockAgents, error: null }),
+    }));
+
+    renderComponent();
+    const connectButton = await screen.findByText((content, element) => {
+      const hasText = content.includes('Conectar');
+      const isButton = element?.tagName.toLowerCase() === 'button';
+      return isButton && hasText;
+    });
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: "desconectado", qr: null, sessionId: "session-abc" }),
+    });
+
+    fireEvent.click(connectButton);
+
+    await act(async () => {
+      vi.advanceTimersByTime(61000);
+    });
+
+    expect(await screen.findByText(/falha na conexão/i)).toBeInTheDocument();
+    vi.useRealTimers();
   });
 });
