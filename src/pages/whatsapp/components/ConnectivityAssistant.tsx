@@ -60,7 +60,8 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 2. Health check
       updateStep("health", { status: "loading" });
       try {
-        const res = await fetch(buildApiUrl("/health")).catch(err => {
+        const healthUrl = buildApiUrl("/health");
+        const res = await fetch(healthUrl).catch(err => {
           if (err.message.includes("SSL") || err.message.includes("cert")) {
              throw { cause: "SSL_INVALID", error: err };
           }
