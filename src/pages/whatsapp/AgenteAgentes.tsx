@@ -73,7 +73,7 @@ export default function AgenteAgentes() {
       setIsQrModalOpen(true);
       
       try {
-        const response = await fetch("http://155.133.23.9:3333/start", {
+        const response = await fetch("https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/start", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -127,7 +127,7 @@ export default function AgenteAgentes() {
         const sessionId = (window as any).sessionId;
         if (sessionId) {
           try {
-            const response = await fetch(`http://155.133.23.9:3333/qr/${sessionId}`);
+            const response = await fetch(`https://hmzqfcooxqucytxwljhg.supabase.co/functions/v1/whatsapp-api/qr/${sessionId}`);
             if (response.ok) {
               const data = await response.json();
               
