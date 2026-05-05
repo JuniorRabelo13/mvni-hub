@@ -122,6 +122,33 @@ export default function AgenteAgentes() {
   });
 
   useEffect(() => {
+    if (isQrModalOpen) {
+      qrIntervalRef.current = setInterval(async () => {
+        const sessionId = (window as any).sessionId;
+        if (sessionId) {
+          try {
+            const response = await fetch(`http://155.133.23.9:3333/qr/${sessionId}`);
+            if (response.ok) {
+              const data = await response.json();
+              if (data.qr) {
+                setQrBase64(data.qr);
+              }
+            }
+          } catch (error) {
+            console.error("Erro ao buscar QR Code:", error);
+          }
+        }
+      }, 2000);
+    } else {
+      if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+      setQrBase64(null);
+    }
+    return () => {
+      if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
+    };
+  }, [isQrModalOpen]);
+
+  useEffect(() => {
     let interval: any;
     if (isQrModalOpen && connectingAgentId) {
       interval = setInterval(() => {
