@@ -85,7 +85,8 @@ export function ConnectivityAssistant({ apiBaseUrl, agentId, tenantId }: Connect
       // 3. Preflight OPTIONS
       updateStep("preflight", { status: "loading" });
       try {
-        const res = await fetch(buildApiUrl("/start"), {
+        const startUrl = buildApiUrl("/start");
+        const res = await fetch(startUrl, {
           method: "OPTIONS",
         });
         if (res.ok) {
