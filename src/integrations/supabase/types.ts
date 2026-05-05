@@ -866,6 +866,93 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_alerts: {
+        Row: {
+          alert_name: string
+          created_at: string | null
+          id: string
+          message: string
+          metrics_data: Json | null
+          resolved_at: string | null
+          sample_sessions: string[] | null
+          severity: string
+        }
+        Insert: {
+          alert_name: string
+          created_at?: string | null
+          id?: string
+          message: string
+          metrics_data?: Json | null
+          resolved_at?: string | null
+          sample_sessions?: string[] | null
+          severity: string
+        }
+        Update: {
+          alert_name?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          metrics_data?: Json | null
+          resolved_at?: string | null
+          sample_sessions?: string[] | null
+          severity?: string
+        }
+        Relationships: []
+      }
+      whatsapp_audit_logs: {
+        Row: {
+          agent_id: string | null
+          backend_reason: string | null
+          duration_ms: number | null
+          environment: string | null
+          error_code: string | null
+          error_message: string | null
+          event: string
+          id: string
+          level: string
+          metadata: Json | null
+          request_id: string | null
+          session_id: string | null
+          status: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          backend_reason?: string | null
+          duration_ms?: number | null
+          environment?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          event: string
+          id?: string
+          level: string
+          metadata?: Json | null
+          request_id?: string | null
+          session_id?: string | null
+          status?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          backend_reason?: string | null
+          duration_ms?: number | null
+          environment?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          event?: string
+          id?: string
+          level?: string
+          metadata?: Json | null
+          request_id?: string | null
+          session_id?: string | null
+          status?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_campaigns: {
         Row: {
           created_at: string
@@ -991,6 +1078,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_metrics: {
+        Row: {
+          dimensions: Json | null
+          id: string
+          metric_name: string
+          metric_value: number
+          timestamp: string | null
+        }
+        Insert: {
+          dimensions?: Json | null
+          id?: string
+          metric_name: string
+          metric_value?: number
+          timestamp?: string | null
+        }
+        Update: {
+          dimensions?: Json | null
+          id?: string
+          metric_name?: string
+          metric_value?: number
+          timestamp?: string | null
+        }
+        Relationships: []
       }
       whatsapp_number_stats: {
         Row: {
