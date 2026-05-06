@@ -74,10 +74,28 @@ serve(async (req) => {
 
     // POST /start
     if (route === "/start" && req.method === "POST") {
+      console.log(JSON.stringify({
+        event: "START_SESSION_BEGIN",
+        requestId,
+        timestamp: new Date().toISOString()
+      }));
+
       let body;
       try {
         body = await req.json();
+        console.log(JSON.stringify({
+          event: "START_PAYLOAD_READY",
+          sessionId: body?.sessionId,
+          requestId,
+          timestamp: new Date().toISOString()
+        }));
       } catch (e) {
+        console.error(JSON.stringify({
+          event: "START_PAYLOAD_ERROR",
+          requestId,
+          error: "INVALID_JSON_BODY",
+          timestamp: new Date().toISOString()
+        }));
         return json({ success: false, error: "INVALID_JSON_BODY" }, 400);
       }
       
@@ -87,34 +105,55 @@ serve(async (req) => {
       }
 
       console.log(JSON.stringify({
-        event: "provider_start_init",
+        event: "PROVIDER_CALL_BEGIN",
+        url: `${EXTERNAL_API_URL}/start`,
         sessionId,
         requestId,
         timestamp: new Date().toISOString()
       }));
 
-      const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/start`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      try {
+        const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
 
-      const data = await response.json().catch(() => ({}));
-      
-      console.log(JSON.stringify({
-        event: "provider_start_done",
-        sessionId,
-        requestId,
-        status: response.status,
-        durationMs: Date.now() - startTime,
-        timestamp: new Date().toISOString()
-      }));
+        const data = await response.json().catch(() => ({}));
+        
+        console.log(JSON.stringify({
+          event: "PROVIDER_CALL_COMPLETE",
+          sessionId,
+          requestId,
+          status: response.status,
+          durationMs: Date.now() - startTime,
+          timestamp: new Date().toISOString()
+        }));
 
-      return json({ 
-        success: response.ok, 
-        providerStatus: response.status,
-        ...data 
-      }, response.ok ? 200 : 502);
+        console.log(JSON.stringify({
+          event: "START_SESSION_FINISHED",
+          sessionId,
+          requestId,
+          success: response.ok,
+          timestamp: new Date().toISOString()
+        }));
+
+        return json({ 
+          success: response.ok, 
+          providerStatus: response.status,
+          ...data 
+        }, response.ok ? 200 : 502);
+      } catch (error) {
+        console.error(JSON.stringify({
+          event: "PROVIDER_CALL_FAILED",
+          sessionId,
+          requestId,
+          error: String(error),
+          durationMs: Date.now() - startTime,
+          timestamp: new Date().toISOString()
+        }));
+        throw error; // Let the global handler catch it
+      }
     }
 
     // GET /qr/:sessionId
