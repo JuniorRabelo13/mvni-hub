@@ -1,16 +1,15 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Content-Type": "application/json",
+};
 
-const EXTERNAL_API_URL = "http://155.133.23.9:3333"
+const EXTERNAL_API_URL = Deno.env.get("WHATSAPP_PROVIDER_URL") || "http://155.133.23.9:3333";
+const PROVIDER_TIMEOUT_MS = 8000;
 
-// Cache em memória para estados de sessão
-// Em produção com múltiplas instâncias do Edge Function, 
-// o ideal seria Redis ou Database, mas para persistência temporária 
-// entre polling na mesma instância ou curta duração, usamos Map.
 interface SessionState {
   sessionId: string;
   status: "iniciando" | "gerando_qr" | "qr_pronto" | "conectado" | "desconectado" | "erro";
@@ -20,170 +19,230 @@ interface SessionState {
 }
 
 const sessionCache = new Map<string, SessionState>();
-
-// TTL de 10 minutos
 const SESSION_TTL = 10 * 60 * 1000;
 
-// Limpeza automática de sessões expiradas
 setInterval(() => {
   const now = Date.now();
-  for (const [id, session] of sessionCache.entries()) {
-    if (now - session.updatedAt > SESSION_TTL) {
-      console.log(`[Session] Cleaning up expired session: ${id}`);
-      sessionCache.delete(id);
-    }
+  for (const [id, s] of sessionCache.entries()) {
+    if (now - s.updatedAt > SESSION_TTL) sessionCache.delete(id);
   }
 }, 60000);
 
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+}
+
+function logEvent(data: Record<string, unknown>) {
+  try {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), ...data }));
+  } catch {
+    console.log("[log] (unserializable event)");
+  }
+}
+
+async function fetchWithTimeout(url: string, init?: RequestInit, timeoutMs = PROVIDER_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 serve(async (req) => {
-  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
-  
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  const requestId = req.headers.get("x-request-id") || crypto.randomUUID();
+
+  // CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
-  const url = new URL(req.url)
-  const path = url.pathname.replace('/whatsapp-api', '')
+  let route = "";
+  let sessionId: string | undefined;
 
   try {
-    // Rota: POST /start
-    if (path === '/start' && req.method === 'POST') {
-      const startTime = Date.now();
-      const body = await req.json()
-      const { sessionId, agentId } = body;
+    const url = new URL(req.url);
+    const path = url.pathname.replace("/whatsapp-api", "") || "/";
+    route = path;
 
-      if (!sessionId) {
-        return new Response(JSON.stringify({ error: 'sessionId is required' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+    logEvent({ event: "request_in", route, method: req.method, requestId });
+
+    // GET /health
+    if (path === "/health" && req.method === "GET") {
+      return json({ success: true, service: "whatsapp-api", uptime: Date.now() });
+    }
+
+    // POST /start
+    if (path === "/start" && req.method === "POST") {
+      const startTime = Date.now();
+      let body: any = {};
+      try {
+        body = await req.json();
+      } catch {
+        return json({ success: false, error: "INVALID_JSON_BODY" }, 400);
       }
 
-      console.log(`[Session ${sessionId}] Starting connection for agent ${agentId}`);
+      sessionId = body?.sessionId;
+      const agentId = body?.agentId;
 
-      // Inicializa estado no cache
+      if (!sessionId) {
+        return json({ success: false, error: "sessionId is required" }, 400);
+      }
+
+      logEvent({ event: "start_request", route, method: "POST", sessionId, agentId, requestId });
+
       sessionCache.set(sessionId, {
         sessionId,
         status: "iniciando",
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       });
 
       try {
-        const response = await fetch(`${EXTERNAL_API_URL}/start`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        })
-        
-        const data = await response.json()
-        
-        // Atualiza estado após resposta do backend real
+        const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        let data: any = {};
+        try {
+          data = await response.json();
+        } catch {
+          data = { providerStatus: response.status };
+        }
+
         const current = sessionCache.get(sessionId);
         if (current) {
           sessionCache.set(sessionId, {
             ...current,
-            status: "gerando_qr",
-            updatedAt: Date.now()
+            status: response.ok ? "gerando_qr" : "erro",
+            lastError: response.ok ? undefined : `provider_status_${response.status}`,
+            updatedAt: Date.now(),
           });
         }
 
-        const durationMs = Date.now() - startTime;
-        console.log(JSON.stringify({
-          timestamp: new Date().toISOString(),
-          level: "info",
-          event: "start_response_ok",
+        logEvent({
+          event: "start_response",
           sessionId,
           agentId,
           requestId,
-          durationMs,
-          environment: Deno.env.get("ENVIRONMENT") || "production"
-        }));
+          providerStatus: response.status,
+          durationMs: Date.now() - startTime,
+        });
 
-        return new Response(JSON.stringify(data), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+        return json({ success: response.ok, ...data }, response.ok ? 200 : 502);
       } catch (err) {
-        console.error(`[Session ${sessionId}] Error starting:`, err);
+        const msg = err instanceof Error ? err.message : String(err);
         sessionCache.set(sessionId, {
           sessionId,
           status: "erro",
-          lastError: err.message,
-          updatedAt: Date.now()
+          lastError: msg,
+          updatedAt: Date.now(),
         });
-        throw err;
+        logEvent({ event: "start_provider_error", sessionId, requestId, error: msg });
+        return json({ success: false, error: "PROVIDER_UNREACHABLE", details: msg }, 502);
       }
     }
 
-    // Rota: GET /qr/:id
-    if (path.startsWith('/qr/') && req.method === 'GET') {
-      const sessionId = path.split('/')[2]
-      
-      console.log(`[Session ${sessionId}] Polling QR...`);
+    // GET /qr/:sessionId
+    if (path.startsWith("/qr/") && req.method === "GET") {
+      sessionId = path.split("/")[2];
+      if (!sessionId) return json({ success: false, error: "sessionId is required" }, 400);
 
-      // Tenta buscar do cache primeiro para evitar 404 imediatos
-      let cached = sessionCache.get(sessionId);
+      logEvent({ event: "qr_poll", route, method: "GET", sessionId, requestId });
+
+      const cached = sessionCache.get(sessionId);
 
       try {
-        const response = await fetch(`${EXTERNAL_API_URL}/qr/${sessionId}`)
+        const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/qr/${sessionId}`);
         if (response.ok) {
-          const data = await response.json()
-          
-          // Atualiza cache com dados reais do backend
-          const newStatus = data.qr ? "qr_pronto" : (data.status === "conectado" ? "conectado" : "gerando_qr");
-          
+          let data: any = {};
+          try {
+            data = await response.json();
+          } catch {
+            data = {};
+          }
+
+          const newStatus = data.qr
+            ? "qr_pronto"
+            : data.status === "conectado"
+            ? "conectado"
+            : "gerando_qr";
+
           sessionCache.set(sessionId, {
             sessionId,
             status: newStatus as any,
-            qr: data.qr,
-            updatedAt: Date.now()
+            qr: data.qr ?? null,
+            updatedAt: Date.now(),
           });
 
-          return new Response(JSON.stringify(data), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
+          if (data.qr) {
+            return json({ success: true, qr: data.qr, status: newStatus, sessionId });
+          }
+          if (newStatus === "conectado") {
+            return json({ success: true, status: "conectado", sessionId });
+          }
+          return json({ success: false, error: "QR_NOT_READY", status: newStatus, sessionId }, 200);
         }
+
+        // Provider returned non-OK
+        if (cached) {
+          return json({
+            success: !!cached.qr,
+            qr: cached.qr ?? undefined,
+            status: cached.status,
+            sessionId: cached.sessionId,
+            fromCache: true,
+          });
+        }
+        return json({ success: false, error: "QR_NOT_READY", providerStatus: response.status }, 200);
       } catch (err) {
-        console.error(`[Session ${sessionId}] Fetch error:`, err);
+        const msg = err instanceof Error ? err.message : String(err);
+        logEvent({ event: "qr_provider_error", sessionId, requestId, error: msg });
+        if (cached) {
+          return json({
+            success: !!cached.qr,
+            qr: cached.qr ?? undefined,
+            status: cached.status,
+            sessionId: cached.sessionId,
+            fromCache: true,
+          });
+        }
+        return json({ success: false, error: "QR_NOT_READY", details: msg }, 200);
       }
-
-      // Se falhou fetch mas temos cache, retorna cache como fallback
-      if (cached) {
-        return new Response(JSON.stringify({
-          status: cached.status,
-          qr: cached.qr,
-          sessionId: cached.sessionId,
-          fromCache: true
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      return new Response(JSON.stringify({ error: 'Session not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
     }
 
-    // Rota: GET /status/:id
-    if (path.startsWith('/status/') && req.method === 'GET') {
-      const id = path.split('/')[2]
-      const response = await fetch(`${EXTERNAL_API_URL}/status/${id}`)
-      const data = await response.json()
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+    // GET /status/:sessionId
+    if (path.startsWith("/status/") && req.method === "GET") {
+      sessionId = path.split("/")[2];
+      if (!sessionId) return json({ success: false, error: "sessionId is required" }, 400);
+
+      logEvent({ event: "status_request", route, method: "GET", sessionId, requestId });
+
+      try {
+        const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/status/${sessionId}`);
+        let data: any = {};
+        try {
+          data = await response.json();
+        } catch {
+          data = {};
+        }
+        return json({ success: response.ok, ...data }, response.ok ? 200 : 502);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const cached = sessionCache.get(sessionId);
+        if (cached) {
+          return json({ success: true, status: cached.status, sessionId, fromCache: true });
+        }
+        return json({ success: false, error: "PROVIDER_UNREACHABLE", details: msg }, 502);
+      }
     }
 
-    return new Response(JSON.stringify({ error: 'Not Found' }), {
-      status: 404,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-
-  } catch (error) {
-    console.error('Error in whatsapp-api proxy:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    return json({ success: false, error: "NOT_FOUND", route, method: req.method }, 404);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logEvent({ event: "unhandled_error", route, requestId, sessionId, error: msg });
+    return json({ success: false, error: `INTERNAL_ERROR: ${msg}` }, 500);
   }
-})
+});
