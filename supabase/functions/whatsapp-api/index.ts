@@ -133,6 +133,7 @@ serve(async (req) => {
           sessionId,
           requestId,
           status: response.status,
+          providerResponse: data,
           durationMs: Date.now() - startTime,
           timestamp: new Date().toISOString()
         }));
@@ -147,7 +148,8 @@ serve(async (req) => {
         return json({ 
           success: response.ok, 
           providerStatus: response.status,
-          ...data 
+          providerData: data,
+          sessionId,
         }, response.ok ? 200 : 502);
       } catch (error) {
         const isTimeout = error instanceof Error && error.message === "START_TIMEOUT";
