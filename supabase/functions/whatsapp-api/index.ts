@@ -4,245 +4,207 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "*",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Content-Type": "application/json",
 };
 
 const EXTERNAL_API_URL = Deno.env.get("WHATSAPP_PROVIDER_URL") || "http://155.133.23.9:3333";
-const PROVIDER_TIMEOUT_MS = 8000;
-
-interface SessionState {
-  sessionId: string;
-  status: "iniciando" | "gerando_qr" | "qr_pronto" | "conectado" | "desconectado" | "erro";
-  qr?: string | null;
-  lastError?: string;
-  updatedAt: number;
-}
-
-const sessionCache = new Map<string, SessionState>();
-const SESSION_TTL = 10 * 60 * 1000;
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [id, s] of sessionCache.entries()) {
-    if (now - s.updatedAt > SESSION_TTL) sessionCache.delete(id);
-  }
-}, 60000);
+const PROVIDER_TIMEOUT_MS = 15000; // 15 seconds for QR generation
 
 function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+  return new Response(JSON.stringify(body), { 
+    status, 
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    }
+  });
 }
 
-function logEvent(data: Record<string, unknown>) {
-  try {
-    console.log(JSON.stringify({ timestamp: new Date().toISOString(), ...data }));
-  } catch {
-    console.log("[log] (unserializable event)");
-  }
-}
-
-async function fetchWithTimeout(url: string, init?: RequestInit, timeoutMs = PROVIDER_TIMEOUT_MS): Promise<Response> {
+async function fetchWithTimeout(url: string, init?: RequestInit, timeoutMs = PROVIDER_TIMEOUT_MS) {
   const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), timeoutMs);
+  const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    const response = await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+    return response;
   } finally {
-    clearTimeout(t);
+    clearTimeout(id);
   }
 }
 
 serve(async (req) => {
-  const requestId = req.headers.get("x-request-id") || crypto.randomUUID();
-
-  // CORS preflight
+  // 1. Mandatory CORS Preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  let route = "";
-  let sessionId: string | undefined;
+  const startTime = Date.now();
+  const requestId = req.headers.get("x-request-id") || crypto.randomUUID();
+  const url = new URL(req.url);
+  
+  // Robust Path Parsing
+  const pathParts = url.pathname.split('/').filter(Boolean);
+  let cleanParts = [...pathParts];
+  
+  // Handle Supabase routing (/functions/v1/whatsapp-api/...)
+  const apiIdx = cleanParts.indexOf('whatsapp-api');
+  if (apiIdx !== -1) {
+    cleanParts = cleanParts.slice(apiIdx + 1);
+  }
+  
+  const route = '/' + cleanParts.join('/');
+  let sessionId = cleanParts.length > 1 ? cleanParts[1] : undefined;
 
   try {
-    const url = new URL(req.url);
-    const path = url.pathname.replace("/whatsapp-api", "") || "/";
-    route = path;
-
-    logEvent({ event: "request_in", route, method: req.method, requestId });
+    // Structured Logging
+    console.log(JSON.stringify({
+      event: "request_received",
+      route,
+      method: req.method,
+      sessionId,
+      requestId,
+      timestamp: new Date().toISOString()
+    }));
 
     // GET /health
-    if (path === "/health" && req.method === "GET") {
-      return json({ success: true, service: "whatsapp-api", uptime: Date.now() });
+    if (route === "/health" && req.method === "GET") {
+      return json({ success: true });
     }
 
     // POST /start
-    if (path === "/start" && req.method === "POST") {
-      const startTime = Date.now();
-      let body: any = {};
+    if (route === "/start" && req.method === "POST") {
+      let body;
       try {
         body = await req.json();
-      } catch {
+      } catch (e) {
         return json({ success: false, error: "INVALID_JSON_BODY" }, 400);
       }
-
+      
       sessionId = body?.sessionId;
-      const agentId = body?.agentId;
-
       if (!sessionId) {
         return json({ success: false, error: "sessionId is required" }, 400);
       }
 
-      logEvent({ event: "start_request", route, method: "POST", sessionId, agentId, requestId });
-
-      sessionCache.set(sessionId, {
+      console.log(JSON.stringify({
+        event: "provider_start_init",
         sessionId,
-        status: "iniciando",
-        updatedAt: Date.now(),
+        requestId,
+        timestamp: new Date().toISOString()
+      }));
+
+      const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
 
-      try {
-        const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/start`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+      const data = await response.json().catch(() => ({}));
+      
+      console.log(JSON.stringify({
+        event: "provider_start_done",
+        sessionId,
+        requestId,
+        status: response.status,
+        durationMs: Date.now() - startTime,
+        timestamp: new Date().toISOString()
+      }));
 
-        let data: any = {};
-        try {
-          data = await response.json();
-        } catch {
-          data = { providerStatus: response.status };
-        }
-
-        const current = sessionCache.get(sessionId);
-        if (current) {
-          sessionCache.set(sessionId, {
-            ...current,
-            status: response.ok ? "gerando_qr" : "erro",
-            lastError: response.ok ? undefined : `provider_status_${response.status}`,
-            updatedAt: Date.now(),
-          });
-        }
-
-        logEvent({
-          event: "start_response",
-          sessionId,
-          agentId,
-          requestId,
-          providerStatus: response.status,
-          durationMs: Date.now() - startTime,
-        });
-
-        return json({ success: response.ok, ...data }, response.ok ? 200 : 502);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        sessionCache.set(sessionId, {
-          sessionId,
-          status: "erro",
-          lastError: msg,
-          updatedAt: Date.now(),
-        });
-        logEvent({ event: "start_provider_error", sessionId, requestId, error: msg });
-        return json({ success: false, error: "PROVIDER_UNREACHABLE", details: msg }, 502);
-      }
+      return json({ 
+        success: response.ok, 
+        providerStatus: response.status,
+        ...data 
+      }, response.ok ? 200 : 502);
     }
 
     // GET /qr/:sessionId
-    if (path.startsWith("/qr/") && req.method === "GET") {
-      sessionId = path.split("/")[2];
-      if (!sessionId) return json({ success: false, error: "sessionId is required" }, 400);
+    if (route.startsWith("/qr/") && req.method === "GET") {
+      if (!sessionId) {
+        return json({ success: false, error: "sessionId is required" }, 400);
+      }
 
-      logEvent({ event: "qr_poll", route, method: "GET", sessionId, requestId });
-
-      const cached = sessionCache.get(sessionId);
+      console.log(JSON.stringify({
+        event: "provider_qr_init",
+        sessionId,
+        requestId,
+        timestamp: new Date().toISOString()
+      }));
 
       try {
         const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/qr/${sessionId}`);
-        if (response.ok) {
-          let data: any = {};
-          try {
-            data = await response.json();
-          } catch {
-            data = {};
-          }
+        
+        if (!response.ok) {
+          return json({ 
+            success: false, 
+            error: "QR_NOT_READY", 
+            providerStatus: response.status 
+          }, 200);
+        }
 
-          const newStatus = data.qr
-            ? "qr_pronto"
-            : data.status === "conectado"
-            ? "conectado"
-            : "gerando_qr";
-
-          sessionCache.set(sessionId, {
+        const data = await response.json().catch(() => ({}));
+        
+        if (data.qr) {
+          console.log(JSON.stringify({
+            event: "provider_qr_success",
             sessionId,
-            status: newStatus as any,
-            qr: data.qr ?? null,
-            updatedAt: Date.now(),
-          });
-
-          if (data.qr) {
-            return json({ success: true, qr: data.qr, status: newStatus, sessionId });
-          }
-          if (newStatus === "conectado") {
-            return json({ success: true, status: "conectado", sessionId });
-          }
-          return json({ success: false, error: "QR_NOT_READY", status: newStatus, sessionId }, 200);
+            requestId,
+            timestamp: new Date().toISOString()
+          }));
+          return json({ success: true, qr: data.qr });
         }
 
-        // Provider returned non-OK
-        if (cached) {
-          return json({
-            success: !!cached.qr,
-            qr: cached.qr ?? undefined,
-            status: cached.status,
-            sessionId: cached.sessionId,
-            fromCache: true,
-          });
-        }
-        return json({ success: false, error: "QR_NOT_READY", providerStatus: response.status }, 200);
+        return json({ success: false, error: "QR_NOT_READY" });
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        logEvent({ event: "qr_provider_error", sessionId, requestId, error: msg });
-        if (cached) {
-          return json({
-            success: !!cached.qr,
-            qr: cached.qr ?? undefined,
-            status: cached.status,
-            sessionId: cached.sessionId,
-            fromCache: true,
-          });
-        }
-        return json({ success: false, error: "QR_NOT_READY", details: msg }, 200);
+        console.error(JSON.stringify({
+          event: "provider_qr_timeout_or_error",
+          sessionId,
+          requestId,
+          error: String(err),
+          timestamp: new Date().toISOString()
+        }));
+        return json({ success: false, error: "QR_NOT_READY", details: "PROVIDER_TIMEOUT_OR_ERROR" });
       }
     }
 
     // GET /status/:sessionId
-    if (path.startsWith("/status/") && req.method === "GET") {
-      sessionId = path.split("/")[2];
-      if (!sessionId) return json({ success: false, error: "sessionId is required" }, 400);
-
-      logEvent({ event: "status_request", route, method: "GET", sessionId, requestId });
-
-      try {
-        const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/status/${sessionId}`);
-        let data: any = {};
-        try {
-          data = await response.json();
-        } catch {
-          data = {};
-        }
-        return json({ success: response.ok, ...data }, response.ok ? 200 : 502);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const cached = sessionCache.get(sessionId);
-        if (cached) {
-          return json({ success: true, status: cached.status, sessionId, fromCache: true });
-        }
-        return json({ success: false, error: "PROVIDER_UNREACHABLE", details: msg }, 502);
+    if (route.startsWith("/status/") && req.method === "GET") {
+      if (!sessionId) {
+        return json({ success: false, error: "sessionId is required" }, 400);
       }
+
+      const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/status/${sessionId}`);
+      const data = await response.json().catch(() => ({}));
+      
+      return json({ 
+        success: response.ok, 
+        providerStatus: response.status,
+        ...data 
+      }, response.ok ? 200 : 502);
     }
 
-    return json({ success: false, error: "NOT_FOUND", route, method: req.method }, 404);
+    // 404 Fallback
+    return json({ 
+      success: false, 
+      error: "ENDPOINT_NOT_FOUND", 
+      path: route 
+    }, 404);
+
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    logEvent({ event: "unhandled_error", route, requestId, sessionId, error: msg });
-    return json({ success: false, error: `INTERNAL_ERROR: ${msg}` }, 500);
+    // 5. Global Exception Handler
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(JSON.stringify({
+      event: "unhandled_exception",
+      route,
+      method: req.method,
+      sessionId,
+      requestId,
+      error: errorMsg,
+      timestamp: new Date().toISOString()
+    }));
+
+    return json({
+      success: false,
+      error: errorMsg
+    }, 500);
   }
 });
