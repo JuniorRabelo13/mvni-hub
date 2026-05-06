@@ -131,10 +131,9 @@ serve(async (req) => {
         }));
 
         console.log(JSON.stringify({
-          event: "START_SESSION_FINISHED",
+          event: "START_SESSION_SUCCESS",
           sessionId,
           requestId,
-          success: response.ok,
           timestamp: new Date().toISOString()
         }));
 
