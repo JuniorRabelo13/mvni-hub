@@ -182,9 +182,17 @@ serve(async (req) => {
         timestamp: new Date().toISOString()
       }));
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => {
+        controller.abort();
+      }, 10000);
+
       try {
-        const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/qr/${sessionId}`);
-        
+        const response = await fetch(`${EXTERNAL_API_URL}/qr/${sessionId}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
         if (!response.ok) {
           return json({ 
             success: false, 
@@ -207,6 +215,7 @@ serve(async (req) => {
 
         return json({ success: false, error: "QR_NOT_READY" });
       } catch (err) {
+        clearTimeout(timeout);
         console.error(JSON.stringify({
           event: "provider_qr_timeout_or_error",
           sessionId,
