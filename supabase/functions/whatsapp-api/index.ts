@@ -113,11 +113,16 @@ serve(async (req) => {
       }));
 
       try {
-        const response = await fetchWithTimeout(`${EXTERNAL_API_URL}/start`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+        const response = await Promise.race([
+          fetchWithTimeout(`${EXTERNAL_API_URL}/start`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("START_TIMEOUT")), 15000)
+          )
+        ]) as Response;
 
         const data = await response.json().catch(() => ({}));
         
@@ -143,14 +148,19 @@ serve(async (req) => {
           ...data 
         }, response.ok ? 200 : 502);
       } catch (error) {
+        const isTimeout = error instanceof Error && error.message === "START_TIMEOUT";
         console.error(JSON.stringify({
-          event: "PROVIDER_CALL_FAILED",
+          event: isTimeout ? "START_SESSION_TIMEOUT" : "PROVIDER_CALL_FAILED",
           sessionId,
           requestId,
           error: String(error),
           durationMs: Date.now() - startTime,
           timestamp: new Date().toISOString()
         }));
+        
+        if (isTimeout) {
+          return json({ success: false, error: "START_TIMEOUT" }, 504);
+        }
         throw error; // Let the global handler catch it
       }
     }
