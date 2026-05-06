@@ -113,12 +113,14 @@ serve(async (req) => {
       }));
 
       try {
+        const startSession = () => fetchWithTimeout(`${EXTERNAL_API_URL}/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
         const response = await Promise.race([
-          fetchWithTimeout(`${EXTERNAL_API_URL}/start`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          }),
+          startSession(),
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error("START_TIMEOUT")), 15000)
           )
