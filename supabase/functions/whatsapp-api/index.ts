@@ -215,6 +215,7 @@ serve(async (req) => {
 
         return json({ success: false, error: "QR_NOT_READY" });
       } catch (err) {
+        clearTimeout(timeout);
         console.error(JSON.stringify({
           event: "provider_qr_timeout_or_error",
           sessionId,
