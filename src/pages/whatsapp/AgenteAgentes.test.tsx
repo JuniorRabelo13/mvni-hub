@@ -3,23 +3,61 @@ const pollConnectionStatus = async (agentId: string, sessionId: string) => {
 
   const maxAttempts = 30;
 
+  try {
+    clearInterval(pollingRef.current);
+  } catch {}
+
   pollingRef.current = setInterval(async () => {
     attempts++;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/status/${sessionId}`);
+      const response = await fetch(`${API_BASE_URL}/status/${sessionId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
 
       const data = await response.json();
 
       console.log("WHATSAPP STATUS:", data);
 
       /*
-      ==========================================
-      STATUS CONECTADO
-      ==========================================
+      ==================================================
+      NORMALIZA STATUS
+      ==================================================
       */
 
-      if (data.status === "conectado") {
+      const normalizedStatus = String(data?.status || "")
+        .toLowerCase()
+        .trim();
+
+      const isConnected =
+        normalizedStatus === "conectado" ||
+        normalizedStatus === "connected" ||
+        normalizedStatus === "open" ||
+        normalizedStatus === "ativo" ||
+        data?.connected === true;
+
+      const isDisconnected =
+        normalizedStatus === "desconectado" ||
+        normalizedStatus === "disconnected" ||
+        normalizedStatus === "close" ||
+        normalizedStatus === "closed";
+
+      const hasQr = normalizedStatus === "qr" || normalizedStatus === "qrcode" || !!data?.qr;
+
+      /*
+      ==================================================
+      STATUS CONECTADO
+      ==================================================
+      */
+
+      if (isConnected) {
         try {
           clearInterval(pollingRef.current);
         } catch {}
@@ -41,6 +79,8 @@ const pollConnectionStatus = async (agentId: string, sessionId: string) => {
             loading: false,
             attempts: 0,
             error: null,
+            sessionId,
+            updatedAt: new Date().toISOString(),
           },
         }));
 
@@ -50,18 +90,51 @@ const pollConnectionStatus = async (agentId: string, sessionId: string) => {
       }
 
       /*
-      ==========================================
-      STATUS QR
-      ==========================================
+      ==================================================
+      STATUS QR CODE
+      ==================================================
       */
 
-      if (data.status === "qr") {
-        const qrResponse = await fetch(`${API_BASE_URL}/qr/${sessionId}`);
+      if (hasQr) {
+        let qrImage = data?.qr || null;
 
-        const qrData = await qrResponse.json();
+        /*
+        ==================================================
+        BUSCA QR SE NÃO VEIO NO STATUS
+        ==================================================
+        */
 
-        if (qrData?.qr) {
-          setQrCode(qrData.qr);
+        if (!qrImage) {
+          try {
+            const qrResponse = await fetch(`${API_BASE_URL}/qr/${sessionId}`, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (qrResponse.ok) {
+              const qrData = await qrResponse.json();
+
+              console.log("QR DATA:", qrData);
+
+              if (qrData?.qr) {
+                qrImage = qrData.qr;
+              }
+            }
+          } catch (qrError) {
+            console.error("QR FETCH ERROR:", qrError);
+          }
+        }
+
+        /*
+        ==================================================
+        ATUALIZA QR
+        ==================================================
+        */
+
+        if (qrImage) {
+          setQrCode(qrImage);
 
           setConnectionStatus("qr");
 
@@ -71,9 +144,13 @@ const pollConnectionStatus = async (agentId: string, sessionId: string) => {
               ...prev[agentId],
               status: "qr",
               connected: false,
-              qr: qrData.qr,
+              conectado: false,
+              qr: qrImage,
               loading: false,
+              attempts,
               error: null,
+              sessionId,
+              updatedAt: new Date().toISOString(),
             },
           }));
         }
@@ -82,12 +159,12 @@ const pollConnectionStatus = async (agentId: string, sessionId: string) => {
       }
 
       /*
-      ==========================================
+      ==================================================
       STATUS DESCONECTADO
-      ==========================================
+      ==================================================
       */
 
-      if (data.status === "desconectado") {
+      if (isDisconnected) {
         setConnectionStatus("desconectado");
 
         setAgentConnections((prev) => ({
@@ -96,15 +173,19 @@ const pollConnectionStatus = async (agentId: string, sessionId: string) => {
             ...prev[agentId],
             status: "desconectado",
             connected: false,
+            conectado: false,
             loading: false,
+            attempts,
+            qr: null,
+            updatedAt: new Date().toISOString(),
           },
         }));
       }
 
       /*
-      ==========================================
+      ==================================================
       TIMEOUT
-      ==========================================
+      ==================================================
       */
 
       if (attempts >= maxAttempts) {
@@ -120,15 +201,19 @@ const pollConnectionStatus = async (agentId: string, sessionId: string) => {
             ...prev[agentId],
             status: "erro",
             connected: false,
+            conectado: false,
             loading: false,
+            attempts,
+            qr: null,
             error: "Timeout ao conectar WhatsApp",
+            updatedAt: new Date().toISOString(),
           },
         }));
 
-        toast.error("Falha na conexão");
+        toast.error("Falha na conexão do WhatsApp");
       }
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error("POLL STATUS ERROR:", error);
 
       try {
         clearInterval(pollingRef.current);
@@ -142,8 +227,11 @@ const pollConnectionStatus = async (agentId: string, sessionId: string) => {
           ...prev[agentId],
           status: "erro",
           connected: false,
+          conectado: false,
           loading: false,
-          error: "Erro ao consultar status",
+          qr: null,
+          error: error?.message || "Erro ao consultar status do WhatsApp",
+          updatedAt: new Date().toISOString(),
         },
       }));
 
