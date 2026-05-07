@@ -1,24 +1,18 @@
 const connectWhatsApp = async (agent: any) => {
   try {
-    /*
-    ==================================================
-    IDENTIFICAÇÃO
-    ==================================================
-    */
-
     const agentId = agent?.id || agent?.uuid || crypto.randomUUID();
 
     const sessionId = agent?.sessionId || agent?.session_id || crypto.randomUUID();
 
-    console.log("CONNECTING SESSION:", {
+    console.log("CONNECTING:", {
       agentId,
       sessionId,
     });
 
     /*
-    ==================================================
-    LIMPA POLLING ANTIGO
-    ==================================================
+    =========================================
+    LIMPA POLLING
+    =========================================
     */
 
     if (pollingRef.current) {
@@ -26,9 +20,9 @@ const connectWhatsApp = async (agent: any) => {
     }
 
     /*
-    ==================================================
-    ESTADO INICIAL
-    ==================================================
+    =========================================
+    RESET UI
+    =========================================
     */
 
     setQrCode(null);
@@ -62,9 +56,9 @@ const connectWhatsApp = async (agent: any) => {
     }));
 
     /*
-    ==================================================
+    =========================================
     REMOVE SESSÃO ANTIGA
-    ==================================================
+    =========================================
     */
 
     try {
@@ -72,13 +66,13 @@ const connectWhatsApp = async (agent: any) => {
         method: "DELETE",
       });
     } catch (error) {
-      console.error("DELETE OLD SESSION ERROR:", error);
+      console.error("DELETE SESSION ERROR:", error);
     }
 
     /*
-    ==================================================
+    =========================================
     START SESSION
-    ==================================================
+    =========================================
     */
 
     const startResponse = await fetch(`${API_BASE_URL}/start`, {
@@ -93,54 +87,32 @@ const connectWhatsApp = async (agent: any) => {
       }),
     });
 
-    /*
-    ==================================================
-    VALIDA RESPONSE
-    ==================================================
-    */
-
     if (!startResponse.ok) {
       const errorText = await startResponse.text();
-
-      console.error("START RESPONSE ERROR:", errorText);
 
       throw new Error(errorText || "Erro ao iniciar sessão");
     }
 
-    /*
-    ==================================================
-    JSON START
-    ==================================================
-    */
-
-    let startData: any = {};
-
-    try {
-      startData = await startResponse.json();
-    } catch {
-      startData = {};
-    }
-
-    console.log("START SESSION SUCCESS:", startData);
+    console.log("SESSION STARTED");
 
     /*
-    ==================================================
-    AGUARDA BACKEND
-    ==================================================
+    =========================================
+    AGUARDA QR
+    =========================================
     */
 
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     /*
-    ==================================================
+    =========================================
     BUSCA QR
-    ==================================================
+    =========================================
     */
 
     const qrResponse = await fetch(`${API_BASE_URL}/qr/${sessionId}`);
 
     if (!qrResponse.ok) {
-      throw new Error("Erro ao gerar QR Code");
+      throw new Error("Erro ao buscar QR");
     }
 
     const qrData = await qrResponse.json();
@@ -148,9 +120,9 @@ const connectWhatsApp = async (agent: any) => {
     console.log("QR DATA:", qrData);
 
     /*
-    ==================================================
-    QR ENCONTRADO
-    ==================================================
+    =========================================
+    QR OK
+    =========================================
     */
 
     if (qrData?.qr) {
@@ -184,18 +156,18 @@ const connectWhatsApp = async (agent: any) => {
         },
       }));
     } else {
-      throw new Error("QR Code não encontrado");
+      throw new Error("QR não encontrado");
     }
 
     /*
-    ==================================================
-    INICIA POLLING
-    ==================================================
+    =========================================
+    START POLLING
+    =========================================
     */
 
     pollConnectionStatus(agentId, sessionId);
   } catch (error: any) {
-    console.error("CONNECT WHATSAPP ERROR:", error);
+    console.error("CONNECT ERROR:", error);
 
     setQrCode(null);
 
@@ -219,7 +191,7 @@ const connectWhatsApp = async (agent: any) => {
 
         qr: null,
 
-        error: error?.message || "Erro ao conectar WhatsApp",
+        error: error?.message || "Erro ao conectar",
 
         updatedAt: new Date().toISOString(),
       },
