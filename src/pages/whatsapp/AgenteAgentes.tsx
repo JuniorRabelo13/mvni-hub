@@ -67,6 +67,10 @@ export default function AgenteAgentes() {
 
   const [, forceUpdate] = useState({});
   const qrTimeoutRef = useRef<Record<string, any>>({});
+  const qrAbortRef = useRef<Record<string, AbortController | null>>({});
+  const pollSeqRef = useRef<Record<string, number>>({});
+  const agentConnectionsRef = useRef(agentConnections);
+  useEffect(() => { agentConnectionsRef.current = agentConnections; }, [agentConnections]);
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ["whatsapp-agents"],
@@ -194,18 +198,35 @@ export default function AgenteAgentes() {
       return 5000;
     };
 
-    const poll = async (agentId: string) => {
-      const connection = agentConnections[agentId];
-      if (!connection?.sessionId || !isQrModalOpen || connectingAgentId !== agentId) return;
+    if (!isQrModalOpen || !connectingAgentId) return;
+    const agentId = connectingAgentId;
+
+    // Ensure only one polling sequence per agent
+    const seq = (pollSeqRef.current[agentId] || 0) + 1;
+    pollSeqRef.current[agentId] = seq;
+
+    const isStale = () => pollSeqRef.current[agentId] !== seq;
+
+    const poll = async () => {
+      if (isStale()) return;
+      const connection = agentConnectionsRef.current[agentId];
+      if (!connection?.sessionId) return;
 
       const attempts = (connection.attempts || 0) + 1;
       const elapsedTime = (Date.now() - (connection.startedAt || Date.now())) / 1000;
 
       if (elapsedTime > 60) {
-        setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], status: "erro" } }));
+        setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], status: "erro", error: "Tempo limite excedido. Tente novamente." } }));
         toast.error("Tempo limite excedido. Tente novamente.", { id: `timeout-${agentId}` });
         return;
       }
+
+      // Cancel previous in-flight fetch for this agent
+      if (qrAbortRef.current[agentId]) {
+        try { qrAbortRef.current[agentId]?.abort(); } catch {}
+      }
+      const controller = new AbortController();
+      qrAbortRef.current[agentId] = controller;
 
       try {
         const endpointPath = `/qr/${connection.sessionId}`;
@@ -214,31 +235,42 @@ export default function AgenteAgentes() {
 
         const response = await fetch(resolvedUrl, {
           method,
-          headers: { "X-Request-Id": connection.requestId || "" }
+          headers: { "X-Request-Id": connection.requestId || "" },
+          signal: controller.signal,
         });
-        
-        if (!isQrModalOpen || connectingAgentId !== agentId) return;
+
+        if (isStale()) return;
 
         if (response.ok) {
           const data = await response.json();
+          if (isStale()) return;
+
           if (data.qr) {
-            setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], status: "qr_pronto", qr: data.qr } }));
+            setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], status: "qr_pronto", qr: data.qr, attempts } }));
             return;
           } else if (data.status === "conectado") {
-            setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], status: "conectado", qr: null } }));
+            setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], status: "conectado", qr: null, attempts } }));
             toast.success("WhatsApp conectado com sucesso!");
             setTimeout(() => {
+              if (isStale()) return;
               setIsQrModalOpen(false);
               setConnectingAgentId(null);
               queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
             }, 2000);
             return;
+          } else if (data.error === "QR_NOT_READY") {
+            setAgentConnections(prev => ({
+              ...prev,
+              [agentId]: { ...prev[agentId], status: "gerando_qr", attempts }
+            }));
+          } else {
+            setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], attempts } }));
           }
         } else {
-           throw response;
+          throw response;
         }
       } catch (error: any) {
-        if (!isQrModalOpen || connectingAgentId !== agentId) return;
+        if (error?.name === "AbortError" || isStale()) return;
         const normalized = await normalizeConnectError(error, {
           endpointPath: `/qr/${connection.sessionId}`,
           method: "GET",
@@ -248,28 +280,35 @@ export default function AgenteAgentes() {
           attempt: attempts,
           startTime: connection.startedAt
         });
+        if (isStale()) return;
+        // Soft-failure: keep polling, do not lock modal in error
         setAgentConnections(prev => ({
           ...prev,
-          [agentId]: { ...prev[agentId], status: "erro", attempts, error: normalized.userMessage, normalizedError: normalized }
+          [agentId]: { ...prev[agentId], status: "gerando_qr", attempts, lastPollStatus: normalized.code }
         }));
       }
 
-      qrTimeoutRef.current[agentId] = setTimeout(() => poll(agentId), getNextInterval(attempts));
+      if (isStale()) return;
+      qrTimeoutRef.current[agentId] = setTimeout(poll, getNextInterval(attempts));
     };
 
-    if (isQrModalOpen && connectingAgentId) {
-      const agentId = connectingAgentId;
-      const timerInterval = setInterval(() => forceUpdate({}), 1000);
-      if (!qrTimeoutRef.current[agentId]) poll(agentId);
-      return () => {
-        clearInterval(timerInterval);
-        if (qrTimeoutRef.current[agentId]) {
-          clearTimeout(qrTimeoutRef.current[agentId]);
-          delete qrTimeoutRef.current[agentId];
-        }
-      };
-    }
-  }, [isQrModalOpen, connectingAgentId, queryClient, agentConnections]);
+    const timerInterval = setInterval(() => forceUpdate({}), 1000);
+    poll();
+
+    return () => {
+      clearInterval(timerInterval);
+      // Invalidate this polling sequence
+      pollSeqRef.current[agentId] = (pollSeqRef.current[agentId] || 0) + 1;
+      if (qrTimeoutRef.current[agentId]) {
+        clearTimeout(qrTimeoutRef.current[agentId]);
+        delete qrTimeoutRef.current[agentId];
+      }
+      if (qrAbortRef.current[agentId]) {
+        try { qrAbortRef.current[agentId]?.abort(); } catch {}
+        qrAbortRef.current[agentId] = null;
+      }
+    };
+  }, [isQrModalOpen, connectingAgentId, queryClient]);
 
   const activeAgent = agents?.find(a => a.id === connectingAgentId);
   
