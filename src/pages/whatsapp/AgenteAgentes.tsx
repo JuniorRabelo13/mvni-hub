@@ -67,6 +67,10 @@ export default function AgenteAgentes() {
 
   const [, forceUpdate] = useState({});
   const qrTimeoutRef = useRef<Record<string, any>>({});
+  const qrAbortRef = useRef<Record<string, AbortController | null>>({});
+  const pollSeqRef = useRef<Record<string, number>>({});
+  const agentConnectionsRef = useRef(agentConnections);
+  useEffect(() => { agentConnectionsRef.current = agentConnections; }, [agentConnections]);
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ["whatsapp-agents"],
