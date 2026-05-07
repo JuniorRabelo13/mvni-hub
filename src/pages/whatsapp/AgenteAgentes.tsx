@@ -259,9 +259,25 @@ export default function AgenteAgentes() {
             }, 2000);
             return;
           } else if (data.error === "QR_NOT_READY") {
+            const notReadyCount = ((agentConnectionsRef.current[agentId] as any)?.notReadyCount || 0) + 1;
+            // After ~24s of consecutive QR_NOT_READY (≈8 tries at 2-3s), surface error
+            if (notReadyCount >= 8) {
+              setAgentConnections(prev => ({
+                ...prev,
+                [agentId]: {
+                  ...prev[agentId],
+                  status: "erro",
+                  attempts,
+                  error: "O servidor de QR Code não está respondendo. O provider WhatsApp pode estar offline. Tente novamente em alguns instantes.",
+                  ...( { notReadyCount } as any )
+                }
+              }));
+              toast.error("Provider WhatsApp indisponível. Tente novamente.", { id: `provider-down-${agentId}` });
+              return;
+            }
             setAgentConnections(prev => ({
               ...prev,
-              [agentId]: { ...prev[agentId], status: "gerando_qr", attempts }
+              [agentId]: { ...prev[agentId], status: "gerando_qr", attempts, ...( { notReadyCount } as any ) }
             }));
           } else {
             setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], attempts } }));
