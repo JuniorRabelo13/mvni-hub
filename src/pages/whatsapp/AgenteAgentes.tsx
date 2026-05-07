@@ -21,12 +21,8 @@ const connectWhatsApp = async (agent: any) => {
     ==================================================
     */
 
-    try {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-    } catch (error) {
-      console.error("CLEAR POLLING ERROR:", error);
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
     }
 
     /*
@@ -64,6 +60,20 @@ const connectWhatsApp = async (agent: any) => {
         updatedAt: new Date().toISOString(),
       },
     }));
+
+    /*
+    ==================================================
+    REMOVE SESSÃO ANTIGA
+    ==================================================
+    */
+
+    try {
+      await fetch(`${API_BASE_URL}/session/${sessionId}`, {
+        method: "DELETE",
+      });
+    } catch (error) {
+      console.error("DELETE OLD SESSION ERROR:", error);
+    }
 
     /*
     ==================================================
@@ -115,79 +125,67 @@ const connectWhatsApp = async (agent: any) => {
 
     /*
     ==================================================
-    QR CODE
+    AGUARDA BACKEND
     ==================================================
     */
 
-    setTimeout(async () => {
-      try {
-        console.log("FETCHING QR:", sessionId);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
-        const qrResponse = await fetch(`${API_BASE_URL}/qr/${sessionId}`, {
-          method: "GET",
+    /*
+    ==================================================
+    BUSCA QR
+    ==================================================
+    */
 
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+    const qrResponse = await fetch(`${API_BASE_URL}/qr/${sessionId}`);
 
-        if (!qrResponse.ok) {
-          console.error("QR RESPONSE ERROR:", qrResponse.status);
+    if (!qrResponse.ok) {
+      throw new Error("Erro ao gerar QR Code");
+    }
 
-          return;
-        }
+    const qrData = await qrResponse.json();
 
-        let qrData: any = {};
+    console.log("QR DATA:", qrData);
 
-        try {
-          qrData = await qrResponse.json();
-        } catch {
-          qrData = {};
-        }
+    /*
+    ==================================================
+    QR ENCONTRADO
+    ==================================================
+    */
 
-        console.log("QR DATA:", qrData);
+    if (qrData?.qr) {
+      setQrCode(qrData.qr);
 
-        /*
-        ==================================================
-        QR ENCONTRADO
-        ==================================================
-        */
+      setShowQrModal(true);
 
-        if (qrData?.qr) {
-          setQrCode(qrData.qr);
+      setConnectionStatus("qr");
 
-          setShowQrModal(true);
+      setAgentConnections((prev: any) => ({
+        ...prev,
 
-          setConnectionStatus("qr");
+        [agentId]: {
+          ...(prev?.[agentId] || {}),
 
-          setAgentConnections((prev: any) => ({
-            ...prev,
+          status: "qr",
 
-            [agentId]: {
-              ...(prev?.[agentId] || {}),
+          connected: false,
 
-              status: "qr",
+          conectado: false,
 
-              connected: false,
+          loading: false,
 
-              conectado: false,
+          qr: qrData.qr,
 
-              loading: false,
+          sessionId,
 
-              qr: qrData.qr,
+          error: null,
 
-              sessionId,
-
-              error: null,
-
-              updatedAt: new Date().toISOString(),
-            },
-          }));
-        }
-      } catch (error) {
-        console.error("QR FETCH ERROR:", error);
-      }
-    }, 2000);
+          updatedAt: new Date().toISOString(),
+        },
+      }));
+    } else {
+      throw new Error("QR Code não encontrado");
+    }
 
     /*
     ==================================================
@@ -195,9 +193,13 @@ const connectWhatsApp = async (agent: any) => {
     ==================================================
     */
 
-    await pollConnectionStatus(agentId, sessionId);
+    pollConnectionStatus(agentId, sessionId);
   } catch (error: any) {
     console.error("CONNECT WHATSAPP ERROR:", error);
+
+    setQrCode(null);
+
+    setShowQrModal(false);
 
     setConnectionStatus("erro");
 
