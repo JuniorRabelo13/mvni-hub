@@ -1,86 +1,228 @@
-<tbody>
-  {agents.map((agent) => {
-    const connection = agentConnections?.[agent.id] || {};
+const connectWhatsApp = async (agent: any) => {
+  try {
+    /*
+    ==================================================
+    IDENTIFICAÇÃO
+    ==================================================
+    */
 
-    const isConnected =
-      connection?.connected === true ||
-      connection?.conectado === true ||
-      connection?.status === "conectado" ||
-      connection?.status === "connected";
+    const agentId = agent?.id || agent?.uuid || crypto.randomUUID();
 
-    const isQr = connection?.status === "qr";
+    const sessionId = agent?.sessionId || agent?.session_id || crypto.randomUUID();
 
-    const isStarting = connection?.status === "iniciando";
+    console.log("CONNECTING SESSION:", {
+      agentId,
+      sessionId,
+    });
 
-    const isDisconnected =
-      connection?.status === "desconectado" || connection?.status === "erro" || !connection?.status;
+    /*
+    ==================================================
+    LIMPA POLLING ANTIGO
+    ==================================================
+    */
 
-    return (
-      <tr key={agent.id} className="border-b border-yellow-500/10">
-        {/* NÚMERO */}
+    try {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    } catch (error) {
+      console.error("CLEAR POLLING ERROR:", error);
+    }
 
-        <td className="py-6 text-white font-medium">
-          <div className="flex items-center gap-3">
-            <Phone className="w-4 h-4 text-zinc-400" />
+    /*
+    ==================================================
+    ESTADO INICIAL
+    ==================================================
+    */
 
-            {agent.numero || agent.phone || "Sem número"}
-          </div>
-        </td>
+    setQrCode(null);
 
-        {/* STATUS */}
+    setShowQrModal(false);
 
-        <td className="py-6">
-          <span className="bg-yellow-500 text-black text-sm px-4 py-1 rounded-full font-semibold">ativo</span>
-        </td>
+    setConnectionStatus("iniciando");
 
-        {/* CONEXÃO */}
+    setAgentConnections((prev: any) => ({
+      ...prev,
 
-        <td className="py-6">
-          {isConnected ? (
-            <div className="flex items-center gap-2 text-green-400 font-semibold">
-              <div className="w-2 h-2 rounded-full bg-green-400" />
-              CONECTADO
-            </div>
-          ) : isQr ? (
-            <div className="flex items-center gap-2 text-yellow-400 font-semibold">
-              <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-              QR CODE
-            </div>
-          ) : isStarting ? (
-            <div className="flex items-center gap-2 text-blue-400 font-semibold">
-              <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-              INICIANDO
-            </div>
-          ) : isDisconnected ? (
-            <div className="flex items-center gap-2 text-red-400 font-semibold">
-              <div className="w-2 h-2 rounded-full bg-red-400" />
-              DESCONECTADO
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-zinc-400 font-semibold">
-              <div className="w-2 h-2 rounded-full bg-zinc-400" />
-              DESCONHECIDO
-            </div>
-          )}
-        </td>
+      [agentId]: {
+        ...(prev?.[agentId] || {}),
 
-        {/* AÇÕES */}
+        status: "iniciando",
 
-        <td className="py-6">
-          {isConnected ? (
-            <button disabled className="text-green-400 font-semibold cursor-default">
-              Conectado
-            </button>
-          ) : (
-            <button
-              onClick={() => connectWhatsApp(agent)}
-              className="text-yellow-400 hover:text-yellow-300 font-semibold transition-all"
-            >
-              Conectar
-            </button>
-          )}
-        </td>
-      </tr>
-    );
-  })}
-</tbody>;
+        connected: false,
+
+        conectado: false,
+
+        loading: true,
+
+        qr: null,
+
+        sessionId,
+
+        error: null,
+
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+
+    /*
+    ==================================================
+    START SESSION
+    ==================================================
+    */
+
+    const startResponse = await fetch(`${API_BASE_URL}/start`, {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        sessionId,
+      }),
+    });
+
+    /*
+    ==================================================
+    VALIDA RESPONSE
+    ==================================================
+    */
+
+    if (!startResponse.ok) {
+      const errorText = await startResponse.text();
+
+      console.error("START RESPONSE ERROR:", errorText);
+
+      throw new Error(errorText || "Erro ao iniciar sessão");
+    }
+
+    /*
+    ==================================================
+    JSON START
+    ==================================================
+    */
+
+    let startData: any = {};
+
+    try {
+      startData = await startResponse.json();
+    } catch {
+      startData = {};
+    }
+
+    console.log("START SESSION SUCCESS:", startData);
+
+    /*
+    ==================================================
+    QR CODE
+    ==================================================
+    */
+
+    setTimeout(async () => {
+      try {
+        console.log("FETCHING QR:", sessionId);
+
+        const qrResponse = await fetch(`${API_BASE_URL}/qr/${sessionId}`, {
+          method: "GET",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!qrResponse.ok) {
+          console.error("QR RESPONSE ERROR:", qrResponse.status);
+
+          return;
+        }
+
+        let qrData: any = {};
+
+        try {
+          qrData = await qrResponse.json();
+        } catch {
+          qrData = {};
+        }
+
+        console.log("QR DATA:", qrData);
+
+        /*
+        ==================================================
+        QR ENCONTRADO
+        ==================================================
+        */
+
+        if (qrData?.qr) {
+          setQrCode(qrData.qr);
+
+          setShowQrModal(true);
+
+          setConnectionStatus("qr");
+
+          setAgentConnections((prev: any) => ({
+            ...prev,
+
+            [agentId]: {
+              ...(prev?.[agentId] || {}),
+
+              status: "qr",
+
+              connected: false,
+
+              conectado: false,
+
+              loading: false,
+
+              qr: qrData.qr,
+
+              sessionId,
+
+              error: null,
+
+              updatedAt: new Date().toISOString(),
+            },
+          }));
+        }
+      } catch (error) {
+        console.error("QR FETCH ERROR:", error);
+      }
+    }, 2000);
+
+    /*
+    ==================================================
+    INICIA POLLING
+    ==================================================
+    */
+
+    await pollConnectionStatus(agentId, sessionId);
+  } catch (error: any) {
+    console.error("CONNECT WHATSAPP ERROR:", error);
+
+    setConnectionStatus("erro");
+
+    setAgentConnections((prev: any) => ({
+      ...prev,
+
+      [agent?.id]: {
+        ...(prev?.[agent?.id] || {}),
+
+        status: "erro",
+
+        connected: false,
+
+        conectado: false,
+
+        loading: false,
+
+        qr: null,
+
+        error: error?.message || "Erro ao conectar WhatsApp",
+
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+
+    toast.error(error?.message || "Erro ao conectar WhatsApp");
+  }
+};
