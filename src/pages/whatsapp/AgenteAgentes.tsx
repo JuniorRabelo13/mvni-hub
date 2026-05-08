@@ -430,6 +430,18 @@ export default function AgenteAgentes() {
     }
   }, [activeAgent, isQrModalOpen]);
 
+  console.info("[WHATSAPP_AGENTS_BEFORE_RENDER]", {
+    count: agents?.length || 0,
+    agents: agents?.map((agent) => ({
+      id: agent.id,
+      numero_whatsapp: agent.numero_whatsapp,
+      conectado: agent.conectado,
+      status_conexao: agent.status_conexao,
+      status: agent.status,
+    })) || [],
+    queryCache: queryClient.getQueryData(["whatsapp-agents"]),
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
