@@ -80,18 +80,34 @@ export default function AgenteAgentes() {
         .select("*, whatsapp_number_stats(*)");
       logger.info({
         event: "WHATSAPP_AGENTS_QUERY_RESPONSE",
-        count: data?.length || 0,
-        agents: data?.map((agent) => ({
-          id: agent.id,
-          numero_whatsapp: agent.numero_whatsapp,
-          conectado: agent.conectado,
-          status_conexao: agent.status_conexao,
-          status: agent.status,
-        })) || [],
+        metadata: {
+          count: data?.length || 0,
+          agents: data?.map((agent) => ({
+            id: agent.id,
+            numero_whatsapp: agent.numero_whatsapp,
+            conectado: agent.conectado,
+            status_conexao: agent.status_conexao,
+            status: agent.status,
+          })) || [],
+        },
       });
       return data || [];
     }
   });
+
+  useEffect(() => {
+    console.info("[WHATSAPP_AGENTS_AFTER_REFETCH]", {
+      count: agents?.length || 0,
+      agents: agents?.map((agent) => ({
+        id: agent.id,
+        numero_whatsapp: agent.numero_whatsapp,
+        conectado: agent.conectado,
+        status_conexao: agent.status_conexao,
+        status: agent.status,
+      })) || [],
+      queryCache: queryClient.getQueryData(["whatsapp-agents"]),
+    });
+  }, [agents, queryClient]);
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
