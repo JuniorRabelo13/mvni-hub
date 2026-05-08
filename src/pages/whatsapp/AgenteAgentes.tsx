@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrações/supabase/cliente";
+import { supabase } from "@/integracoes/supabase/client";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -18,6 +18,12 @@ export default function AgenteAgentes() {
 
   const [agentConnections, setAgentConnections] = useState<any>({});
 
+  /*
+  ==================================================
+  QUERY AGENTES
+  ==================================================
+  */
+
   const { data: agents = [] } = useQuery({
     queryKey: ["whatsapp-agents"],
 
@@ -26,11 +32,21 @@ export default function AgenteAgentes() {
         ascending: false,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[SUPABASE_ERROR]", error);
+
+        throw error;
+      }
 
       return data || [];
     },
   });
+
+  /*
+  ==================================================
+  POLLING STATUS
+  ==================================================
+  */
 
   const pollConnectionStatus = async (agentId: string, sessionId: string) => {
     let attempts = 0;
@@ -84,7 +100,13 @@ export default function AgenteAgentes() {
 
           console.log("[WHATSAPP_CONNECTED]");
 
-          await supabase
+          /*
+          ==========================================
+          UPDATE BANCO
+          ==========================================
+          */
+
+          const { error: updateError } = await supabase
             .from("whatsapp_agents")
             .update({
               conectado: true,
@@ -94,11 +116,23 @@ export default function AgenteAgentes() {
             })
             .eq("id", agentId);
 
+          if (updateError) {
+            console.error("[SUPABASE_UPDATE_ERROR]", updateError);
+          }
+
+          /*
+          ==========================================
+          CACHE LOCAL
+          ==========================================
+          */
+
           queryClient.setQueryData(["whatsapp-agents"], (oldData: any) => {
             if (!oldData) return oldData;
 
             return oldData.map((item: any) => {
-              if (item.id !== agentId) return item;
+              if (item.id !== agentId) {
+                return item;
+              }
 
               return {
                 ...item,
@@ -108,6 +142,12 @@ export default function AgenteAgentes() {
               };
             });
           });
+
+          /*
+          ==========================================
+          ESTADO LOCAL
+          ==========================================
+          */
 
           setAgentConnections((prev: any) => ({
             ...prev,
@@ -136,6 +176,16 @@ export default function AgenteAgentes() {
           setShowQrModal(false);
 
           toast.success("WhatsApp conectado");
+
+          /*
+          ==========================================
+          REFRESH QUERY
+          ==========================================
+          */
+
+          queryClient.invalidateQueries({
+            queryKey: ["whatsapp-agents"],
+          });
 
           return;
         }
@@ -203,6 +253,12 @@ export default function AgenteAgentes() {
     }, 2000);
   };
 
+  /*
+  ==================================================
+  CONECTAR WHATSAPP
+  ==================================================
+  */
+
   const connectWhatsApp = async (agent: any) => {
     try {
       const agentId = agent?.id;
@@ -215,6 +271,12 @@ export default function AgenteAgentes() {
       });
 
       setConnectionStatus("iniciando");
+
+      /*
+      ==========================================
+      START SESSION
+      ==========================================
+      */
 
       const response = await fetch(`${API_BASE_URL}/start`, {
         method: "POST",
@@ -232,6 +294,12 @@ export default function AgenteAgentes() {
         throw new Error("Erro iniciar sessão");
       }
 
+      /*
+      ==========================================
+      UPDATE LOCAL
+      ==========================================
+      */
+
       setAgentConnections((prev: any) => ({
         ...prev,
 
@@ -248,6 +316,32 @@ export default function AgenteAgentes() {
         },
       }));
 
+      /*
+      ==========================================
+      UPDATE BANCO
+      ==========================================
+      */
+
+      const { error: updateError } = await supabase
+        .from("whatsapp_agents")
+        .update({
+          session_id: sessionId,
+          status_conexao: "iniciando",
+          conectado: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", agentId);
+
+      if (updateError) {
+        console.error("[SUPABASE_SESSION_UPDATE_ERROR]", updateError);
+      }
+
+      /*
+      ==========================================
+      START POLLING
+      ==========================================
+      */
+
       await pollConnectionStatus(agentId, sessionId);
     } catch (error: any) {
       console.error("[WHATSAPP_CONNECT_ERROR]", error);
@@ -256,6 +350,12 @@ export default function AgenteAgentes() {
     }
   };
 
+  /*
+  ==================================================
+  DESTROY INTERVAL
+  ==================================================
+  */
+
   useEffect(() => {
     return () => {
       if (pollingRef.current) {
@@ -263,6 +363,12 @@ export default function AgenteAgentes() {
       }
     };
   }, []);
+
+  /*
+  ==================================================
+  RENDER
+  ==================================================
+  */
 
   return (
     <div className="p-10 text-white">
@@ -291,13 +397,15 @@ export default function AgenteAgentes() {
 
             <tbody>
               {agents.map((agent: any) => {
-                const localConnection = agentConnections[agent.id];
+                const localConnection = agentConnections?.[agent.id];
 
                 const isConnected =
                   localConnection?.status === "conectado" ||
+                  localConnection?.connected === true ||
                   localConnection?.conectado === true ||
                   agent?.conectado === true ||
-                  agent?.status_conexao === "conectado";
+                  agent?.status_conexao === "conectado" ||
+                  agent?.status_conexao === "connected";
 
                 return (
                   <tr key={agent.id} className="border-b border-zinc-900">
