@@ -326,12 +326,101 @@ export default function AgenteAgentes() {
           });
           
           // Atualização definitiva no banco
-          const updateResult = await supabase.from("whatsapp_agents").update({
-            conectado: true,
-            status_conexao: 'conectado',
-            qr_code: null
-          }).eq('id', agentId).select("id, numero_whatsapp, conectado, status_conexao, status");
-          console.info("[WHATSAPP_SUPABASE_UPDATE_RESULT]", { agentId, updateResult });
+          console.info("[WHATSAPP_SUPABASE_UPDATE_START]", {
+            agentId,
+            sessionId: connection.sessionId,
+            payload: {
+              conectado: true,
+              status_conexao: "conectado",
+              qr_code: null,
+            },
+          });
+
+          const lookupResult = await supabase
+            .from("whatsapp_agents")
+            .select("id, numero_whatsapp, conectado, status_conexao, qr_code")
+            .eq("id", agentId)
+            .maybeSingle();
+
+          console.info("[WHATSAPP_SUPABASE_UPDATE_LOOKUP]", {
+            agentId,
+            found: Boolean(lookupResult.data),
+            lookupResult,
+          });
+
+          const updateWhatsappAgentConnection = async (attempt: 1 | 2) => {
+            console.info("[WHATSAPP_SUPABASE_UPDATE_ATTEMPT]", {
+              agentId,
+              attempt,
+              eq: { id: agentId },
+            });
+
+            const result = await supabase
+              .from("whatsapp_agents")
+              .update(
+                {
+                  conectado: true,
+                  status_conexao: "conectado",
+                  qr_code: null,
+                },
+                { count: "exact" }
+              )
+              .eq("id", agentId)
+              .select("id, numero_whatsapp, conectado, status_conexao, qr_code, updated_at");
+
+            console.info("[WHATSAPP_SUPABASE_UPDATE_RESULT]", {
+              agentId,
+              attempt,
+              count: result.count,
+              data: result.data,
+              error: result.error,
+              status: result.status,
+              statusText: result.statusText,
+            });
+
+            return result;
+          };
+
+          let updateResult = await updateWhatsappAgentConnection(1);
+
+          if (updateResult.error || !updateResult.data?.length) {
+            console.warn("[WHATSAPP_SUPABASE_UPDATE_RETRY]", {
+              agentId,
+              reason: updateResult.error ? "update_error" : "no_rows_returned",
+              firstAttempt: {
+                count: updateResult.count,
+                data: updateResult.data,
+                error: updateResult.error,
+                status: updateResult.status,
+                statusText: updateResult.statusText,
+              },
+            });
+
+            updateResult = await updateWhatsappAgentConnection(2);
+          }
+
+          const updatedAgent = updateResult.data?.[0];
+          const updateConfirmed = Boolean(
+            updatedAgent?.conectado === true &&
+            updatedAgent?.status_conexao === "conectado" &&
+            updatedAgent?.qr_code === null
+          );
+
+          console.info("[WHATSAPP_SUPABASE_UPDATE_CONFIRMATION]", {
+            agentId,
+            confirmed: updateConfirmed,
+            updatedAgent,
+            finalError: updateResult.error,
+          });
+
+          if (updateResult.error || !updateConfirmed) {
+            console.error("[WHATSAPP_SUPABASE_UPDATE_FAILED]", {
+              agentId,
+              lookupResult,
+              updateResult,
+            });
+            throw updateResult.error || new Error("Falha ao confirmar atualização de conexão do WhatsApp.");
+          }
 
           setTimeout(() => {
             if (isStale()) return;
