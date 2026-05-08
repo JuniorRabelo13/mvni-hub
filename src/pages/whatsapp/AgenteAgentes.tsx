@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrações/supabase/cliente";
+import { supabase } from "@/integracoes/supabase/client";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -22,9 +22,10 @@ export default function AgenteAgentes() {
     queryKey: ["whatsapp-agents"],
 
     queryFn: async () => {
-      const { data, error } = await supabase.from("whatsapp_agents").select("*").order("created_at", {
-        ascending: false,
-      });
+      const { data, error } = await supabase
+        .from("whatsapp_agents")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
@@ -40,6 +41,14 @@ export default function AgenteAgentes() {
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
     }
+
+    await supabase
+      .from("whatsapp_agents")
+      .update({
+        session_id: sessionId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", agentId);
 
     pollingRef.current = setInterval(async () => {
       attempts++;
@@ -84,7 +93,7 @@ export default function AgenteAgentes() {
 
           console.log("[WHATSAPP_CONNECTED]");
 
-          await supabase
+          const updateResult = await supabase
             .from("whatsapp_agents")
             .update({
               conectado: true,
@@ -92,7 +101,18 @@ export default function AgenteAgentes() {
               qr_code: null,
               updated_at: new Date().toISOString(),
             })
-            .eq("id", agentId);
+            .eq("id", agentId)
+            .select("*");
+
+          console.log("[WHATSAPP_UPDATE_RESULT]", updateResult);
+
+          const confirmedAgent = updateResult?.data?.[0];
+
+          /*
+          ==========================================
+          CACHE LOCAL
+          ==========================================
+          */
 
           queryClient.setQueryData(["whatsapp-agents"], (oldData: any) => {
             if (!oldData) return oldData;
@@ -100,14 +120,25 @@ export default function AgenteAgentes() {
             return oldData.map((item: any) => {
               if (item.id !== agentId) return item;
 
-              return {
-                ...item,
-                conectado: true,
-                status_conexao: "conectado",
-                qr_code: null,
-              };
+              return confirmedAgent
+                ? {
+                    ...item,
+                    ...confirmedAgent,
+                  }
+                : {
+                    ...item,
+                    conectado: true,
+                    status_conexao: "conectado",
+                    qr_code: null,
+                  };
             });
           });
+
+          /*
+          ==========================================
+          ESTADO LOCAL
+          ==========================================
+          */
 
           setAgentConnections((prev: any) => ({
             ...prev,
@@ -126,6 +157,8 @@ export default function AgenteAgentes() {
               qr: null,
 
               error: null,
+
+              updatedAt: new Date().toISOString(),
             },
           }));
 
@@ -135,7 +168,7 @@ export default function AgenteAgentes() {
 
           setShowQrModal(false);
 
-          toast.success("WhatsApp conectado");
+          toast.success("WhatsApp conectado com sucesso");
 
           return;
         }
@@ -297,7 +330,8 @@ export default function AgenteAgentes() {
                   localConnection?.status === "conectado" ||
                   localConnection?.conectado === true ||
                   agent?.conectado === true ||
-                  agent?.status_conexao === "conectado";
+                  agent?.status_conexao === "conectado" ||
+                  agent?.status_conexao === "connected";
 
                 return (
                   <tr key={agent.id} className="border-b border-zinc-900">
