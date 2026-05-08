@@ -244,9 +244,9 @@ export default function AgenteAgentes() {
         const statusData = statusRes.ok ? await statusRes.json().catch(() => ({})) : {};
 
         // Normalização de status de conexão
+        const statusStr = (statusData.status || "").toLowerCase();
         const isConnected = 
-          statusData.status === "conectado" || 
-          statusData.status === "connected" || 
+          ["conectado", "connected", "open", "authenticated"].includes(statusStr) || 
           statusData.connected === true || 
           statusData.conectado === true;
 
@@ -257,8 +257,14 @@ export default function AgenteAgentes() {
           }));
           
           toast.success("WhatsApp conectado com sucesso!");
+
+          // Atualização imediata do cache para feedback visual instantâneo
+          queryClient.setQueryData(["whatsapp-agents"], (old: any[] | undefined) => {
+            if (!old) return old;
+            return old.map(a => a.id === agentId ? { ...a, conectado: true, status_conexao: 'conectado' } : a);
+          });
           
-          // Atualização imediata no banco para refletir na tabela
+          // Atualização definitiva no banco
           await supabase.from("whatsapp_agents").update({
             conectado: true,
             status_conexao: 'conectado',
