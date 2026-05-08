@@ -304,9 +304,6 @@ export default function AgenteAgentes() {
           } else {
             setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], attempts } }));
           }
-        } else {
-          throw response;
-        }
       } catch (error: any) {
         if (error?.name === "AbortError" || isStale()) return;
         const normalized = await normalizeConnectError(error, {
