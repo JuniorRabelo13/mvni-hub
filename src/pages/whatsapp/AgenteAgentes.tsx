@@ -229,36 +229,58 @@ export default function AgenteAgentes() {
       qrAbortRef.current[agentId] = controller;
 
       try {
-        const endpointPath = `/qr/${connection.sessionId}`;
-        const method = "GET";
-        const resolvedUrl = buildApiUrl(endpointPath);
-
-        const response = await fetch(resolvedUrl, {
-          method,
-          headers: { "X-Request-Id": connection.requestId || "" },
-          signal: controller.signal,
-        });
+        const qrUrl = buildApiUrl(`/qr/${connection.sessionId}`);
+        const statusUrl = buildApiUrl(`/status/${connection.sessionId}`);
+        
+        // Polling Híbrido: Verifica QR e Status simultaneamente
+        const [qrRes, statusRes] = await Promise.all([
+          fetch(qrUrl, { headers: { "X-Request-Id": connection.requestId || "" }, signal: controller.signal }),
+          fetch(statusUrl, { headers: { "X-Request-Id": connection.requestId || "" }, signal: controller.signal })
+        ]);
 
         if (isStale()) return;
 
-        if (response.ok) {
-          const data = await response.json();
-          if (isStale()) return;
+        const qrData = qrRes.ok ? await qrRes.json().catch(() => ({})) : {};
+        const statusData = statusRes.ok ? await statusRes.json().catch(() => ({})) : {};
 
-          if (data.qr) {
-            setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], status: "qr_pronto", qr: data.qr, attempts } }));
-            return;
-          } else if (data.status === "conectado") {
-            setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], status: "conectado", qr: null, attempts } }));
-            toast.success("WhatsApp conectado com sucesso!");
-            setTimeout(() => {
-              if (isStale()) return;
-              setIsQrModalOpen(false);
-              setConnectingAgentId(null);
-              queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
-            }, 2000);
-            return;
-          } else if (data.error === "QR_NOT_READY") {
+        // Normalização de status de conexão
+        const isConnected = 
+          statusData.status === "conectado" || 
+          statusData.status === "connected" || 
+          statusData.connected === true || 
+          statusData.conectado === true;
+
+        if (isConnected) {
+          setAgentConnections(prev => ({ 
+            ...prev, 
+            [agentId]: { ...prev[agentId], status: "conectado", qr: null, attempts } 
+          }));
+          
+          toast.success("WhatsApp conectado com sucesso!");
+          
+          // Atualização imediata no banco para refletir na tabela
+          await supabase.from("whatsapp_agents").update({
+            conectado: true,
+            status_conexao: 'conectado',
+            qr_code: null
+          }).eq('id', agentId);
+
+          setTimeout(() => {
+            if (isStale()) return;
+            setIsQrModalOpen(false);
+            setConnectingAgentId(null);
+            queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
+          }, 1500);
+          return;
+        }
+
+        if (qrData.qr) {
+          setAgentConnections(prev => ({ 
+            ...prev, 
+            [agentId]: { ...prev[agentId], status: "qr_pronto", qr: qrData.qr, attempts } 
+          }));
+          return;
+        } else if (qrData.error === "QR_NOT_READY") {
             const notReadyCount = ((agentConnectionsRef.current[agentId] as any)?.notReadyCount || 0) + 1;
             // After ~24s of consecutive QR_NOT_READY (≈8 tries at 2-3s), surface error
             if (notReadyCount >= 8) {
@@ -282,9 +304,6 @@ export default function AgenteAgentes() {
           } else {
             setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], attempts } }));
           }
-        } else {
-          throw response;
-        }
       } catch (error: any) {
         if (error?.name === "AbortError" || isStale()) return;
         const normalized = await normalizeConnectError(error, {
