@@ -274,13 +274,15 @@ export default function AgenteAgentes() {
           event: "WHATSAPP_POLL_STATUS_RESPONSE",
           agentId,
           sessionId: connection.sessionId,
-          attempts,
-          qrHttpOk: qrRes.ok,
-          statusHttpOk: statusRes.ok,
-          qrData,
-          statusData,
-          currentAgentConnection: agentConnectionsRef.current[agentId],
-          queryCacheBeforeNormalize: queryClient.getQueryData(["whatsapp-agents"]),
+          metadata: {
+            attempts,
+            qrHttpOk: qrRes.ok,
+            statusHttpOk: statusRes.ok,
+            qrData,
+            statusData,
+            currentAgentConnection: agentConnectionsRef.current[agentId],
+            queryCacheBeforeNormalize: queryClient.getQueryData(["whatsapp-agents"]),
+          },
         });
 
         // Normalização de status de conexão
@@ -294,10 +296,12 @@ export default function AgenteAgentes() {
           event: "WHATSAPP_POLL_NORMALIZED_STATUS",
           agentId,
           sessionId: connection.sessionId,
-          statusStr,
-          connectedBoolean: statusData.connected,
-          conectadoBoolean: statusData.conectado,
-          isConnected,
+          status: statusStr,
+          metadata: {
+            connectedBoolean: statusData.connected,
+            conectadoBoolean: statusData.conectado,
+            isConnected,
+          },
         });
 
         if (isConnected) {
