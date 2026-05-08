@@ -1,744 +1,440 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Plus, Phone, RefreshCw, QrCode, Power, PowerOff, Loader2 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/integracoes/supabase/client";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect, useRef, useMemo } from "react";
-import { logger } from "./utils/observability";
-import { normalizeConnectError, NormalizedError } from "./utils/error-handler";
-import { 
-  CheckCircle2, 
-  AlertCircle, 
-  XCircle, 
-  BarChart3, 
-  Activity, 
-  ClipboardCheck,
-  ChevronDown,
-  ChevronUp,
-  Copy
-} from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Progress } from "@/components/ui/progress";
-import { ConnectivityAssistant } from "./components/ConnectivityAssistant";
-import { getApiBaseUrl, buildApiUrl } from "./utils/api-config";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
+const API_BASE_URL = "http://155.133.23.9:3333";
 
 export default function AgenteAgentes() {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset } = useForm();
-  const [connectingAgentId, setConnectingAgentId] = useState<string | null>(null);
-  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  
-  const isAdmin = user?.email?.includes('admin');
-  
-  const [resolvedBaseUrl, setResolvedBaseUrl] = useState<string>("");
-  const [urlError, setUrlError] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      setResolvedBaseUrl(getApiBaseUrl());
-      setUrlError(null);
-    } catch (e: any) {
-      setUrlError(e.message);
-    }
-  }, []);
+  const pollingRef = useRef<any>(null);
 
-  
-  const [agentConnections, setAgentConnections] = useState<Record<string, {
-    sessionId?: string;
-    requestId?: string;
-    status: "iniciando" | "gerando_qr" | "qr_pronto" | "conectado" | "erro";
-    qr?: string | null;
-    startedAt?: number;
-    error?: string;
-    normalizedError?: NormalizedError;
-    attempts?: number;
-    lastPollStatus?: string;
-  }>>({});
+  const [qrCode, setQrCode] = useState<string | null>(null);
 
-  const [, forceUpdate] = useState({});
-  const qrTimeoutRef = useRef<Record<string, any>>({});
-  const qrAbortRef = useRef<Record<string, AbortController | null>>({});
-  const pollSeqRef = useRef<Record<string, number>>({});
-  const agentConnectionsRef = useRef(agentConnections);
-  useEffect(() => { agentConnectionsRef.current = agentConnections; }, [agentConnections]);
+  const [showQrModal, setShowQrModal] = useState(false);
 
-  const { data: agents, isLoading } = useQuery({
+  const [connectionStatus, setConnectionStatus] = useState("desconectado");
+
+  const [agentConnections, setAgentConnections] = useState<any>({});
+
+  /*
+  ==================================================
+  CARREGA AGENTES
+  ==================================================
+  */
+
+  const { data: agents = [] } = useQuery({
     queryKey: ["whatsapp-agents"],
+
     queryFn: async () => {
-      const { data } = await supabase
-        .from("whatsapp_agents")
-        .select("*, whatsapp_number_stats(*)");
-      logger.info({
-        event: "WHATSAPP_AGENTS_QUERY_RESPONSE",
-        metadata: {
-          count: data?.length || 0,
-          agents: data?.map((agent) => ({
-            id: agent.id,
-            numero_whatsapp: agent.numero_whatsapp,
-            conectado: agent.conectado,
-            status_conexao: agent.status_conexao,
-            status: agent.status,
-          })) || [],
-        },
-      });
-      return data || [];
-    }
-  });
-
-  useEffect(() => {
-    console.info("[WHATSAPP_AGENTS_AFTER_REFETCH]", {
-      count: agents?.length || 0,
-      agents: agents?.map((agent) => ({
-        id: agent.id,
-        numero_whatsapp: agent.numero_whatsapp,
-        conectado: agent.conectado,
-        status_conexao: agent.status_conexao,
-        status: agent.status,
-      })) || [],
-      queryCache: queryClient.getQueryData(["whatsapp-agents"]),
-    });
-  }, [agents, queryClient]);
-
-  const mutation = useMutation({
-    mutationFn: async (values: any) => {
-      const { data: agent, error } = await supabase.from("whatsapp_agents").insert({
-        ...values,
-        user_id: user?.id,
-        status: 'ativo',
-        mensagens_enviadas_hoje: 0,
-        nivel_aquecimento: 1,
-        subscription_price: 49.90
-      }).select().single();
-      
-      if (error) throw error;
-
-      await supabase.from("whatsapp_number_stats").insert({
-        agent_id: agent.id,
-        warming_level: 1,
-        daily_volume_limit: 42
+      const { data, error } = await supabase.from("whatsapp_agents").select("*").order("created_at", {
+        ascending: false,
       });
 
-      return agent;
-    },
-    onSuccess: (agent) => {
-      toast.success("Agente criado! Iniciando conexão...");
-      queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
-      reset();
-      if (agent?.id) {
-        connectMutation.mutate(agent.id);
-      }
-    },
-    onError: (error) => {
-      toast.error("Erro ao criar agente: " + error.message);
-    }
-  });
-
-  const connectMutation = useMutation({
-    mutationFn: async (agentId: string) => {
-      setConnectingAgentId(agentId);
-      setIsQrModalOpen(true);
-      
-      const sessionId = crypto.randomUUID();
-      const requestId = crypto.randomUUID();
-      const startTime = Date.now();
-      
-      logger.info({ event: "connect_click", agentId, sessionId, requestId });
-
-      setAgentConnections(prev => ({
-        ...prev,
-        [agentId]: { sessionId, requestId, status: "iniciando", startedAt: Date.now() }
-      }));
-
-      try {
-        const endpointPath = "/start";
-        const method = "POST";
-        const resolvedUrl = buildApiUrl(endpointPath);
-
-        const response = await fetch(resolvedUrl, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-            "X-Request-Id": requestId
-          },
-          body: JSON.stringify({ sessionId, agentId }),
-        });
-
-        if (!response.ok) throw response;
-        
-        const data = await response.json();
-        logger.info({ event: "start_response_ok", agentId, sessionId, requestId, durationMs: Date.now() - startTime, metadata: { resolvedUrl, method } });
-        return data;
-      } catch (error: any) {
-        const normalized = await normalizeConnectError(error, { 
-          endpointPath: "/start", 
-          method: "POST",
-          sessionId, 
-          requestId, 
-          agentId, 
-          startTime 
-        });
-        setAgentConnections(prev => ({
-          ...prev,
-          [agentId]: { ...prev[agentId], status: "erro", error: normalized.userMessage, normalizedError: normalized }
-        }));
+      if (error) {
         throw error;
       }
+
+      return data || [];
     },
-    onError: (error: any, agentId: string) => {
-      toast.error("Erro ao iniciar conexão: " + error.message, { id: `start-error-${agentId}` });
-    }
   });
 
-  const disconnectMutation = useMutation({
-    mutationFn: async (agentId: string) => {
-      const { error } = await supabase.functions.invoke("whatsapp-connect", {
-        body: { action: "disconnect", agentId }
-      });
-      if (error) throw error;
-      
-      await supabase.from("whatsapp_agents").update({
-        conectado: false,
-        status_conexao: 'desconectado',
-        qr_code: null
-      }).eq('id', agentId);
-    },
-    onSuccess: () => {
-      toast.success("Desconectado com sucesso");
-      queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
+  /*
+  ==================================================
+  POLLING STATUS
+  ==================================================
+  */
+
+  const pollConnectionStatus = async (agentId: string, sessionId: string) => {
+    let attempts = 0;
+
+    const maxAttempts = 60;
+
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
     }
-  });
 
-  useEffect(() => {
-    const getNextInterval = (attempts: number) => {
-      if (attempts <= 10) return 2000;
-      if (attempts <= 20) return 3000;
-      return 5000;
-    };
-
-    if (!isQrModalOpen || !connectingAgentId) return;
-    const agentId = connectingAgentId;
-
-    // Ensure only one polling sequence per agent
-    const seq = (pollSeqRef.current[agentId] || 0) + 1;
-    pollSeqRef.current[agentId] = seq;
-
-    const isStale = () => pollSeqRef.current[agentId] !== seq;
-
-    const poll = async () => {
-      if (isStale()) return;
-      const connection = agentConnectionsRef.current[agentId];
-      if (!connection?.sessionId) return;
-
-      const attempts = (connection.attempts || 0) + 1;
-      const elapsedTime = (Date.now() - (connection.startedAt || Date.now())) / 1000;
-
-      if (elapsedTime > 60) {
-        setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], status: "erro", error: "Tempo limite excedido. Tente novamente." } }));
-        toast.error("Tempo limite excedido. Tente novamente.", { id: `timeout-${agentId}` });
-        return;
-      }
-
-      // Cancel previous in-flight fetch for this agent
-      if (qrAbortRef.current[agentId]) {
-        try { qrAbortRef.current[agentId]?.abort(); } catch {}
-      }
-      const controller = new AbortController();
-      qrAbortRef.current[agentId] = controller;
+    pollingRef.current = setInterval(async () => {
+      attempts++;
 
       try {
-        const qrUrl = buildApiUrl(`/qr/${connection.sessionId}`);
-        const statusUrl = buildApiUrl(`/status/${connection.sessionId}`);
-        
-        // Polling Híbrido: Verifica QR e Status simultaneamente
-        const [qrRes, statusRes] = await Promise.all([
-          fetch(qrUrl, { headers: { "X-Request-Id": connection.requestId || "" }, signal: controller.signal }),
-          fetch(statusUrl, { headers: { "X-Request-Id": connection.requestId || "" }, signal: controller.signal })
-        ]);
+        /*
+        ==================================================
+        STATUS
+        ==================================================
+        */
 
-        if (isStale()) return;
+        const statusResponse = await fetch(`${API_BASE_URL}/status/${sessionId}`);
 
-        const qrData = qrRes.ok ? await qrRes.json().catch(() => ({})) : {};
-        const statusData = statusRes.ok ? await statusRes.json().catch(() => ({})) : {};
+        let statusData: any = {};
 
-        logger.info({
-          event: "WHATSAPP_POLL_STATUS_RESPONSE",
-          agentId,
-          sessionId: connection.sessionId,
-          metadata: {
-            attempts,
-            qrHttpOk: qrRes.ok,
-            statusHttpOk: statusRes.ok,
-            qrData,
-            statusData,
-            currentAgentConnection: agentConnectionsRef.current[agentId],
-            queryCacheBeforeNormalize: queryClient.getQueryData(["whatsapp-agents"]),
-          },
-        });
+        try {
+          statusData = await statusResponse.json();
+        } catch {
+          statusData = {};
+        }
 
-        // Normalização de status de conexão
-        const statusStr = (statusData.status || "").toLowerCase();
-        const isConnected = 
-          ["conectado", "connected", "open", "authenticated"].includes(statusStr) || 
-          statusData.connected === true || 
-          statusData.conectado === true;
+        console.log("[WHATSAPP_STATUS]", statusData);
 
-        logger.info({
-          event: "WHATSAPP_POLL_NORMALIZED_STATUS",
-          agentId,
-          sessionId: connection.sessionId,
-          status: statusStr,
-          metadata: {
-            connectedBoolean: statusData.connected,
-            conectadoBoolean: statusData.conectado,
-            isConnected,
-          },
-        });
+        /*
+        ==================================================
+        NORMALIZA STATUS
+        ==================================================
+        */
+
+        const normalizedStatus = String(statusData?.status || "").toLowerCase();
+
+        const isConnected =
+          normalizedStatus === "conectado" ||
+          normalizedStatus === "connected" ||
+          normalizedStatus === "open" ||
+          normalizedStatus === "authenticated" ||
+          statusData?.connected === true ||
+          statusData?.conectado === true;
+
+        /*
+        ==================================================
+        CONECTADO
+        ==================================================
+        */
 
         if (isConnected) {
-          setAgentConnections(prev => ({ 
-            ...prev, 
-            [agentId]: { ...prev[agentId], status: "conectado", qr: null, attempts } 
-          }));
-          
-          toast.success("WhatsApp conectado com sucesso!");
+          clearInterval(pollingRef.current);
 
-          // Atualização imediata do cache para feedback visual instantâneo
-          queryClient.setQueryData(["whatsapp-agents"], (old: any[] | undefined) => {
-            console.info("[WHATSAPP_SET_QUERY_DATA_BEFORE]", { agentId, old });
-            if (!old) return old;
-            const next = old.map(a => a.id === agentId ? { ...a, conectado: true, status_conexao: 'conectado' } : a);
-            console.info("[WHATSAPP_SET_QUERY_DATA_AFTER]", { agentId, next });
-            return next;
-          });
-          console.info("[WHATSAPP_QUERY_CACHE_AFTER_SET_QUERY_DATA]", {
-            agentId,
-            cache: queryClient.getQueryData(["whatsapp-agents"]),
-          });
-          
-          // Atualização definitiva no banco
+          console.log("[WHATSAPP_CONNECTED]");
+
+          /*
+          ==================================================
+          UPDATE SUPABASE
+          ==================================================
+          */
+
           console.info("[WHATSAPP_SUPABASE_UPDATE_START]", {
             agentId,
-            sessionId: connection.sessionId,
-            payload: {
+            sessionId,
+          });
+
+          const parsedAgentId = typeof agentId === "string" ? agentId.trim() : agentId;
+
+          const lookupBefore = await supabase.from("whatsapp_agents").select("*").eq("id", parsedAgentId).maybeSingle();
+
+          console.info("[WHATSAPP_LOOKUP_BEFORE]", lookupBefore);
+
+          if (!lookupBefore.data) {
+            throw new Error("Agente não encontrado.");
+          }
+
+          const updateResult = await supabase
+            .from("whatsapp_agents")
+            .update({
               conectado: true,
               status_conexao: "conectado",
               qr_code: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", parsedAgentId)
+            .select("*");
+
+          console.info("[WHATSAPP_UPDATE_RESULT]", updateResult);
+
+          if (updateResult.error) {
+            throw updateResult.error;
+          }
+
+          const lookupAfter = await supabase.from("whatsapp_agents").select("*").eq("id", parsedAgentId).maybeSingle();
+
+          console.info("[WHATSAPP_LOOKUP_AFTER]", lookupAfter);
+
+          /*
+          ==================================================
+          CACHE IMEDIATO
+          ==================================================
+          */
+
+          queryClient.setQueryData(["whatsapp-agents"], (oldData: any) => {
+            if (!oldData) {
+              return oldData;
+            }
+
+            return oldData.map((item: any) => {
+              if (item.id !== parsedAgentId) {
+                return item;
+              }
+
+              return {
+                ...item,
+                conectado: true,
+                status_conexao: "conectado",
+                qr_code: null,
+              };
+            });
+          });
+
+          /*
+          ==================================================
+          ESTADO LOCAL
+          ==================================================
+          */
+
+          setAgentConnections((prev: any) => ({
+            ...prev,
+
+            [parsedAgentId]: {
+              ...(prev?.[parsedAgentId] || {}),
+
+              status: "conectado",
+
+              connected: true,
+
+              conectado: true,
+
+              loading: false,
+
+              qr: null,
+
+              error: null,
+
+              updatedAt: new Date().toISOString(),
             },
+          }));
+
+          setConnectionStatus("conectado");
+
+          setQrCode(null);
+
+          setShowQrModal(false);
+
+          toast.success("WhatsApp conectado");
+
+          queryClient.invalidateQueries({
+            queryKey: ["whatsapp-agents"],
           });
 
-          const lookupResult = await supabase
-            .from("whatsapp_agents")
-            .select("id, numero_whatsapp, conectado, status_conexao, qr_code")
-            .eq("id", agentId)
-            .maybeSingle();
-
-          console.info("[WHATSAPP_SUPABASE_UPDATE_LOOKUP]", {
-            agentId,
-            found: Boolean(lookupResult.data),
-            lookupResult,
-          });
-
-          const updateWhatsappAgentConnection = async (attempt: 1 | 2) => {
-            console.info("[WHATSAPP_SUPABASE_UPDATE_ATTEMPT]", {
-              agentId,
-              attempt,
-              eq: { id: agentId },
-            });
-
-            const result = await supabase
-              .from("whatsapp_agents")
-              .update(
-                {
-                  conectado: true,
-                  status_conexao: "conectado",
-                  qr_code: null,
-                },
-                { count: "exact" }
-              )
-              .eq("id", agentId)
-              .select("id, numero_whatsapp, conectado, status_conexao, qr_code, updated_at");
-
-            console.info("[WHATSAPP_SUPABASE_UPDATE_RESULT]", {
-              agentId,
-              attempt,
-              count: result.count,
-              data: result.data,
-              error: result.error,
-              status: result.status,
-              statusText: result.statusText,
-            });
-
-            return result;
-          };
-
-          let updateResult = await updateWhatsappAgentConnection(1);
-
-          if (updateResult.error || !updateResult.data?.length) {
-            console.warn("[WHATSAPP_SUPABASE_UPDATE_RETRY]", {
-              agentId,
-              reason: updateResult.error ? "update_error" : "no_rows_returned",
-              firstAttempt: {
-                count: updateResult.count,
-                data: updateResult.data,
-                error: updateResult.error,
-                status: updateResult.status,
-                statusText: updateResult.statusText,
-              },
-            });
-
-            updateResult = await updateWhatsappAgentConnection(2);
-          }
-
-          const updatedAgent = updateResult.data?.[0];
-          const updateConfirmed = Boolean(
-            updatedAgent?.conectado === true &&
-            updatedAgent?.status_conexao === "conectado" &&
-            updatedAgent?.qr_code === null
-          );
-
-          console.info("[WHATSAPP_SUPABASE_UPDATE_CONFIRMATION]", {
-            agentId,
-            confirmed: updateConfirmed,
-            updatedAgent,
-            finalError: updateResult.error,
-          });
-
-          if (updateResult.error || !updateConfirmed) {
-            console.error("[WHATSAPP_SUPABASE_UPDATE_FAILED]", {
-              agentId,
-              lookupResult,
-              updateResult,
-            });
-            throw updateResult.error || new Error("Falha ao confirmar atualização de conexão do WhatsApp.");
-          }
-
-          setTimeout(() => {
-            if (isStale()) return;
-            setIsQrModalOpen(false);
-            setConnectingAgentId(null);
-            console.info("[WHATSAPP_BEFORE_INVALIDATE_QUERIES]", {
-              agentId,
-              cache: queryClient.getQueryData(["whatsapp-agents"]),
-            });
-            queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
-            console.info("[WHATSAPP_AFTER_INVALIDATE_QUERIES]", {
-              agentId,
-              cache: queryClient.getQueryData(["whatsapp-agents"]),
-            });
-          }, 1500);
           return;
         }
 
-        if (qrData.qr) {
-          setAgentConnections(prev => ({ 
-            ...prev, 
-            [agentId]: { ...prev[agentId], status: "qr_pronto", qr: qrData.qr, attempts } 
+        /*
+        ==================================================
+        QR CODE
+        ==================================================
+        */
+
+        const qrResponse = await fetch(`${API_BASE_URL}/qr/${sessionId}`);
+
+        let qrData: any = {};
+
+        try {
+          qrData = await qrResponse.json();
+        } catch {
+          qrData = {};
+        }
+
+        console.log("[WHATSAPP_QR]", qrData);
+
+        if (qrData?.qr) {
+          setQrCode(qrData.qr);
+
+          setShowQrModal(true);
+
+          setConnectionStatus("qr");
+
+          setAgentConnections((prev: any) => ({
+            ...prev,
+
+            [agentId]: {
+              ...(prev?.[agentId] || {}),
+
+              status: "qr",
+
+              connected: false,
+
+              conectado: false,
+
+              qr: qrData.qr,
+
+              loading: false,
+            },
           }));
-          return;
-        } else if (qrData.error === "QR_NOT_READY") {
-            const notReadyCount = ((agentConnectionsRef.current[agentId] as any)?.notReadyCount || 0) + 1;
-            // After ~24s of consecutive QR_NOT_READY (≈8 tries at 2-3s), surface error
-            if (notReadyCount >= 8) {
-              setAgentConnections(prev => ({
-                ...prev,
-                [agentId]: {
-                  ...prev[agentId],
-                  status: "erro",
-                  attempts,
-                  error: "O servidor de QR Code não está respondendo. O provider WhatsApp pode estar offline. Tente novamente em alguns instantes.",
-                  ...( { notReadyCount } as any )
-                }
-              }));
-              toast.error("Provider WhatsApp indisponível. Tente novamente.", { id: `provider-down-${agentId}` });
-              return;
-            }
-            setAgentConnections(prev => ({
-              ...prev,
-              [agentId]: { ...prev[agentId], status: "gerando_qr", attempts, ...( { notReadyCount } as any ) }
-            }));
-          } else {
-            setAgentConnections(prev => ({ ...prev, [agentId]: { ...prev[agentId], attempts } }));
-          }
+        }
+
+        /*
+        ==================================================
+        TIMEOUT
+        ==================================================
+        */
+
+        if (attempts >= maxAttempts) {
+          clearInterval(pollingRef.current);
+
+          setConnectionStatus("erro");
+
+          toast.error("Timeout conexão WhatsApp");
+        }
       } catch (error: any) {
-        if (error?.name === "AbortError" || isStale()) return;
-        const normalized = await normalizeConnectError(error, {
-          endpointPath: `/qr/${connection.sessionId}`,
-          method: "GET",
-          sessionId: connection.sessionId,
-          requestId: connection.requestId,
-          agentId,
-          attempt: attempts,
-          startTime: connection.startedAt
-        });
-        if (isStale()) return;
-        // Soft-failure: keep polling, do not lock modal in error
-        setAgentConnections(prev => ({
-          ...prev,
-          [agentId]: { ...prev[agentId], status: "gerando_qr", attempts, lastPollStatus: normalized.code }
-        }));
+        console.error("[WHATSAPP_POLL_ERROR]", error);
+      }
+    }, 2000);
+  };
+
+  /*
+  ==================================================
+  CONECTAR
+  ==================================================
+  */
+
+  const connectWhatsApp = async (agent: any) => {
+    try {
+      const agentId = agent?.id;
+
+      const sessionId = agent?.session_id || crypto.randomUUID();
+
+      console.log("[WHATSAPP_CONNECT_START]", {
+        agentId,
+        sessionId,
+      });
+
+      setConnectionStatus("iniciando");
+
+      const response = await fetch(`${API_BASE_URL}/start`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          sessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro iniciar sessão");
       }
 
-      if (isStale()) return;
-      qrTimeoutRef.current[agentId] = setTimeout(poll, getNextInterval(attempts));
-    };
+      setAgentConnections((prev: any) => ({
+        ...prev,
 
-    const timerInterval = setInterval(() => forceUpdate({}), 1000);
-    poll();
+        [agentId]: {
+          status: "iniciando",
 
-    return () => {
-      clearInterval(timerInterval);
-      // Invalidate this polling sequence
-      pollSeqRef.current[agentId] = (pollSeqRef.current[agentId] || 0) + 1;
-      if (qrTimeoutRef.current[agentId]) {
-        clearTimeout(qrTimeoutRef.current[agentId]);
-        delete qrTimeoutRef.current[agentId];
-      }
-      if (qrAbortRef.current[agentId]) {
-        try { qrAbortRef.current[agentId]?.abort(); } catch {}
-        qrAbortRef.current[agentId] = null;
-      }
-    };
-  }, [isQrModalOpen, connectingAgentId, queryClient]);
+          connected: false,
 
-  const activeAgent = agents?.find(a => a.id === connectingAgentId);
-  
-  useEffect(() => {
-    if (activeAgent?.status_conexao === 'conectado' && isQrModalOpen) {
-      setIsQrModalOpen(false);
-      setConnectingAgentId(null);
+          conectado: false,
+
+          loading: true,
+
+          sessionId,
+        },
+      }));
+
+      await pollConnectionStatus(agentId, sessionId);
+    } catch (error: any) {
+      console.error("[WHATSAPP_CONNECT_ERROR]", error);
+
+      toast.error(error?.message || "Erro conectar");
     }
-  }, [activeAgent, isQrModalOpen]);
+  };
 
-  console.info("[WHATSAPP_AGENTS_BEFORE_RENDER]", {
-    count: agents?.length || 0,
-    agents: agents?.map((agent) => ({
-      id: agent.id,
-      numero_whatsapp: agent.numero_whatsapp,
-      conectado: agent.conectado,
-      status_conexao: agent.status_conexao,
-      status: agent.status,
-    })) || [],
-    queryCache: queryClient.getQueryData(["whatsapp-agents"]),
-  });
+  /*
+  ==================================================
+  CLEANUP
+  ==================================================
+  */
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Números Conectados</h1>
-        
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Novo Número
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Conectar Novo WhatsApp</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="numero_whatsapp">Número do WhatsApp</Label>
-                <Input id="numero_whatsapp" placeholder="Ex: 5511999999999" required {...register("numero_whatsapp")} />
-              </div>
-              <Button type="submit" className="w-full" disabled={mutation.isPending}>
-                {mutation.isPending ? "Conectando..." : "Conectar Agente"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+    <div className="p-10 text-white">
+      <div className="flex items-center justify-between mb-10">
+        <h1 className="text-5xl font-bold">Números Conectados</h1>
+
+        <button className="bg-yellow-500 text-black px-6 py-3 rounded-xl font-bold">Novo Número</button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Agentes Ativos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Número</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Conexão</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-8">Carregando...</TableCell></TableRow>
-                ) : agents?.map((agent) => (
-                  <TableRow key={agent.id}>
-                    <TableCell className="font-medium flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      {agent.numero_whatsapp}
-                    </TableCell>
-                    <TableCell><Badge>{agent.status}</Badge></TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className={`h-2 w-2 rounded-full ${agent.conectado ? 'bg-green-500' : 'bg-red-500'}`} />
-                        <span className="text-xs uppercase font-medium">
-                          {agent.conectado ? 'CONECTADO' : (agent.status_conexao || 'DESCONECTADO')}
-                        </span>
+      <div className="grid grid-cols-3 gap-6">
+        <div className="col-span-2 border border-yellow-500/20 rounded-3xl p-8">
+          <h2 className="text-3xl font-bold mb-10">Agentes Ativos</h2>
+
+          <table className="w-full">
+            <thead>
+              <tr className="text-left text-zinc-400 border-b border-zinc-800">
+                <th className="pb-4">Número</th>
+
+                <th className="pb-4">Status</th>
+
+                <th className="pb-4">Conexão</th>
+
+                <th className="pb-4">Ações</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {agents.map((agent: any) => {
+                const localConnection = agentConnections[agent.id];
+
+                const isConnected =
+                  localConnection?.status === "conectado" ||
+                  agent?.conectado === true ||
+                  agent?.status_conexao === "conectado" ||
+                  agent?.status_conexao === "connected";
+
+                return (
+                  <tr key={agent.id} className="border-b border-zinc-900">
+                    <td className="py-6 font-bold">{agent.numero_whatsapp || "Sem número"}</td>
+
+                    <td className="py-6">
+                      <span className="bg-yellow-500 text-black px-4 py-1 rounded-full text-sm font-bold">ativo</span>
+                    </td>
+
+                    <td className="py-6">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`} />
+
+                        <span className="font-semibold">{isConnected ? "CONECTADO" : "DESCONECTADO"}</span>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {agent.conectado ? (
-                        <Button variant="ghost" size="sm" onClick={() => disconnectMutation.mutate(agent.id)} disabled={disconnectMutation.isPending}>
-                          <PowerOff className="h-4 w-4 mr-1" /> Desconectar
-                        </Button>
-                      ) : (
-                        <Button variant="ghost" size="sm" onClick={() => connectMutation.mutate(agent.id)} disabled={connectMutation.isPending}>
-                          <QrCode className="h-4 w-4 mr-1" /> Conectar
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                    </td>
 
-        <Card>
-          <CardHeader><CardTitle>Controle</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg bg-muted p-3 text-sm">
-              <div className="flex justify-between mb-2">
-                <span>Ativos:</span>
-                <span className="font-bold">{agents?.length || 0}</span>
-              </div>
-            </div>
-            <Button variant="outline" className="w-full gap-2">
-              <RefreshCw className="h-4 w-4" /> Resetar
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+                    <td className="py-6">
+                      <button onClick={() => connectWhatsApp(agent)} className="font-bold text-yellow-500">
+                        Conectar
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-      <Dialog open={isQrModalOpen} onOpenChange={setIsQrModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Conectar WhatsApp</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center p-6 space-y-4">
-            <div className="min-h-[300px] w-full flex flex-col items-center justify-center">
-              {connectingAgentId && agentConnections[connectingAgentId]?.status === "conectado" ? (
-                <div className="text-center space-y-4">
-                  <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
-                  <h3 className="text-xl font-semibold text-green-500">Conectado!</h3>
-                  <Button onClick={() => setIsQrModalOpen(false)}>Fechar</Button>
-                </div>
-              ) : connectingAgentId && agentConnections[connectingAgentId]?.status === "erro" ? (
-                <div className="text-center space-y-4 w-full">
-                  <XCircle className="h-12 w-12 text-red-500 mx-auto" />
-                  <h3 className="text-xl font-semibold text-red-500">Erro</h3>
-                  <p className="text-sm text-muted-foreground">{agentConnections[connectingAgentId]?.error}</p>
-                  
-                  {agentConnections[connectingAgentId]?.normalizedError && (
-                    <Collapsible className="w-full border rounded-md">
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="w-full flex justify-between px-3 text-[10px]">
-                          Detalhes Técnicos <ChevronDown className="h-3 w-3" />
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="p-3 bg-muted/30 text-[10px] text-left space-y-2">
-                        <pre className="whitespace-pre-wrap">{JSON.stringify(agentConnections[connectingAgentId].normalizedError, null, 2)}</pre>
-                        <Button variant="outline" size="sm" className="w-full h-7 text-[9px]" onClick={() => {
-                          navigator.clipboard.writeText(JSON.stringify(agentConnections[connectingAgentId].normalizedError, null, 2));
-                          toast.success("Copiado!");
-                        }}>Copiar JSON</Button>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
-                  <Button variant="outline" onClick={() => connectMutation.mutate(connectingAgentId)} className="w-full">Repetir</Button>
-                </div>
-              ) : connectingAgentId && agentConnections[connectingAgentId]?.status === "qr_pronto" ? (
-                <div className="text-center space-y-4">
-                  <img src={agentConnections[connectingAgentId].qr!} className="w-[250px] h-[250px] mx-auto border" />
-                  <div className="flex items-center gap-2 justify-center text-sm"><Loader2 className="h-4 w-4 animate-spin" /> Aguardando...</div>
-                </div>
-              ) : (
-                <div className="text-center space-y-4">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                  <p>{connectingAgentId && agentConnections[connectingAgentId]?.status === "gerando_qr" ? "Gerando QR..." : "Iniciando..."}</p>
-                </div>
-              )}
-            </div>
+        <div className="border border-yellow-500/20 rounded-3xl p-8">
+          <h2 className="text-3xl font-bold mb-10">Controle</h2>
 
-            {isAdmin && connectingAgentId && (
-              <div className="w-full mt-2 border-t pt-4 space-y-3">
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase font-semibold">
-                  <span>Debug Admin</span> <Activity className="h-3 w-3" />
-                </div>
-                <div className="bg-slate-950/50 p-3 rounded border border-slate-800 text-[10px] font-mono space-y-2">
-                  <div><span className="text-blue-400">BASE_URL:</span> {urlError ? <span className="text-red-500 font-bold">API_URL_INVALID ({urlError})</span> : resolvedBaseUrl}</div>
-                  
-                  {connectingAgentId && agentConnections[connectingAgentId] && (
-                    <>
-                      <div>
-                        <span className="text-blue-400">ENDPOINT:</span> {
-                          agentConnections[connectingAgentId].status === "iniciando" ? "/start" :
-                          agentConnections[connectingAgentId].status === "gerando_qr" || agentConnections[connectingAgentId].status === "qr_pronto" ? `/qr/${agentConnections[connectingAgentId].sessionId}` : "N/A"
-                        }
-                      </div>
-                      <div>
-                        <span className="text-blue-400">RESOLVED_URL:</span> {
-                          agentConnections[connectingAgentId].status === "iniciando" ? buildApiUrl("/start") :
-                          agentConnections[connectingAgentId].status === "gerando_qr" || agentConnections[connectingAgentId].status === "qr_pronto" ? buildApiUrl(`/qr/${agentConnections[connectingAgentId].sessionId}`) : "N/A"
-                        }
-                      </div>
-                      <div>
-                        <span className="text-blue-400">METHOD:</span> {
-                          agentConnections[connectingAgentId].status === "iniciando" ? "POST" : "GET"
-                        }
-                      </div>
-                    </>
-                  )}
+          <div className="bg-zinc-900 rounded-2xl p-6 mb-6 flex items-center justify-between">
+            <span className="text-xl">Ativos:</span>
 
-                  {!urlError && <ConnectivityAssistant apiBaseUrl={resolvedBaseUrl} agentId={connectingAgentId || undefined} tenantId={user?.id} />}
-                </div>
-
-              </div>
-            )}
+            <span className="text-2xl font-bold">{agents.length}</span>
           </div>
-        </DialogContent>
-      </Dialog>
-      
-      {isAdmin && <div className="mt-8 border-t pt-8"><h2 className="text-lg font-semibold mb-4">Checklist Go-Live (Admin)</h2><GoLiveChecklist /></div>}
-    </div>
-  );
-}
+        </div>
+      </div>
 
-function GoLiveChecklist() {
-  const items = [
-    { label: "Polling cancel on close", status: "OK" },
-    { label: "Backoff progressivo", status: "OK" },
-    { label: "Isolamento de estado", status: "OK" },
-    { label: "Audit logs ativos", status: "OK" },
-  ];
-  return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableBody>
-          {items.map((item, i) => (
-            <TableRow key={i}>
-              <TableCell className="font-medium text-xs">{item.label}</TableCell>
-              <TableCell><Badge className="bg-green-500">{item.status}</Badge></TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {showQrModal && qrCode && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-zinc-950 border border-yellow-500/20 rounded-3xl p-10 w-[500px]">
+            <h2 className="text-3xl font-bold mb-8">Conectar WhatsApp</h2>
+
+            <img src={qrCode} alt="QR Code" className="w-full rounded-2xl" />
+
+            <div className="mt-6 text-center text-zinc-400">Aguardando conexão...</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
