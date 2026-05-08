@@ -314,22 +314,38 @@ export default function AgenteAgentes() {
 
           // Atualização imediata do cache para feedback visual instantâneo
           queryClient.setQueryData(["whatsapp-agents"], (old: any[] | undefined) => {
+            console.info("[WHATSAPP_SET_QUERY_DATA_BEFORE]", { agentId, old });
             if (!old) return old;
-            return old.map(a => a.id === agentId ? { ...a, conectado: true, status_conexao: 'conectado' } : a);
+            const next = old.map(a => a.id === agentId ? { ...a, conectado: true, status_conexao: 'conectado' } : a);
+            console.info("[WHATSAPP_SET_QUERY_DATA_AFTER]", { agentId, next });
+            return next;
+          });
+          console.info("[WHATSAPP_QUERY_CACHE_AFTER_SET_QUERY_DATA]", {
+            agentId,
+            cache: queryClient.getQueryData(["whatsapp-agents"]),
           });
           
           // Atualização definitiva no banco
-          await supabase.from("whatsapp_agents").update({
+          const updateResult = await supabase.from("whatsapp_agents").update({
             conectado: true,
             status_conexao: 'conectado',
             qr_code: null
-          }).eq('id', agentId);
+          }).eq('id', agentId).select("id, numero_whatsapp, conectado, status_conexao, status");
+          console.info("[WHATSAPP_SUPABASE_UPDATE_RESULT]", { agentId, updateResult });
 
           setTimeout(() => {
             if (isStale()) return;
             setIsQrModalOpen(false);
             setConnectingAgentId(null);
+            console.info("[WHATSAPP_BEFORE_INVALIDATE_QUERIES]", {
+              agentId,
+              cache: queryClient.getQueryData(["whatsapp-agents"]),
+            });
             queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
+            console.info("[WHATSAPP_AFTER_INVALIDATE_QUERIES]", {
+              agentId,
+              cache: queryClient.getQueryData(["whatsapp-agents"]),
+            });
           }, 1500);
           return;
         }
