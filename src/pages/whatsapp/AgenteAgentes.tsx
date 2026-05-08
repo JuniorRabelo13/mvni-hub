@@ -244,9 +244,9 @@ export default function AgenteAgentes() {
         const statusData = statusRes.ok ? await statusRes.json().catch(() => ({})) : {};
 
         // Normalização de status de conexão
+        const statusStr = (statusData.status || "").toLowerCase();
         const isConnected = 
-          statusData.status === "conectado" || 
-          statusData.status === "connected" || 
+          ["conectado", "connected", "open", "authenticated"].includes(statusStr) || 
           statusData.connected === true || 
           statusData.conectado === true;
 
