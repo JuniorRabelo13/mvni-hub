@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integracoes/supabase/client";
+import { supabase } from "@/integrações/supabase/cliente";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -13,11 +13,6 @@ export default function AgenteAgentes() {
   const [connectionStatus, setConnectionStatus] = useState("desconectado");
   const [agentConnections, setAgentConnections] = useState<any>({});
 
-  /*
-  ==================================================
-  CARREGA AGENTES
-  ==================================================
-  */
   const { data: agents = [] } = useQuery({
     queryKey: ["whatsapp-agents"],
     queryFn: async () => {
@@ -30,11 +25,6 @@ export default function AgenteAgentes() {
     },
   });
 
-  /*
-  ==================================================
-  POLLING STATUS
-  ==================================================
-  */
   const pollConnectionStatus = async (agentId: string, sessionId: string) => {
     let attempts = 0;
     const maxAttempts = 60;
@@ -43,7 +33,6 @@ export default function AgenteAgentes() {
       clearInterval(pollingRef.current);
     }
 
-    // Salva session_id no banco antes de começar polling
     await supabase
       .from("whatsapp_agents")
       .update({ session_id: sessionId, updated_at: new Date().toISOString() })
@@ -51,13 +40,7 @@ export default function AgenteAgentes() {
 
     pollingRef.current = setInterval(async () => {
       attempts++;
-
       try {
-        /*
-        ==================================================
-        STATUS
-        ==================================================
-        */
         const statusResponse = await fetch(`${API_BASE_URL}/status/${sessionId}`);
         let statusData: any = {};
         try {
@@ -68,11 +51,6 @@ export default function AgenteAgentes() {
 
         console.log("[WHATSAPP_STATUS]", statusData);
 
-        /*
-        ==================================================
-        NORMALIZA STATUS
-        ==================================================
-        */
         const normalizedStatus = String(statusData?.status || "").toLowerCase();
         const isConnected =
           normalizedStatus === "conectado" ||
@@ -82,16 +60,10 @@ export default function AgenteAgentes() {
           statusData?.connected === true ||
           statusData?.conectado === true;
 
-        /*
-        ==================================================
-        CONECTADO
-        ==================================================
-        */
         if (isConnected) {
           clearInterval(pollingRef.current);
           console.log("[WHATSAPP_CONNECTED]");
 
-          // Update direto sem lookup prévio
           const updateResult = await supabase
             .from("whatsapp_agents")
             .update({
@@ -108,16 +80,10 @@ export default function AgenteAgentes() {
           if (updateResult.error) {
             console.error("[WHATSAPP_UPDATE_ERROR]", updateResult.error);
             toast.error("Erro ao salvar status: " + updateResult.error.message);
-            // Continua mesmo com erro — atualiza UI local
           }
 
           const confirmedAgent = updateResult.data?.[0];
 
-          /*
-          ==================================================
-          CACHE — sem invalidateQueries para evitar race condition
-          ==================================================
-          */
           queryClient.setQueryData(["whatsapp-agents"], (oldData: any) => {
             if (!oldData) return oldData;
             return oldData.map((item: any) => {
@@ -128,11 +94,6 @@ export default function AgenteAgentes() {
             });
           });
 
-          /*
-          ==================================================
-          ESTADO LOCAL
-          ==================================================
-          */
           setAgentConnections((prev: any) => ({
             ...prev,
             [agentId]: {
@@ -154,11 +115,6 @@ export default function AgenteAgentes() {
           return;
         }
 
-        /*
-        ==================================================
-        QR CODE
-        ==================================================
-        */
         const qrResponse = await fetch(`${API_BASE_URL}/qr/${sessionId}`);
         let qrData: any = {};
         try {
@@ -186,11 +142,6 @@ export default function AgenteAgentes() {
           }));
         }
 
-        /*
-        ==================================================
-        TIMEOUT
-        ==================================================
-        */
         if (attempts >= maxAttempts) {
           clearInterval(pollingRef.current);
           setConnectionStatus("erro");
@@ -202,15 +153,9 @@ export default function AgenteAgentes() {
     }, 2000);
   };
 
-  /*
-  ==================================================
-  CONECTAR
-  ==================================================
-  */
   const connectWhatsApp = async (agent: any) => {
     try {
       const agentId = agent?.id;
-      // Sempre gera sessionId novo para evitar sessão zumbi
       const sessionId = crypto.randomUUID();
 
       console.log("[WHATSAPP_CONNECT_START]", { agentId, sessionId });
@@ -244,11 +189,6 @@ export default function AgenteAgentes() {
     }
   };
 
-  /*
-  ==================================================
-  CLEANUP
-  ==================================================
-  */
   useEffect(() => {
     return () => {
       if (pollingRef.current) {
@@ -267,7 +207,6 @@ export default function AgenteAgentes() {
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 border border-yellow-500/20 rounded-3xl p-8">
           <h2 className="text-3xl font-bold mb-10">Agentes Ativos</h2>
-
           <table className="w-full">
             <thead>
               <tr className="text-left text-zinc-400 border-b border-zinc-800">
