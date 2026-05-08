@@ -78,9 +78,36 @@ export default function AgenteAgentes() {
       const { data } = await supabase
         .from("whatsapp_agents")
         .select("*, whatsapp_number_stats(*)");
+      logger.info({
+        event: "WHATSAPP_AGENTS_QUERY_RESPONSE",
+        metadata: {
+          count: data?.length || 0,
+          agents: data?.map((agent) => ({
+            id: agent.id,
+            numero_whatsapp: agent.numero_whatsapp,
+            conectado: agent.conectado,
+            status_conexao: agent.status_conexao,
+            status: agent.status,
+          })) || [],
+        },
+      });
       return data || [];
     }
   });
+
+  useEffect(() => {
+    console.info("[WHATSAPP_AGENTS_AFTER_REFETCH]", {
+      count: agents?.length || 0,
+      agents: agents?.map((agent) => ({
+        id: agent.id,
+        numero_whatsapp: agent.numero_whatsapp,
+        conectado: agent.conectado,
+        status_conexao: agent.status_conexao,
+        status: agent.status,
+      })) || [],
+      queryCache: queryClient.getQueryData(["whatsapp-agents"]),
+    });
+  }, [agents, queryClient]);
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
@@ -243,12 +270,39 @@ export default function AgenteAgentes() {
         const qrData = qrRes.ok ? await qrRes.json().catch(() => ({})) : {};
         const statusData = statusRes.ok ? await statusRes.json().catch(() => ({})) : {};
 
+        logger.info({
+          event: "WHATSAPP_POLL_STATUS_RESPONSE",
+          agentId,
+          sessionId: connection.sessionId,
+          metadata: {
+            attempts,
+            qrHttpOk: qrRes.ok,
+            statusHttpOk: statusRes.ok,
+            qrData,
+            statusData,
+            currentAgentConnection: agentConnectionsRef.current[agentId],
+            queryCacheBeforeNormalize: queryClient.getQueryData(["whatsapp-agents"]),
+          },
+        });
+
         // Normalização de status de conexão
         const statusStr = (statusData.status || "").toLowerCase();
         const isConnected = 
           ["conectado", "connected", "open", "authenticated"].includes(statusStr) || 
           statusData.connected === true || 
           statusData.conectado === true;
+
+        logger.info({
+          event: "WHATSAPP_POLL_NORMALIZED_STATUS",
+          agentId,
+          sessionId: connection.sessionId,
+          status: statusStr,
+          metadata: {
+            connectedBoolean: statusData.connected,
+            conectadoBoolean: statusData.conectado,
+            isConnected,
+          },
+        });
 
         if (isConnected) {
           setAgentConnections(prev => ({ 
@@ -260,22 +314,38 @@ export default function AgenteAgentes() {
 
           // Atualização imediata do cache para feedback visual instantâneo
           queryClient.setQueryData(["whatsapp-agents"], (old: any[] | undefined) => {
+            console.info("[WHATSAPP_SET_QUERY_DATA_BEFORE]", { agentId, old });
             if (!old) return old;
-            return old.map(a => a.id === agentId ? { ...a, conectado: true, status_conexao: 'conectado' } : a);
+            const next = old.map(a => a.id === agentId ? { ...a, conectado: true, status_conexao: 'conectado' } : a);
+            console.info("[WHATSAPP_SET_QUERY_DATA_AFTER]", { agentId, next });
+            return next;
+          });
+          console.info("[WHATSAPP_QUERY_CACHE_AFTER_SET_QUERY_DATA]", {
+            agentId,
+            cache: queryClient.getQueryData(["whatsapp-agents"]),
           });
           
           // Atualização definitiva no banco
-          await supabase.from("whatsapp_agents").update({
+          const updateResult = await supabase.from("whatsapp_agents").update({
             conectado: true,
             status_conexao: 'conectado',
             qr_code: null
-          }).eq('id', agentId);
+          }).eq('id', agentId).select("id, numero_whatsapp, conectado, status_conexao, status");
+          console.info("[WHATSAPP_SUPABASE_UPDATE_RESULT]", { agentId, updateResult });
 
           setTimeout(() => {
             if (isStale()) return;
             setIsQrModalOpen(false);
             setConnectingAgentId(null);
+            console.info("[WHATSAPP_BEFORE_INVALIDATE_QUERIES]", {
+              agentId,
+              cache: queryClient.getQueryData(["whatsapp-agents"]),
+            });
             queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
+            console.info("[WHATSAPP_AFTER_INVALIDATE_QUERIES]", {
+              agentId,
+              cache: queryClient.getQueryData(["whatsapp-agents"]),
+            });
           }, 1500);
           return;
         }
@@ -359,6 +429,18 @@ export default function AgenteAgentes() {
       setConnectingAgentId(null);
     }
   }, [activeAgent, isQrModalOpen]);
+
+  console.info("[WHATSAPP_AGENTS_BEFORE_RENDER]", {
+    count: agents?.length || 0,
+    agents: agents?.map((agent) => ({
+      id: agent.id,
+      numero_whatsapp: agent.numero_whatsapp,
+      conectado: agent.conectado,
+      status_conexao: agent.status_conexao,
+      status: agent.status,
+    })) || [],
+    queryCache: queryClient.getQueryData(["whatsapp-agents"]),
+  });
 
   return (
     <div className="space-y-6">
