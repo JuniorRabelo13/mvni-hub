@@ -416,7 +416,9 @@ export default function AgenteAgentes() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className={`h-2 w-2 rounded-full ${agent.conectado ? 'bg-green-500' : 'bg-red-500'}`} />
-                        <span className="text-xs uppercase">{agent.status_conexao || 'desconectado'}</span>
+                        <span className="text-xs uppercase font-medium">
+                          {agent.conectado ? 'CONECTADO' : (agent.status_conexao || 'DESCONECTADO')}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
