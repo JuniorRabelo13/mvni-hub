@@ -438,27 +438,57 @@ export default function AgenteAgentes() {
         </div>
       </div>
 
-      {showQrModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={handleCloseModal}>
-          <div className="bg-zinc-950 border border-yellow-500/20 rounded-3xl p-10 w-full max-w-[500px] relative" onClick={(e) => e.stopPropagation()}>
-            <button onClick={handleCloseModal} className="absolute top-6 right-6 text-zinc-400 hover:text-white transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-            <h2 className="text-3xl font-bold mb-8">Conectar WhatsApp</h2>
-            {qrCode ? (
-              <img src={qrCode} alt="QR Code" className="w-full rounded-2xl mb-6 shadow-2xl" />
-            ) : (
-              <div className="w-full aspect-square bg-zinc-900 rounded-2xl mb-6 flex items-center justify-center border border-white/5">
-                <div className="w-12 h-12 border-4 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin" />
+      <Dialog open={showQrModal} onOpenChange={(open) => !open && handleCloseModal()}>
+        <DialogContent className="sm:max-w-[500px] bg-zinc-950 border-yellow-500/20 p-0 overflow-hidden rounded-3xl">
+          <div className="p-10 relative">
+            <DialogHeader className="mb-8">
+              <DialogTitle className="text-3xl font-bold flex items-center gap-3">
+                <QrCodeIcon className="w-8 h-8 text-yellow-500" />
+                Conectar WhatsApp
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="flex flex-col items-center justify-center">
+              {qrCode ? (
+                <div className="relative group">
+                  <img 
+                    src={qrCode} 
+                    alt="QR Code" 
+                    className="w-full aspect-square rounded-2xl mb-6 shadow-2xl border border-white/5 transition-transform duration-500 group-hover:scale-[1.02]" 
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl flex items-center justify-center pointer-events-none">
+                    <span className="text-white text-sm font-bold bg-black/60 px-4 py-2 rounded-full backdrop-blur-sm">
+                      Escaneie com seu celular
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full aspect-square bg-zinc-900/50 rounded-2xl mb-6 flex flex-col items-center justify-center border border-white/5 gap-4">
+                  <Loader2 className="w-12 h-12 text-yellow-500 animate-spin" />
+                  <p className="text-zinc-500 text-sm font-medium animate-pulse">Gerando QRCode...</p>
+                </div>
+              )}
+
+              <div className="text-center space-y-2 mb-8">
+                <p className="text-white font-bold tracking-tight">
+                  {qrCode ? "Aguardando conexão..." : "Iniciando sessão..."}
+                </p>
+                <p className="text-zinc-500 text-sm max-w-[280px] mx-auto">
+                  Abra o WhatsApp no seu celular e escaneie o código acima.
+                </p>
               </div>
-            )}
-            <div className="text-center text-zinc-400 mb-8">
-              {qrCode ? "Aguardando conexão..." : "Iniciando sessão..."}
+
+              <button 
+                onClick={handleCloseModal}
+                className="w-full bg-zinc-900 hover:bg-zinc-800 text-white py-4 rounded-xl font-bold transition-all active:scale-95 border border-white/5"
+              >
+                Cancelar conexão
+              </button>
             </div>
-            <button onClick={handleCloseModal} className="w-full bg-zinc-900 hover:bg-zinc-800 text-white py-4 rounded-xl font-bold transition-colors">Cancelar conexão</button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
+
 
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => !deletingId && setShowDeleteModal(false)}>
