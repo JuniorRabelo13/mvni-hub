@@ -27,8 +27,9 @@ export default function Dashboard() {
   const [indiretos, setIndiretos] = useState<number>(0);
 
   const simulacao = useMemo(() => {
+    const comissaoAtivacao = diretos * 85;
     const ganhoRecorrenteDireto = diretos * 20;
-    
+
     let valorPorIndireto = 0;
     let faixa = "Abaixo de 21 associados";
     
@@ -44,12 +45,14 @@ export default function Dashboard() {
     const total = ganhoRecorrenteDireto + ganhoIndireto;
     
     return {
+      comissaoAtivacao,
       ganhoRecorrenteDireto,
       ganhoIndireto,
       total,
       valorPorIndireto,
       faixa
     };
+
   }, [diretos, indiretos]);
 
   useEffect(() => {
@@ -219,6 +222,16 @@ export default function Dashboard() {
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Valor por Indireto</p>
                 <p className="text-xl font-bold text-primary">{fmt(simulacao.valorPorIndireto)}</p>
               </div>
+            </div>
+
+            <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-primary font-bold">Comissão de Ativação</p>
+                <p className="text-2xl font-black text-white">{fmt(simulacao.comissaoAtivacao)}</p>
+              </div>
+              <p className="text-[9px] text-primary/70 uppercase font-medium text-right max-w-[120px]">
+                Pagamento imediato por novas ativações
+              </p>
             </div>
 
             <div className="grid gap-4 pt-4 border-t border-white/5 sm:grid-cols-3">
