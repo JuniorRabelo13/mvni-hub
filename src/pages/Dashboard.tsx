@@ -238,6 +238,15 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Simulador de Ganhos da Rede</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Conteúdo do simulador será implementado conforme necessário */}
+        </CardContent>
+      </Card>
     </div>
   );
 }
