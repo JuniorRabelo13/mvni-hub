@@ -180,6 +180,8 @@ export default function AgenteAgentes() {
             session_id: sessionId,
             status_conexao: "iniciando",
             conectado: false,
+            numero_whatsapp: "Aguardando...",
+            user_id: (await supabase.auth.getUser()).data.user?.id || "",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }]);
