@@ -300,29 +300,39 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Simulador de Ganhos da Rede</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="diretos-rede">Quantidade de associados diretos</Label>
-            <Input
-              id="diretos-rede"
-              type="number"
-              min="0"
-              value={diretos}
-              onChange={(e) => {
-                const val = Math.max(0, parseInt(e.target.value) || 0);
-                setDiretos(val);
-                if (val >= 21) {
-                  setIndiretos(val * 5);
-                }
+      <div id="cadastro-sessao">
+        <Card>
+          <CardHeader>
+            <CardTitle>Simulador de Ganhos da Rede</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="diretos-rede">Quantidade de associados diretos</Label>
+              <Input
+                id="diretos-rede"
+                type="number"
+                min="0"
+                value={diretos}
+                onChange={(e) => {
+                  const val = Math.max(0, parseInt(e.target.value) || 0);
+                  setDiretos(val);
+                  if (val >= 21) {
+                    setIndiretos(val * 5);
+                  }
+                }}
+              />
+            </div>
+            <Button 
+              className="w-full mt-4 bg-gradient-gold text-primary-foreground font-bold py-6 text-lg hover:opacity-90 transition-all shadow-gold-sm"
+              onClick={() => {
+                document.getElementById('cadastro-sessao')?.scrollIntoView({ behavior: 'smooth' });
               }}
-            />
-          </div>
-        </CardContent>
-      </Card>
+            >
+              Quero alcançar esse faturamento
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
