@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-
-const API_BASE_URL = "http://155.133.23.9:3333";
+import { buildApiUrl } from "./utils/api-config";
 
 export default function AgenteAgentes() {
   const queryClient = useQueryClient();
@@ -60,7 +59,7 @@ export default function AgenteAgentes() {
         ==========================================
         */
 
-        const statusResponse = await fetch(`${API_BASE_URL}/status/${sessionId}`);
+        const statusResponse = await fetch(buildApiUrl(`/status/${sessionId}`));
 
         let statusData: any = {};
 
@@ -179,7 +178,7 @@ export default function AgenteAgentes() {
         ==========================================
         */
 
-        const qrResponse = await fetch(`${API_BASE_URL}/qr/${sessionId}`);
+        const qrResponse = await fetch(buildApiUrl(`/qr/${sessionId}`));
 
         let qrData: any = {};
 
@@ -249,7 +248,7 @@ export default function AgenteAgentes() {
 
       setConnectionStatus("iniciando");
 
-      const response = await fetch(`${API_BASE_URL}/start`, {
+      const response = await fetch(buildApiUrl("/start"), {
         method: "POST",
 
         headers: {
