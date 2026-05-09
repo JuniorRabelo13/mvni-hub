@@ -276,9 +276,14 @@ export default function Dashboard() {
                 <p className="text-4xl font-black text-white transition-all duration-300 animate-in fade-in zoom-in-95" key={`anual-${simulacao.total * 12}`}>
                   {fmt(simulacao.total * 12)}
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-2 font-medium">
-                  Projeção de faturamento total acumulado em 12 meses
-                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-[10px] text-muted-foreground font-medium">
+                    Projeção de faturamento total acumulado em 12 meses
+                  </p>
+                  <p className="text-[11px] text-primary/80 font-bold italic">
+                    Em 12 meses sua rede pode ultrapassar: <span className="text-white">{fmt(simulacao.total * 12)}</span>
+                  </p>
+                </div>
               </div>
               <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-primary" />
