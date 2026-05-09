@@ -240,25 +240,33 @@ export default function Dashboard() {
             <div className="grid gap-4 pt-4 border-t border-white/5 sm:grid-cols-5">
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Indicações Diretas</p>
-                <p className="text-lg font-semibold">{diretos} associados diretos</p>
+                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`diretos-${diretos}`}>
+                  {diretos} associados diretos
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Comissão de Ativação</p>
-                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={simulacao.comissaoAtivacao}>
+                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`ativacao-${simulacao.comissaoAtivacao}`}>
                   {fmt(simulacao.comissaoAtivacao)}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Recorrente Direto</p>
-                <p className="text-lg font-semibold">{fmt(simulacao.ganhoRecorrenteDireto)}</p>
+                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`recorrente-${simulacao.ganhoRecorrenteDireto}`}>
+                  {fmt(simulacao.ganhoRecorrenteDireto)}
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Bônus Indireto</p>
-                <p className="text-lg font-semibold">{fmt(simulacao.ganhoIndireto)}</p>
+                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`indireto-${simulacao.ganhoIndireto}`}>
+                  {fmt(simulacao.ganhoIndireto)}
+                </p>
               </div>
               <div className="space-y-1 pt-2 sm:pt-0 sm:text-right border-t sm:border-t-0 sm:border-l border-white/5 sm:pl-4">
                 <p className="text-[10px] text-primary uppercase tracking-widest font-bold">Total Estimado Mensal</p>
-                <p className="text-3xl font-black text-gradient-gold">{fmt(simulacao.total)}</p>
+                <p className="text-3xl font-black text-gradient-gold transition-all duration-300 animate-in fade-in zoom-in-95" key={`total-${simulacao.total}`}>
+                  {fmt(simulacao.total)}
+                </p>
               </div>
             </div>
           </div>
