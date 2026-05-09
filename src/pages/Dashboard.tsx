@@ -237,7 +237,11 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <div className="grid gap-4 pt-4 border-t border-white/5 sm:grid-cols-3">
+            <div className="grid gap-4 pt-4 border-t border-white/5 sm:grid-cols-4">
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Comissão de Ativação</p>
+                <p className="text-lg font-semibold">{fmt(simulacao.comissaoAtivacao)}</p>
+              </div>
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Recorrente Direto</p>
                 <p className="text-lg font-semibold">{fmt(simulacao.ganhoRecorrenteDireto)}</p>
