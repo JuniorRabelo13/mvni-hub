@@ -224,6 +224,16 @@ export default function Dashboard() {
               </div>
             </div>
 
+            <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-primary font-bold">Comissão de Ativação</p>
+                <p className="text-2xl font-black text-white">{fmt(simulacao.comissaoAtivacao)}</p>
+              </div>
+              <p className="text-[9px] text-primary/70 uppercase font-medium text-right max-w-[120px]">
+                Pagamento imediato por novas ativações
+              </p>
+            </div>
+
             <div className="grid gap-4 pt-4 border-t border-white/5 sm:grid-cols-3">
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Recorrente Direto</p>
