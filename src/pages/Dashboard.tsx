@@ -45,12 +45,14 @@ export default function Dashboard() {
     const total = ganhoRecorrenteDireto + ganhoIndireto;
     
     return {
+      comissaoAtivacao,
       ganhoRecorrenteDireto,
       ganhoIndireto,
       total,
       valorPorIndireto,
       faixa
     };
+
   }, [diretos, indiretos]);
 
   useEffect(() => {
