@@ -175,14 +175,14 @@ export default function AgenteAgentes() {
       if (!agent?.numero_whatsapp) {
         const { error: insertError } = await supabase
           .from("whatsapp_agents")
-          .insert({
+          .insert([{
             id: agentId,
             session_id: sessionId,
             status_conexao: "iniciando",
             conectado: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          });
+          }]);
 
         if (insertError) {
           console.error("[WHATSAPP_INSERT_ERROR]", insertError);
