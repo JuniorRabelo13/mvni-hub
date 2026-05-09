@@ -137,7 +137,6 @@ export default function AgenteAgentes() {
         console.log("[WHATSAPP_QR]", qrData);
         if (qrData?.qr) {
           setQrCode(qrData.qr);
-          setShowQrModal(true);
           setConnectionStatus("qr");
           setAgentConnections((prev: any) => ({
             ...prev,
