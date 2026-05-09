@@ -169,6 +169,7 @@ export default function AgenteAgentes() {
 
       console.log("[WHATSAPP_CONNECT_START]", { agentId, sessionId });
       setConnectionStatus("iniciando");
+      setShowQrModal(true);
 
       try {
         await fetch(buildApiUrl(`/logout/${sessionId}`), { 
