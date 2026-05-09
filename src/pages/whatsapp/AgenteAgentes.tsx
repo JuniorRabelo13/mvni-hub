@@ -164,12 +164,37 @@ export default function AgenteAgentes() {
 
   const connectWhatsApp = async (agent: any) => {
     try {
-      const agentId = agent?.id;
+      const agentId = agent?.id || crypto.randomUUID();
       const sessionId = agent?.session_id || crypto.randomUUID();
 
       console.log("[WHATSAPP_CONNECT_START]", { agentId, sessionId });
       setConnectionStatus("iniciando");
       setShowQrModal(true);
+
+      // Persistir registro inicial no Supabase se for um novo número
+      if (!agent?.numero_whatsapp) {
+        const { error: insertError } = await supabase
+          .from("whatsapp_agents")
+          .insert({
+            id: agentId,
+            session_id: sessionId,
+            status_conexao: "iniciando",
+            conectado: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+
+        if (insertError) {
+          console.error("[WHATSAPP_INSERT_ERROR]", insertError);
+          toast.error("Erro ao criar registro do agente");
+          setShowQrModal(false);
+          return;
+        }
+
+        // Atualizar o cache do React Query para mostrar o item imediatamente
+        queryClient.invalidateQueries({ queryKey: ["whatsapp-agents"] });
+      }
+
 
       try {
         await fetch(buildApiUrl(`/logout/${sessionId}`), { 
@@ -279,7 +304,7 @@ export default function AgenteAgentes() {
           </div>
 
           <button 
-            onClick={() => connectWhatsApp({ id: crypto.randomUUID(), session_id: crypto.randomUUID() })}
+            onClick={() => connectWhatsApp({})}
             className="bg-yellow-500 hover:bg-yellow-400 text-black px-8 py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-yellow-500/20 flex items-center gap-2 group"
           >
             <svg className="group-hover:rotate-90 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
