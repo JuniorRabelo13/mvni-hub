@@ -23,8 +23,37 @@ export default function Dashboard() {
   const { user, effectiveUser } = useAuth();
   const [s, setS] = useState<Stats>({ clientesAtivos: 0, linhasAtivas: 0, ganhoMes: 0, ganhoTotal: 0, indicados: 0 });
   const [loading, setLoading] = useState(true);
+  const [diretos, setDiretos] = useState<number>(0);
+  const [indiretos, setIndiretos] = useState<number>(0);
+
+  const simulacao = useMemo(() => {
+    const ganhoRecorrenteDireto = diretos * 20;
+    
+    let valorPorIndireto = 0;
+    let faixa = "Abaixo de 21 associados";
+    
+    if (diretos >= 21 && diretos <= 40) {
+      valorPorIndireto = 5;
+      faixa = "21 a 40 associados (Bônus R$ 5)";
+    } else if (diretos >= 41) {
+      valorPorIndireto = 10;
+      faixa = "Acima de 41 associados (Bônus R$ 10)";
+    }
+    
+    const ganhoIndireto = indiretos * valorPorIndireto;
+    const total = ganhoRecorrenteDireto + ganhoIndireto;
+    
+    return {
+      ganhoRecorrenteDireto,
+      ganhoIndireto,
+      total,
+      valorPorIndireto,
+      faixa
+    };
+  }, [diretos, indiretos]);
 
   useEffect(() => {
+
     if (!user) return;
     const load = async () => {
       const inicioMes = new Date();
