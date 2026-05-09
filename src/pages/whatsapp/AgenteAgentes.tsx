@@ -415,8 +415,16 @@ export default function AgenteAgentes() {
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
             <h2 className="text-3xl font-bold mb-8">Conectar WhatsApp</h2>
-            <img src={qrCode} alt="QR Code" className="w-full rounded-2xl mb-6 shadow-2xl" />
-            <div className="text-center text-zinc-400 mb-8">Aguardando conexão...</div>
+            {qrCode ? (
+              <img src={qrCode} alt="QR Code" className="w-full rounded-2xl mb-6 shadow-2xl" />
+            ) : (
+              <div className="w-full aspect-square bg-zinc-900 rounded-2xl mb-6 flex items-center justify-center border border-white/5">
+                <div className="w-12 h-12 border-4 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin" />
+              </div>
+            )}
+            <div className="text-center text-zinc-400 mb-8">
+              {qrCode ? "Aguardando conexão..." : "Iniciando sessão..."}
+            </div>
             <button onClick={handleCloseModal} className="w-full bg-zinc-900 hover:bg-zinc-800 text-white py-4 rounded-xl font-bold transition-colors">Cancelar conexão</button>
           </div>
         </div>
