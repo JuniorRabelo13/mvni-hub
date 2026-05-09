@@ -202,6 +202,7 @@ export default function Dashboard() {
                 className="bg-zinc-900/50"
               />
               <p className="text-[10px] text-muted-foreground">Gera bônus conforme sua faixa de diretos.</p>
+              <p className="text-[10px] text-primary italic mt-1">Estimativa automática baseada em média mínima de 5 associados por membro da sua rede.</p>
             </div>
           </div>
 
