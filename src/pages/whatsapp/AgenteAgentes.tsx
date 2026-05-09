@@ -461,13 +461,26 @@ export default function AgenteAgentes() {
                       </div>
                     </td>
                     <td className="py-6">
-                      <button 
-                        onClick={() => connectWhatsApp(agent)} 
-                        disabled={isStarting || isConnected}
-                        className={`font-bold ${isStarting || isConnected ? "text-zinc-600" : "text-yellow-500"}`}
-                      >
-                        {isConnected ? "Conectado" : isStarting ? "Conectando..." : "Conectar"}
-                      </button>
+                      <div className="flex items-center gap-4">
+                        <button 
+                          onClick={() => connectWhatsApp(agent)} 
+                          disabled={isStarting || isConnected || deletingId === agent.id}
+                          className={`font-bold transition-opacity ${isStarting || isConnected ? "text-zinc-600" : "text-yellow-500 hover:text-yellow-400"}`}
+                        >
+                          {isConnected ? "Conectado" : isStarting ? "Conectando..." : "Conectar"}
+                        </button>
+                        
+                        <button 
+                          onClick={() => {
+                            setAgentToDelete(agent);
+                            setShowDeleteModal(true);
+                          }} 
+                          disabled={deletingId === agent.id}
+                          className="text-red-500 hover:text-red-400 font-bold disabled:opacity-50 transition-colors"
+                        >
+                          {deletingId === agent.id ? "Apagando..." : "Apagar"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
