@@ -15,11 +15,17 @@ export default function AgenteAgentes() {
   const [showQrModal, setShowQrModal] = useState(false);
 
   const [connectionStatus, setConnectionStatus] = useState("desconectado");
-
   const [agentConnections, setAgentConnections] = useState<any>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [agentToDelete, setAgentToDelete] = useState<any>(null);
+
 
   const { data: agents = [] } = useQuery({
     queryKey: ["whatsapp-agents"],
+    staleTime: 0,
+    gcTime: 0,
+
 
     queryFn: async () => {
       const { data, error } = await supabase
@@ -303,7 +309,54 @@ export default function AgenteAgentes() {
     }
   };
 
+  const deleteAgent = async (agent: any) => {
+    try {
+      setDeletingId(agent.id);
+      
+      // 1. Tenta destruir sessão no provider
+      const sessionId = agent.session_id;
+      if (sessionId) {
+        try {
+          await fetch(buildApiUrl(`/logout/${sessionId}`), { 
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+          });
+          console.log("[WHATSAPP_DELETE_LOGOUT_SUCCESS]", sessionId);
+        } catch (e) {
+          console.warn("[WHATSAPP_DELETE_LOGOUT_FAIL]", e);
+        }
+      }
+
+      // 2. Remove do Supabase
+      const { error } = await supabase
+        .from("whatsapp_agents")
+        .delete()
+        .eq("id", agent.id);
+
+      if (error) throw error;
+
+      // 3. Cleanup de polling se for o agente atual
+      handleCloseModal();
+
+      // 4. Atualiza cache local
+      queryClient.setQueryData(["whatsapp-agents"], (oldData: any) => {
+        if (!oldData) return [];
+        return oldData.filter((item: any) => item.id !== agent.id);
+      });
+
+      toast.success("Número removido com sucesso");
+    } catch (error: any) {
+      console.error("[WHATSAPP_DELETE_ERROR]", error);
+      toast.error("Erro ao remover número");
+    } finally {
+      setDeletingId(null);
+      setShowDeleteModal(false);
+      setAgentToDelete(null);
+    }
+  };
+
   const handleCloseModal = () => {
+
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
@@ -408,13 +461,26 @@ export default function AgenteAgentes() {
                       </div>
                     </td>
                     <td className="py-6">
-                      <button 
-                        onClick={() => connectWhatsApp(agent)} 
-                        disabled={isStarting || isConnected}
-                        className={`font-bold ${isStarting || isConnected ? "text-zinc-600" : "text-yellow-500"}`}
-                      >
-                        {isConnected ? "Conectado" : isStarting ? "Conectando..." : "Conectar"}
-                      </button>
+                      <div className="flex items-center gap-4">
+                        <button 
+                          onClick={() => connectWhatsApp(agent)} 
+                          disabled={isStarting || isConnected || deletingId === agent.id}
+                          className={`font-bold transition-opacity ${isStarting || isConnected ? "text-zinc-600" : "text-yellow-500 hover:text-yellow-400"}`}
+                        >
+                          {isConnected ? "Conectado" : isStarting ? "Conectando..." : "Conectar"}
+                        </button>
+                        
+                        <button 
+                          onClick={() => {
+                            setAgentToDelete(agent);
+                            setShowDeleteModal(true);
+                          }} 
+                          disabled={deletingId === agent.id}
+                          className="text-red-500 hover:text-red-400 font-bold disabled:opacity-50 transition-colors"
+                        >
+                          {deletingId === agent.id ? "Apagando..." : "Apagar"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -462,6 +528,45 @@ export default function AgenteAgentes() {
             >
               Cancelar conexão
             </button>
+          </div>
+        </div>
+      )}
+      {showDeleteModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => !deletingId && setShowDeleteModal(false)}
+        >
+          <div 
+            className="bg-zinc-950 border border-red-500/20 rounded-3xl p-10 w-full max-w-[450px] relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold mb-4 text-white">Confirmar Exclusão</h2>
+            <p className="text-zinc-400 mb-8">
+              Tem certeza que deseja remover o número <span className="text-white font-bold">{agentToDelete?.numero_whatsapp}</span>? 
+              A sessão será encerrada e os dados apagados.
+            </p>
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deletingId !== null}
+                className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white py-4 rounded-xl font-bold transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => deleteAgent(agentToDelete)}
+                disabled={deletingId !== null}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deletingId ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Apagando...
+                  </>
+                ) : "Confirmar"}
+              </button>
+            </div>
           </div>
         </div>
       )}
