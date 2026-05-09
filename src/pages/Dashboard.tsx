@@ -151,7 +151,7 @@ export default function Dashboard() {
           <p>• Cada associado ativo na sua base gera R$ 20/mês recorrente.</p>
           <p>• Cada cliente ativo gera R$ 20/mês recorrente.</p>
           <p>• De 21 até 40 associados ativos na rede, você ganha R$ 5 por cada novo associado indireto.</p>
-          <p>• De 21 até 40 associados ativos na rede, você ganha R$ 5 por cada novo associado indireto.</p>
+          <p>• Ao atingir mais de 40 associados ativos na sua rede, sua bonificação por cada novo associado indireto dobra de R$ 5,00 para R$ 10,00.</p>
           <p>• Sem cadastro vazio, sem multinível — só venda real conta.</p>
         </CardContent>
       </Card>
