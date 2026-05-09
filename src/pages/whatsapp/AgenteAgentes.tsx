@@ -325,33 +325,55 @@ export default function AgenteAgentes() {
             <tbody>
               {agents.map((agent: any) => {
                 const localConnection = agentConnections[agent.id];
-
-                const isConnected =
-                  localConnection?.status === "conectado" ||
+                
+                // Prioridade 1: Estado Local (polling ativo)
+                // Prioridade 2: Status do Supabase
+                const normalizedLocalStatus = localConnection?.status?.toLowerCase();
+                const normalizedDbStatus = (agent?.status_conexao || agent?.status || "").toLowerCase();
+                
+                const isConnected = 
+                  normalizedLocalStatus === "conectado" ||
+                  normalizedLocalStatus === "connected" ||
+                  normalizedLocalStatus === "open" ||
+                  normalizedLocalStatus === "authenticated" ||
+                  localConnection?.connected === true ||
                   localConnection?.conectado === true ||
-                  agent?.conectado === true ||
-                  agent?.status_conexao === "conectado" ||
-                  agent?.status_conexao === "connected";
+                  normalizedDbStatus === "conectado" ||
+                  normalizedDbStatus === "connected" ||
+                  normalizedDbStatus === "open" ||
+                  normalizedDbStatus === "authenticated" ||
+                  agent?.conectado === true;
+
+                const isStarting = 
+                  normalizedLocalStatus === "iniciando" || 
+                  normalizedDbStatus === "iniciando" ||
+                  localConnection?.loading === true;
 
                 return (
                   <tr key={agent.id} className="border-b border-zinc-900">
                     <td className="py-6 font-bold">{agent.numero_whatsapp || "Sem número"}</td>
-
                     <td className="py-6">
-                      <span className="bg-yellow-500 text-black px-4 py-1 rounded-full text-sm font-bold">ativo</span>
+                      <span className="bg-yellow-500 text-black px-4 py-1 rounded-full text-sm font-bold">
+                        {agent.status || "ativo"}
+                      </span>
                     </td>
-
                     <td className="py-6">
                       <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`} />
-
-                        <span className="font-semibold">{isConnected ? "CONECTADO" : "DESCONECTADO"}</span>
+                        <div className={`w-3 h-3 rounded-full ${
+                          isConnected ? "bg-green-500" : isStarting ? "bg-yellow-500" : "bg-red-500"
+                        }`} />
+                        <span className="font-semibold uppercase">
+                          {isConnected ? "CONECTADO" : isStarting ? "INICIANDO" : "DESCONECTADO"}
+                        </span>
                       </div>
                     </td>
-
                     <td className="py-6">
-                      <button onClick={() => connectWhatsApp(agent)} className="font-bold text-yellow-500">
-                        Conectar
+                      <button 
+                        onClick={() => connectWhatsApp(agent)} 
+                        disabled={isStarting || isConnected}
+                        className={`font-bold ${isStarting || isConnected ? "text-zinc-600" : "text-yellow-500"}`}
+                      >
+                        {isConnected ? "Conectado" : isStarting ? "Conectando..." : "Conectar"}
                       </button>
                     </td>
                   </tr>
