@@ -300,29 +300,42 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Simulador de Ganhos da Rede</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="diretos-rede">Quantidade de associados diretos</Label>
-            <Input
-              id="diretos-rede"
-              type="number"
-              min="0"
-              value={diretos}
-              onChange={(e) => {
-                const val = Math.max(0, parseInt(e.target.value) || 0);
-                setDiretos(val);
-                if (val >= 21) {
-                  setIndiretos(val * 5);
-                }
-              }}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex justify-center pt-4">
+        <Button 
+          className="bg-gradient-gold text-primary-foreground font-bold py-6 px-8 text-lg hover:opacity-90 transition-all shadow-gold-sm rounded-full"
+          onClick={() => {
+            document.getElementById('cadastro-sessao')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        >
+          Quero alcançar esse faturamento
+        </Button>
+      </div>
+
+      <div id="cadastro-sessao">
+        <Card>
+          <CardHeader>
+            <CardTitle>Simulador de Ganhos da Rede</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="diretos-rede">Quantidade de associados diretos</Label>
+              <Input
+                id="diretos-rede"
+                type="number"
+                min="0"
+                value={diretos}
+                onChange={(e) => {
+                  const val = Math.max(0, parseInt(e.target.value) || 0);
+                  setDiretos(val);
+                  if (val >= 21) {
+                    setIndiretos(val * 5);
+                  }
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
