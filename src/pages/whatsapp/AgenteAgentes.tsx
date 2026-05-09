@@ -62,15 +62,23 @@ export default function AgenteAgentes() {
       attempts++;
 
       try {
-        const statusResponse = await fetch(buildApiUrl(`/status/${sessionId}`), { signal });
+        // Polling híbrido: Consulta status e QR simultaneamente para resposta instantânea
+        const [statusRes, qrRes] = await Promise.all([
+          fetch(buildApiUrl(`/status/${sessionId}`), { signal }).catch(() => null),
+          fetch(buildApiUrl(`/qr/${sessionId}`), { signal }).catch(() => null)
+        ]);
+
         let statusData: any = {};
-        try {
-          statusData = await statusResponse.json();
-        } catch {
-          statusData = {};
+        if (statusRes?.ok) {
+          try {
+            statusData = await statusRes.json();
+          } catch {
+            statusData = {};
+          }
         }
 
-        console.log("[WHATSAPP_STATUS]", statusData);
+        console.log("[WHATSAPP_POLL_STATUS]", statusData);
+        
         const normalizedStatus = String(statusData?.status || "").toLowerCase();
         const isConnected =
           normalizedStatus === "conectado" ||
@@ -82,9 +90,9 @@ export default function AgenteAgentes() {
 
         if (isConnected) {
           clearInterval(pollingRef.current);
-          console.log("[WHATSAPP_CONNECTED]");
+          console.log("[WHATSAPP_CONNECTED_DETECTED]");
 
-          const updateResult = await supabase
+          const { data: updateResult, error: updateError } = await supabase
             .from("whatsapp_agents")
             .update({
               conectado: true,
@@ -93,10 +101,13 @@ export default function AgenteAgentes() {
               updated_at: new Date().toISOString(),
             })
             .eq("id", agentId)
-            .select("*");
+            .select();
 
-          console.log("[WHATSAPP_UPDATE_RESULT]", updateResult);
-          const confirmedAgent = updateResult?.data?.[0];
+          if (updateError) {
+            console.error("[WHATSAPP_DB_UPDATE_ERROR]", updateError);
+          }
+
+          const confirmedAgent = updateResult?.[0];
 
           queryClient.setQueryData(["whatsapp-agents"], (oldData: any) => {
             if (!oldData) return oldData;
@@ -117,7 +128,6 @@ export default function AgenteAgentes() {
               conectado: true,
               loading: false,
               qr: null,
-              error: null,
               updatedAt: new Date().toISOString(),
             },
           }));
@@ -129,40 +139,44 @@ export default function AgenteAgentes() {
           return;
         }
 
-        const qrResponse = await fetch(buildApiUrl(`/qr/${sessionId}`), { signal });
-        let qrData: any = {};
-        try {
-          qrData = await qrResponse.json();
-        } catch {
-          qrData = {};
-        }
+        // Se não estiver conectado, processa o QR Code
+        if (qrRes?.ok) {
+          let qrData: any = {};
+          try {
+            qrData = await qrRes.json();
+          } catch {
+            qrData = {};
+          }
 
-        console.log("[WHATSAPP_QR]", qrData);
-        if (qrData?.qr) {
-          setQrCode(qrData.qr);
-          setConnectionStatus("qr");
-          setAgentConnections((prev: any) => ({
-            ...prev,
-            [agentId]: {
-              ...(prev?.[agentId] || {}),
-              status: "qr",
-              connected: false,
-              conectado: false,
-              qr: qrData.qr,
-              loading: false,
-            },
-          }));
+          if (qrData?.qr) {
+            console.log("[WHATSAPP_QR_RECEIVED]");
+            setQrCode(qrData.qr);
+            setConnectionStatus("qr");
+            setAgentConnections((prev: any) => ({
+              ...prev,
+              [agentId]: {
+                ...(prev?.[agentId] || {}),
+                status: "qr",
+                connected: false,
+                conectado: false,
+                qr: qrData.qr,
+                loading: false,
+              },
+            }));
+          }
         }
 
         if (attempts >= maxAttempts) {
           clearInterval(pollingRef.current);
           setConnectionStatus("erro");
-          toast.error("Timeout conexão WhatsApp");
+          toast.error("Tempo limite de conexão excedido");
         }
       } catch (error: any) {
+        if (error.name === 'AbortError') return;
         console.error("[WHATSAPP_POLL_ERROR]", error);
       }
-    }, 2000);
+    }, 2500);
+
   };
 
   const connectWhatsApp = async (agent: any) => {
