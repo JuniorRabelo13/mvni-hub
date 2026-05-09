@@ -243,8 +243,17 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle>Simulador de Ganhos da Rede</CardTitle>
         </CardHeader>
-        <CardContent>
-          {/* Conteúdo do simulador será implementado conforme necessário */}
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="diretos-rede">Quantidade de associados diretos</Label>
+            <Input
+              id="diretos-rede"
+              type="number"
+              min="0"
+              value={diretos}
+              onChange={(e) => setDiretos(Math.max(0, parseInt(e.target.value) || 0))}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
