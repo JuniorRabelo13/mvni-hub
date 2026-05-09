@@ -245,8 +245,7 @@ export default function AgenteAgentes() {
   const connectWhatsApp = async (agent: any) => {
     try {
       const agentId = agent?.id;
-
-      const sessionId = crypto.randomUUID();
+      const sessionId = agent?.session_id || crypto.randomUUID();
 
       console.log("[WHATSAPP_CONNECT_START]", {
         agentId,
@@ -255,13 +254,22 @@ export default function AgenteAgentes() {
 
       setConnectionStatus("iniciando");
 
+      // Tenta fechar sessão antiga se houver (cleanup preventivo)
+      try {
+        await fetch(buildApiUrl(`/logout/${sessionId}`), { 
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" }
+        });
+        console.log("[WHATSAPP_LOGOUT_PREVENTIVO]", sessionId);
+      } catch (e) {
+        console.log("[WHATSAPP_LOGOUT_SILENT_FAIL]", e);
+      }
+
       const response = await fetch(buildApiUrl("/start"), {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
           sessionId,
         }),
