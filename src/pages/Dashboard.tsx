@@ -257,7 +257,13 @@ export default function Dashboard() {
               type="number"
               min="0"
               value={diretos}
-              onChange={(e) => setDiretos(Math.max(0, parseInt(e.target.value) || 0))}
+              onChange={(e) => {
+                const val = Math.max(0, parseInt(e.target.value) || 0);
+                setDiretos(val);
+                if (val >= 21) {
+                  setIndiretos(val * 5);
+                }
+              }}
             />
           </div>
         </CardContent>
