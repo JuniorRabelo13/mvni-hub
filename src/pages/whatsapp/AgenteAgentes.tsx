@@ -408,7 +408,7 @@ export default function AgenteAgentes() {
         </div>
       </div>
 
-      {showQrModal && qrCode && (
+      {showQrModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={handleCloseModal}>
           <div className="bg-zinc-950 border border-yellow-500/20 rounded-3xl p-10 w-full max-w-[500px] relative" onClick={(e) => e.stopPropagation()}>
             <button onClick={handleCloseModal} className="absolute top-6 right-6 text-zinc-400 hover:text-white transition-colors">
