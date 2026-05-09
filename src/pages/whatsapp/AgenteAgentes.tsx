@@ -59,7 +59,7 @@ export default function AgenteAgentes() {
         ==========================================
         */
 
-        const statusResponse = await fetch(`${API_BASE_URL}/status/${sessionId}`);
+        const statusResponse = await fetch(buildApiUrl(`/status/${sessionId}`));
 
         let statusData: any = {};
 
@@ -178,7 +178,7 @@ export default function AgenteAgentes() {
         ==========================================
         */
 
-        const qrResponse = await fetch(`${API_BASE_URL}/qr/${sessionId}`);
+        const qrResponse = await fetch(buildApiUrl(`/qr/${sessionId}`));
 
         let qrData: any = {};
 
@@ -248,7 +248,7 @@ export default function AgenteAgentes() {
 
       setConnectionStatus("iniciando");
 
-      const response = await fetch(`${API_BASE_URL}/start`, {
+      const response = await fetch(buildApiUrl("/start"), {
         method: "POST",
 
         headers: {
