@@ -27,8 +27,9 @@ export default function Dashboard() {
   const [indiretos, setIndiretos] = useState<number>(0);
 
   const simulacao = useMemo(() => {
+    const comissaoAtivacao = diretos * 85;
     const ganhoRecorrenteDireto = diretos * 20;
-    
+
     let valorPorIndireto = 0;
     let faixa = "Abaixo de 21 associados";
     
