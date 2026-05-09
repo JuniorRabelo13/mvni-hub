@@ -8,6 +8,7 @@ export default function AgenteAgentes() {
   const queryClient = useQueryClient();
 
   const pollingRef = useRef<any>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const [qrCode, setQrCode] = useState<string | null>(null);
 
@@ -33,6 +34,12 @@ export default function AgenteAgentes() {
   });
 
   const pollConnectionStatus = async (agentId: string, sessionId: string) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
     let attempts = 0;
 
     const maxAttempts = 60;
@@ -59,7 +66,7 @@ export default function AgenteAgentes() {
         ==========================================
         */
 
-        const statusResponse = await fetch(buildApiUrl(`/status/${sessionId}`));
+        const statusResponse = await fetch(buildApiUrl(`/status/${sessionId}`), { signal });
 
         let statusData: any = {};
 
@@ -178,7 +185,7 @@ export default function AgenteAgentes() {
         ==========================================
         */
 
-        const qrResponse = await fetch(buildApiUrl(`/qr/${sessionId}`));
+        const qrResponse = await fetch(buildApiUrl(`/qr/${sessionId}`), { signal });
 
         let qrData: any = {};
 
@@ -288,10 +295,36 @@ export default function AgenteAgentes() {
     }
   };
 
+  const handleCloseModal = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setQrCode(null);
+    setShowQrModal(false);
+    setConnectionStatus("desconectado");
+    // Limpar estado de loading/iniciando para todos os agentes
+    setAgentConnections({});
+  };
+
   useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
     return () => {
+      window.removeEventListener("keydown", handleEsc);
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
   }, []);
@@ -394,13 +427,33 @@ export default function AgenteAgentes() {
       </div>
 
       {showQrModal && qrCode && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-zinc-950 border border-yellow-500/20 rounded-3xl p-10 w-[500px]">
+        <div 
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={handleCloseModal}
+        >
+          <div 
+            className="bg-zinc-950 border border-yellow-500/20 rounded-3xl p-10 w-full max-w-[500px] relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={handleCloseModal}
+              className="absolute top-6 right-6 text-zinc-400 hover:text-white transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
             <h2 className="text-3xl font-bold mb-8">Conectar WhatsApp</h2>
 
-            <img src={qrCode} alt="QR Code" className="w-full rounded-2xl" />
+            <img src={qrCode} alt="QR Code" className="w-full rounded-2xl mb-6" />
 
-            <div className="mt-6 text-center text-zinc-400">Aguardando conexão...</div>
+            <div className="text-center text-zinc-400 mb-8">Aguardando conexão...</div>
+
+            <button 
+              onClick={handleCloseModal}
+              className="w-full bg-zinc-900 hover:bg-zinc-800 text-white py-4 rounded-xl font-bold transition-colors"
+            >
+              Cancelar conexão
+            </button>
           </div>
         </div>
       )}
