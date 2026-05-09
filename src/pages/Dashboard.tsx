@@ -147,7 +147,7 @@ export default function Dashboard() {
           <CardTitle>Quanto mais você ativa, mais você ganha</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>• Cada venda real (cobrança paga) gera R$ 85 imediatos.</p>
+          <p>• Cada nova ativação paga gera R$ 85 imediatos.</p>
           <p>• Cada cliente ativo gera R$ 20/mês recorrente.</p>
           <p>• De 21 até 40 associados ativos na rede, você ganha R$ 5 por cada novo associado indireto.</p>
           <p>• Sem cadastro vazio, sem multinível — só venda real conta.</p>
