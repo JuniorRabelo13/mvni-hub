@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { buildApiUrl } from "./utils/api-config";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, QrCode as QrCodeIcon, X } from "lucide-react";
+
 
 export default function AgenteAgentes() {
   const queryClient = useQueryClient();
