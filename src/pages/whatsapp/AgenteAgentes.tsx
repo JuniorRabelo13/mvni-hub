@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-
-const API_BASE_URL = "http://155.133.23.9:3333";
+import { buildApiUrl } from "./utils/api-config";
 
 export default function AgenteAgentes() {
   const queryClient = useQueryClient();
