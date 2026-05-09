@@ -42,7 +42,7 @@ export default function Dashboard() {
     }
     
     const ganhoIndireto = indiretos * valorPorIndireto;
-    const total = ganhoRecorrenteDireto + ganhoIndireto;
+    const total = comissaoAtivacao + ganhoRecorrenteDireto + ganhoIndireto;
     
     return {
       comissaoAtivacao,
