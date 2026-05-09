@@ -237,7 +237,11 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <div className="grid gap-4 pt-4 border-t border-white/5 sm:grid-cols-4">
+            <div className="grid gap-4 pt-4 border-t border-white/5 sm:grid-cols-5">
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Indicações Diretas</p>
+                <p className="text-lg font-semibold">{diretos} associados diretos</p>
+              </div>
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Comissão de Ativação</p>
                 <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={simulacao.comissaoAtivacao}>
