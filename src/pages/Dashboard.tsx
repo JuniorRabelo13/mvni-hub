@@ -300,6 +300,17 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
+      <div className="flex justify-center pt-4">
+        <Button 
+          className="bg-gradient-gold text-primary-foreground font-bold py-6 px-8 text-lg hover:opacity-90 transition-all shadow-gold-sm rounded-full"
+          onClick={() => {
+            document.getElementById('cadastro-sessao')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        >
+          Quero alcançar esse faturamento
+        </Button>
+      </div>
+
       <div id="cadastro-sessao">
         <Card>
           <CardHeader>
@@ -322,14 +333,6 @@ export default function Dashboard() {
                 }}
               />
             </div>
-            <Button 
-              className="w-full mt-4 bg-gradient-gold text-primary-foreground font-bold py-6 text-lg hover:opacity-90 transition-all shadow-gold-sm"
-              onClick={() => {
-                document.getElementById('cadastro-sessao')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              Quero alcançar esse faturamento
-            </Button>
           </CardContent>
         </Card>
       </div>
