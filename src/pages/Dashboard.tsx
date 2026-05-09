@@ -228,6 +228,9 @@ export default function Dashboard() {
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-primary font-bold">Comissão de Ativação</p>
                 <p className="text-2xl font-black text-white">{fmt(simulacao.comissaoAtivacao)}</p>
+                <p className="text-[9px] text-primary/70 italic mt-1 font-medium">
+                  Valor recebido pelas ativações iniciais realizadas diretamente na sua rede.
+                </p>
               </div>
               <p className="text-[9px] text-primary/70 uppercase font-medium text-right max-w-[120px]">
                 Pagamento imediato por novas ativações
