@@ -116,7 +116,7 @@ export default function Dashboard() {
           <CardTitle>Quanto mais você ativa, mais você ganha</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>• Cada venda real (cobrança paga) gera <strong className="text-primary">R$ 85</strong> imediatos.</p>
+          <p>• Cada venda real (cobrança paga) gera R$ 85 imediatos.</p>
           <p>• Cada cliente que continua pagando gera <strong className="text-primary">R$ 20/mês</strong>.</p>
           <p>• Sem cadastro vazio, sem multinível — só venda real conta.</p>
         </CardContent>
