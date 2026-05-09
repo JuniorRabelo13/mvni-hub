@@ -269,6 +269,21 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
+
+            <div className="mt-6 p-6 rounded-2xl bg-zinc-900/60 border border-primary/20 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-1">Ganho Anual Estimado</p>
+                <p className="text-4xl font-black text-white transition-all duration-300 animate-in fade-in zoom-in-95" key={`anual-${simulacao.total * 12}`}>
+                  {fmt(simulacao.total * 12)}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-2 font-medium">
+                  Projeção de faturamento total acumulado em 12 meses
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-primary" />
+              </div>
+            </div>
           </div>
 
           <div className="flex items-start gap-2 rounded-xl bg-blue-500/5 p-4 border border-blue-500/10">
