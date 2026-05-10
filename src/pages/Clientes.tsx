@@ -349,6 +349,15 @@ export default function Clientes() {
                       <p className="text-xs text-muted-foreground">{c.telefone ?? c.cpf ?? "—"}</p>
                     </div>
                   <div className="flex flex-wrap gap-2">
+                    {(() => {
+                      const health = getHealthScore(c);
+                      return (
+                        <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${health.bg} ${health.color}`}>
+                          <Activity className="h-3 w-3" />
+                          {health.label} ({health.score}%)
+                        </div>
+                      );
+                    })()}
                     <Badge variant="outline">{linhasAtivas} linha(s)</Badge>
                     <Badge variant={c.ativo ? "default" : "secondary"}>{c.ativo ? "Ativo" : "Inativo"}</Badge>
                     <Button 
