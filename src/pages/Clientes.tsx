@@ -248,7 +248,7 @@ export default function Clientes() {
         </div>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : items.length === 0 ? (
         <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
