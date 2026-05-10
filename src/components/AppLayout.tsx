@@ -23,7 +23,8 @@ import {
   Cpu,
   ShieldQuestion,
   AlertTriangle,
-  Database
+  Database,
+  EyeOff
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
