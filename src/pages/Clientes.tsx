@@ -19,6 +19,7 @@ import { PaginacaoControles } from "@/components/PaginacaoControles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SeletorPlano } from "@/components/SeletorPlano";
 import { TimelineAuditoria } from "@/components/TimelineAuditoria";
+import { maskCPF, maskPhone } from "@/lib/mask";
 
 const clienteSchema = z.object({
   nome: z.string().trim().min(2).max(80),
