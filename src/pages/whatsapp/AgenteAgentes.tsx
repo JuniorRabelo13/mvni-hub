@@ -428,14 +428,9 @@ export default function AgenteAgentes() {
                       ? formatPhoneNumber(rawNumber.replace(/@s\.whatsapp\.net/g, "")) 
                       : null;
                     if (isConnected) {
-                      console.log(`[DEBUG Agent ${agent.id}]:`, {
-                        phone: localConnection?.phone,
-                        remoteJid: localConnection?.remoteJid,
-                        wid: localConnection?.wid,
-                        pushName: localConnection?.pushName,
-                        sender: localConnection?.sender,
-                        session_id: agent.session_id,
-                        db_numero: agent.numero
+                      console.log(`[FULL DEBUG Agent ${agent.id}]:`, {
+                        connection: localConnection,
+                        agent: agent
                       });
                     }
 
