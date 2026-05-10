@@ -42,17 +42,32 @@ export default function Clientes() {
   const [saving, setSaving] = useState(false);
   const [selectedCobranca, setSelectedCobranca] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
 
   const normalize = (s: string | null | undefined) =>
     (s ?? "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const onlyDigits = (s: string | null | undefined) => (s ?? "").toString().replace(/\D/g, "");
 
   const filtered = (() => {
+    let result = items;
+
+    // Filter by status
+    const today = new Date().toISOString().slice(0, 10);
+    if (statusFilter === "ativos") {
+      result = result.filter(c => c.ativo);
+    } else if (statusFilter === "inadimplentes") {
+      result = result.filter(c => c.cobrancas?.some(p => p.status === "pendente" && p.vencimento < today));
+    } else if (statusFilter === "suspensos") {
+      result = result.filter(c => !c.ativo);
+    } else if (statusFilter === "vencendo_hoje") {
+      result = result.filter(c => c.cobrancas?.some(p => p.status === "pendente" && p.vencimento === today));
+    }
+
     const q = query.trim();
-    if (!q) return items;
+    if (!q) return result;
     const qn = normalize(q);
     const qd = onlyDigits(q);
-    return items.filter((c) => {
+    return result.filter((c) => {
       if (normalize(c.nome).includes(qn)) return true;
       if (qd && onlyDigits(c.cpf).includes(qd)) return true;
       if (qd && onlyDigits(c.telefone).includes(qd)) return true;
