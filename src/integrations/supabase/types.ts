@@ -247,6 +247,45 @@ export type Database = {
         }
         Relationships: []
       }
+      dados_bancarios: {
+        Row: {
+          chave_pix: string
+          created_at: string | null
+          historico_alteracoes: Json | null
+          id: string
+          tipo_chave: string
+          titular_cpf: string
+          titular_nome: string
+          updated_at: string | null
+          user_id: string
+          verificado: boolean | null
+        }
+        Insert: {
+          chave_pix: string
+          created_at?: string | null
+          historico_alteracoes?: Json | null
+          id?: string
+          tipo_chave: string
+          titular_cpf: string
+          titular_nome: string
+          updated_at?: string | null
+          user_id: string
+          verificado?: boolean | null
+        }
+        Update: {
+          chave_pix?: string
+          created_at?: string | null
+          historico_alteracoes?: Json | null
+          id?: string
+          tipo_chave?: string
+          titular_cpf?: string
+          titular_nome?: string
+          updated_at?: string | null
+          user_id?: string
+          verificado?: boolean | null
+        }
+        Relationships: []
+      }
       faturas: {
         Row: {
           cliente_id: string
@@ -956,6 +995,63 @@ export type Database = {
         }
         Relationships: []
       }
+      solicitacoes_saque: {
+        Row: {
+          comprovante_url: string | null
+          dados_bancarios_id: string
+          id: string
+          motivo_rejeicao: string | null
+          pago_em: string | null
+          processado_em: string | null
+          solicitado_em: string | null
+          status: string
+          user_id: string
+          valor: number
+          wallet_id: string
+        }
+        Insert: {
+          comprovante_url?: string | null
+          dados_bancarios_id: string
+          id?: string
+          motivo_rejeicao?: string | null
+          pago_em?: string | null
+          processado_em?: string | null
+          solicitado_em?: string | null
+          status?: string
+          user_id: string
+          valor: number
+          wallet_id: string
+        }
+        Update: {
+          comprovante_url?: string | null
+          dados_bancarios_id?: string
+          id?: string
+          motivo_rejeicao?: string | null
+          pago_em?: string | null
+          processado_em?: string | null
+          solicitado_em?: string | null
+          status?: string
+          user_id?: string
+          valor?: number
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_saque_dados_bancarios_id_fkey"
+            columns: ["dados_bancarios_id"]
+            isOneToOne: false
+            referencedRelation: "dados_bancarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_saque_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transacoes_wallet: {
         Row: {
           created_at: string | null
@@ -1504,6 +1600,7 @@ export type Database = {
       }
     }
     Functions: {
+      aprovar_saque: { Args: { p_saque_id: string }; Returns: undefined }
       calculate_next_day_volume: {
         Args: { current_level: number; error_rate: number; reply_rate: number }
         Returns: number

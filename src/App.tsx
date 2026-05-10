@@ -19,6 +19,7 @@ import AdminLogs from "./pages/AdminLogs";
 import SecurityLogs from "./pages/SecurityLogs";
 import Importacoes from "./pages/Importacoes";
 import NotFound from "./pages/NotFound";
+import SaquePix from "./pages/financeiro/SaquePix";
 
 // SMS Module Pages
 import SMSDashboard from "./pages/sms/SMSDashboard";
@@ -59,13 +60,14 @@ const App = () => (
               <Route path="/estrutura" element={<Estrutura />} />
               <Route path="/ganhos" element={<Ganhos />} />
               <Route path="/pagamentos" element={<Pagamentos />} />
+              <Route path="/financeiro/saque" element={<SaquePix />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="/equipe" element={<Equipe />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/logs" element={<AdminLogs />} />
               <Route path="/admin/security" element={<SecurityLogs />} />
               <Route path="/admin/importacoes" element={<Importacoes />} />
-              
+
               {/* SMS Module Routes */}
               <Route path="/sms/dashboard" element={<SMSDashboard />} />
               <Route path="/sms/disparo" element={<SMSDisparo />} />
