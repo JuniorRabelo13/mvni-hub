@@ -322,7 +322,8 @@ export default function AgenteAgentes() {
   }, []);
 
   return (
-    <div className="p-6 md:p-10 text-white min-h-screen bg-black">
+    <TooltipProvider>
+      <div className="p-6 md:p-10 text-white min-h-screen bg-black">
       <div className="max-w-[1400px] mx-auto">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-12">
           <div>
