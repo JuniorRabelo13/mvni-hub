@@ -379,7 +379,7 @@ export default function AgenteAgentes() {
 
                     return (
                       <tr key={agent.id} className="group hover:bg-zinc-800/20 transition-colors">
-                        <td className="px-8 py-7 font-bold text-lg tracking-tight text-white">
+                        <td className="px-8 py-7 font-bold text-lg tracking-tight text-white align-middle">
                           {localConnection?.numero_whatsapp && localConnection?.numero_whatsapp !== "Aguardando..." ? (
                             localConnection.numero_whatsapp
                           ) : agent.numero_whatsapp && agent.numero_whatsapp !== "Aguardando..." ? (
@@ -391,12 +391,12 @@ export default function AgenteAgentes() {
                             </div>
                           )}
                         </td>
-                        <td className="px-8 py-7 text-center">
+                        <td className="px-8 py-7 text-center align-middle">
                           <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider inline-block">
                             {agent.status || "ativo"}
                           </span>
                         </td>
-                        <td className="px-8 py-7">
+                        <td className="px-8 py-7 align-middle">
                           <div className="flex flex-col items-center gap-2 text-center">
                             <div className="flex items-center gap-2.5">
                               <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${
@@ -410,7 +410,7 @@ export default function AgenteAgentes() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-8 py-7">
+                        <td className="px-8 py-7 align-middle">
                           <div className="flex items-center justify-end gap-6 text-right">
                             <button 
                               onClick={() => connectWhatsApp(agent)} 
