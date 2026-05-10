@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,9 @@ import { toast } from "sonner";
 import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle, Activity, TrendingUp, Users, Wallet, AlertCircle, BarChart3, Mail, Phone, Hash, Calendar, PhoneCall, CreditCard } from "lucide-react";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 import { sanitize } from "@/lib/sanitize";
+import { useClientesPaginados, type Cliente } from "@/hooks/useClientesPaginados";
+import { PaginacaoControles } from "@/components/PaginacaoControles";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const clienteSchema = z.object({
   nome: z.string().trim().min(2).max(80),
@@ -23,16 +26,7 @@ const clienteSchema = z.object({
   msisdn: z.string().trim().max(20).optional(),
 });
 
-type Cliente = {
-  id: string;
-  nome: string;
-  cpf: string | null;
-  telefone: string | null;
-  ativo: boolean;
-  created_at: string;
-  linhas: { id: string; status: string; msisdn: string | null; activated_at: string | null; deactivated_at: string | null }[];
-  cobrancas: { id: string; status: string; valor: number; vencimento: string; paid_at: string | null; created_at: string }[];
-};
+// O tipo Cliente agora é importado do hook
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -44,9 +38,9 @@ export default function Clientes() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
-  const itemsPerPage = 20;
 
   useEffect(() => {
     if (!user?.id) return;
@@ -96,17 +90,32 @@ export default function Clientes() {
     };
   }, [user?.id, queryClient]);
 
-  const { data: items = [], isLoading } = useQuery({
-    queryKey: ["clientes", user?.id],
+  const { data: paginatedData, isLoading, prefetchNextPage } = useClientesPaginados(
+    user?.id,
+    currentPage,
+    pageSize,
+    { query, status: statusFilter }
+  );
+
+  const items = paginatedData?.data || [];
+  const totalCount = paginatedData?.count || 0;
+
+  useEffect(() => {
+    prefetchNextPage();
+  }, [currentPage, items, prefetchNextPage]);
+
+  // Hook para métricas ainda precisa de todos os dados ou uma query dedicada. 
+  // Para manter as métricas corretas com paginação, o ideal seria uma query de agregação no Supabase.
+  // Como solução temporária para não quebrar a UI, buscaremos os dados básicos para métricas em background.
+  const { data: allItemsForMetrics = [] } = useQuery({
+    queryKey: ["clientes-metrics", user?.id],
     queryFn: async () => {
       if (!user) return [];
       const { data } = await supabase
         .from("clientes")
-        .select("id, nome, cpf, telefone, ativo, created_at, linhas(id,status,msisdn,activated_at,deactivated_at), cobrancas(id,status,valor,vencimento,paid_at,created_at)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      
-      return sanitize((data as any) ?? [], "clientes_list", user.id) as Cliente[];
+        .select("id, ativo, cobrancas(status, valor, vencimento)")
+        .eq("user_id", user.id);
+      return data || [];
     },
     enabled: !!user,
   });
@@ -251,9 +260,7 @@ export default function Clientes() {
     };
   }, [items]);
 
-  const paginatedItems = useMemo(() => {
-    return filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  }, [filtered, currentPage]);
+  // Removido useMemo redundante
 
   const getHealthScore = (cliente: Cliente) => {
     let score = 100;
