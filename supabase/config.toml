@@ -2,3 +2,6 @@ project_id = "hmzqfcooxqucytxwljhg"
 
 [cron.process-recurring-billing]
 schedule = "0 0 1 * *" # Meia-noite do dia 1 de cada mês
+
+[cron.notificar-vencimento]
+schedule = "0 9 * * *" # Todo dia às 09:00
