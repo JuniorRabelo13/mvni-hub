@@ -380,11 +380,16 @@ export default function AgenteAgentes() {
                     return (
                       <tr key={agent.id} className="group hover:bg-zinc-800/20 transition-colors">
                         <td className="px-8 py-7 font-bold text-lg tracking-tight text-white">
-                          {localConnection?.numero_whatsapp && localConnection?.numero_whatsapp !== "Aguardando..."
-                            ? localConnection.numero_whatsapp
-                            : agent.numero_whatsapp && agent.numero_whatsapp !== "Aguardando..."
-                            ? agent.numero_whatsapp
-                            : "Aguardando..."}
+                          {localConnection?.numero_whatsapp && localConnection?.numero_whatsapp !== "Aguardando..." ? (
+                            localConnection.numero_whatsapp
+                          ) : agent.numero_whatsapp && agent.numero_whatsapp !== "Aguardando..." ? (
+                            agent.numero_whatsapp
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <div className="h-4 w-32 bg-zinc-800 animate-pulse rounded-md" />
+                              <Loader2 className="h-3 w-3 text-zinc-600 animate-spin" />
+                            </div>
+                          )}
                         </td>
                         <td className="px-8 py-7 text-center">
                           <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider inline-block">
