@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Wallet, ArrowUpRight, CheckCircle2, Clock, AlertTriangle, Landmark, Receipt, Loader2, FileDown, Download } from "lucide-react";
+import { maskSensitiveInfo } from "@/lib/mask";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
