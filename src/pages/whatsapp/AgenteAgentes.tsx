@@ -397,15 +397,27 @@ export default function AgenteAgentes() {
                       normalizedLocalStatus === "iniciando" || normalizedDbStatus === "iniciando" ||
                       localConnection?.loading === true;
 
-                    const rawNumber = 
-                      localConnection?.phone || 
-                      localConnection?.remoteJid || 
-                      localConnection?.wid || 
-                      localConnection?.sender || 
-                      localConnection?.pushName ||
-                      localConnection?.numero_whatsapp ||
+                    const extractPhoneFromObject = (obj: any): string | null => {
+                      if (!obj || typeof obj !== "object") return null;
+                      const candidateKeys = [
+                        "phone", "number", "numero", "numero_whatsapp", "whatsapp",
+                        "remoteJid", "wid", "jid", "id", "sender", "pushName", "user"
+                      ];
+                      for (const key of candidateKeys) {
+                        const val = obj[key];
+                        if (typeof val === "string" && /\d{8,}/.test(val)) return val;
+                        if (val && typeof val === "object") {
+                          const nested = extractPhoneFromObject(val);
+                          if (nested) return nested;
+                        }
+                      }
+                      return null;
+                    };
+
+                    const rawNumber =
+                      extractPhoneFromObject(localConnection) ||
                       agent.numero_whatsapp ||
-                      (isConnected ? (agent.session_id || agent.numero) : null);
+                      (isConnected ? (agent.numero || agent.session_id) : null);
 
                     const formatPhoneNumber = (num: string) => {
                       const cleaned = num.replace(/\D/g, "");
