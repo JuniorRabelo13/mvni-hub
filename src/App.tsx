@@ -96,6 +96,14 @@ const App = () => (
               <Route path="/agente/agentes" element={<AgenteAgentes />} />
               <Route path="/agente/mensagens" element={<AgenteMensagens />} />
               <Route path="/agente/configuracoes" element={<AgenteConfig />} />
+
+              {/* Master Admin Routes */}
+              <Route path="/master/dashboard" element={<MasterDashboard />} />
+              <Route path="/master/clientes" element={<Dashboard />} />
+              <Route path="/master/telecom" element={<Dashboard />} />
+              <Route path="/master/automacoes" element={<Dashboard />} />
+              <Route path="/master/alertas" element={<Dashboard />} />
+              <Route path="/master/config" element={<Dashboard />} />
             </Route>
             <Route path="/termos" element={<Terms />} />
             <Route path="/privacidade" element={<Privacy />} />
