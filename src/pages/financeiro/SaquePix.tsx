@@ -107,6 +107,22 @@ export default function SaquePix() {
     onError: (err: any) => toast.error("Erro no saque: " + err.message),
   });
 
+  // 6. Mutation para Gerar Informe de Rendimentos
+  const generateReportMutation = useMutation({
+    mutationFn: async (ano: number) => {
+      const { data, error } = await supabase.functions.invoke('gerar-informe-rendimentos', {
+        body: { user_id: user?.id, ano }
+      });
+      if (error) throw error;
+      return data.url;
+    },
+    onSuccess: (url) => {
+      window.open(url, '_blank');
+      toast.success("Informe de rendimentos gerado com sucesso!");
+    },
+    onError: (err: any) => toast.error("Erro ao gerar informe: " + err.message)
+  });
+
   const handleWithdrawalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const val = Number(valorSaque);
@@ -146,7 +162,6 @@ export default function SaquePix() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Lado Esquerdo: Solicitação e Pix */}
         <div className="space-y-6">
           <Card>
             <CardHeader className="pb-4">
@@ -195,7 +210,6 @@ export default function SaquePix() {
                 <Button type="submit" variant="outline" className="w-full" disabled={savePixMutation.isPending}>
                   {savePixMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} Salvar Dados Bancários
                 </Button>
-                <p className="text-[10px] text-center text-muted-foreground">Suas informações são criptografadas e usadas apenas para transferências.</p>
               </form>
             </CardContent>
           </Card>
@@ -210,30 +224,17 @@ export default function SaquePix() {
                   <Label htmlFor="valor">Valor do Saque (Mínimo R$ 50,00)</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">R$</span>
-                    <Input 
-                      id="valor"
-                      type="number" 
-                      step="0.01"
-                      className="pl-9 text-2xl font-bold"
-                      value={valorSaque}
-                      onChange={(e) => setValorSaque(e.target.value)}
-                      placeholder="0,00"
-                      required
-                    />
+                    <Input id="valor" type="number" step="0.01" className="pl-9 text-2xl font-bold" value={valorSaque} onChange={(e) => setValorSaque(e.target.value)} placeholder="0,00" required />
                   </div>
                 </div>
                 {!showConfirm ? (
-                  <Button type="submit" className="w-full h-12 text-lg" disabled={Number(valorSaque) < 50}>
-                    Solicitar Saque via Pix
-                  </Button>
+                  <Button type="submit" className="w-full h-12 text-lg" disabled={Number(valorSaque) < 50}>Solicitar Saque via Pix</Button>
                 ) : (
                   <div className="space-y-3 p-4 bg-muted/50 rounded-lg border border-primary/20">
                     <p className="text-sm text-center">Confirmar saque de <span className="font-bold">{fmt(Number(valorSaque))}</span> para o Pix <span className="font-bold">{dadosBancarios?.chave_pix}</span>?</p>
                     <div className="flex gap-2">
                       <Button type="button" variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>Cancelar</Button>
-                      <Button type="button" className="flex-1" onClick={() => requestWithdrawalMutation.mutate(Number(valorSaque))} disabled={requestWithdrawalMutation.isPending}>
-                        Confirmar
-                      </Button>
+                      <Button type="button" className="flex-1" onClick={() => requestWithdrawalMutation.mutate(Number(valorSaque))} disabled={requestWithdrawalMutation.isPending}>Confirmar</Button>
                     </div>
                   </div>
                 )}
@@ -242,33 +243,42 @@ export default function SaquePix() {
           </Card>
         </div>
 
-        {/* Lado Direito: Histórico */}
         <div className="space-y-6">
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg flex items-center gap-2"><FileDown className="h-5 w-5 text-blue-500" /> Documentos Fiscais</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border">
+                <div>
+                  <p className="text-sm font-bold">Informe de Rendimentos {new Date().getFullYear() - 1}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase">Para declaração de IRPF</p>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => generateReportMutation.mutate(new Date().getFullYear() - 1)} disabled={generateReportMutation.isPending}>
+                  {generateReportMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <Download className="h-3 w-3 mr-2" />} Gerar PDF
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="h-full">
             <CardHeader className="pb-4 border-b">
               <CardTitle className="text-lg flex items-center gap-2"><Receipt className="h-5 w-5 text-muted-foreground" /> Últimos Saques</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {saques.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground text-sm">
-                  Nenhum saque solicitado ainda.
-                </div>
+                <div className="py-12 text-center text-muted-foreground text-sm">Nenhum saque solicitado ainda.</div>
               ) : (
                 <div className="divide-y divide-border">
-                  {saques.map((saque) => (
+                  {saques.map((saque: any) => (
                     <div key={saque.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-lg">{fmt(Number(saque.valor))}</span>
-                          {getStatusBadge(saque.status)}
-                        </div>
+                        <div className="flex items-center gap-2"><span className="font-bold text-lg">{fmt(Number(saque.valor))}</span>{getStatusBadge(saque.status)}</div>
                         <p className="text-[10px] text-muted-foreground uppercase">Solicitado em: {new Date(saque.solicitado_em).toLocaleDateString("pt-BR")}</p>
                       </div>
                       {saque.comprovante_url && (
                         <Button variant="ghost" size="sm" asChild>
-                          <a href={saque.comprovante_url} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1">
-                            Comprovante <ArrowUpRight className="h-3 w-3" />
-                          </a>
+                          <a href={saque.comprovante_url} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1">Comprovante <ArrowUpRight className="h-3 w-3" /></a>
                         </Button>
                       )}
                     </div>
