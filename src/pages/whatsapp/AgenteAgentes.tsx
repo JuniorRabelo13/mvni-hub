@@ -90,7 +90,12 @@ export default function AgenteAgentes() {
 
         if (isConnected) {
           clearInterval(pollingRef.current);
-          console.log("[WHATSAPP_CONNECTED_DETECTED]");
+          console.log("[WHATSAPP_CONNECTED_DETECTED]", statusData);
+
+          const connectedPhone = statusData?.phone || 
+                               statusData?.remoteJid?.split('@')[0] || 
+                               statusData?.pushName || 
+                               null;
 
           const { data: updateResult, error: updateError } = await supabase
             .from("whatsapp_agents")
@@ -98,6 +103,7 @@ export default function AgenteAgentes() {
               conectado: true,
               status_conexao: "conectado",
               qr_code: null,
+              numero_whatsapp: connectedPhone || "Aguardando...",
               updated_at: new Date().toISOString(),
             })
             .eq("id", agentId)
@@ -372,7 +378,11 @@ export default function AgenteAgentes() {
 
                     return (
                       <tr key={agent.id} className="group hover:bg-zinc-800/20 transition-colors">
-                        <td className="px-8 py-7 font-bold text-lg tracking-tight text-white">{agent.numero_whatsapp || "Sem número"}</td>
+                        <td className="px-8 py-7 font-bold text-lg tracking-tight text-white">
+                          {agent.numero_whatsapp && agent.numero_whatsapp !== "Aguardando..." 
+                            ? agent.numero_whatsapp 
+                            : "Aguardando..."}
+                        </td>
                         <td className="px-8 py-7 text-center">
                           <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider inline-block">
                             {agent.status || "ativo"}
