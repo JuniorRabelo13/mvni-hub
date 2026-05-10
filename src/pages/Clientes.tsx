@@ -174,10 +174,6 @@ export default function Clientes() {
     return filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [filtered, currentPage]);
 
-  const pagarComPix = (cobrancaId: string) => {
-    setSelectedCobranca(cobrancaId);
-  };
-
   return (
     <div className="space-y-6">
       <header className="flex items-end justify-between gap-4">
