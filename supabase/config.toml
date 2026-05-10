@@ -1,1 +1,4 @@
 project_id = "hmzqfcooxqucytxwljhg"
+
+[cron.process-recurring-billing]
+schedule = "0 0 1 * *" # Meia-noite do dia 1 de cada mês
