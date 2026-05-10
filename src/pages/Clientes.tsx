@@ -46,6 +46,11 @@ export default function Clientes() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
+  // Reset to first page when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, statusFilter]);
+
   const normalize = (s: string | null | undefined) =>
     (s ?? "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const onlyDigits = (s: string | null | undefined) => (s ?? "").toString().replace(/\D/g, "");
