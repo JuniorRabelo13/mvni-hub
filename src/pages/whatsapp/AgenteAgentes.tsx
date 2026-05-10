@@ -424,13 +424,13 @@ export default function AgenteAgentes() {
 
                     return (
                       <tr key={agent.id} className="group hover:bg-zinc-800/20 transition-colors">
-                        <td className="px-8 py-7 font-bold text-lg tracking-tight text-white align-middle">
+                        <td className="px-8 py-7 font-bold text-lg tracking-tight text-white align-middle min-w-[200px] w-[35%] overflow-hidden whitespace-nowrap">
                           {displayWhatsApp ? (
-                            displayWhatsApp
+                            <span className="truncate block">{displayWhatsApp}</span>
                           ) : (
-                            <div className="flex items-center gap-2">
-                              <div className="h-4 w-32 bg-zinc-800 animate-pulse rounded-md" />
-                              <Loader2 className="h-3 w-3 text-zinc-600 animate-spin" />
+                            <div className="flex items-center gap-2 w-full">
+                              <div className="h-4 w-32 bg-zinc-800 animate-pulse rounded-md shrink-0" />
+                              <Loader2 className="h-3 w-3 text-zinc-600 animate-spin shrink-0" />
                             </div>
                           )}
                         </td>
