@@ -41,6 +41,25 @@ export default function Clientes() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedCobranca, setSelectedCobranca] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+
+  const normalize = (s: string | null | undefined) =>
+    (s ?? "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const onlyDigits = (s: string | null | undefined) => (s ?? "").toString().replace(/\D/g, "");
+
+  const filtered = (() => {
+    const q = query.trim();
+    if (!q) return items;
+    const qn = normalize(q);
+    const qd = onlyDigits(q);
+    return items.filter((c) => {
+      if (normalize(c.nome).includes(qn)) return true;
+      if (qd && onlyDigits(c.cpf).includes(qd)) return true;
+      if (qd && onlyDigits(c.telefone).includes(qd)) return true;
+      if (qd && c.linhas?.some((l) => onlyDigits(l.msisdn).includes(qd))) return true;
+      return false;
+    });
+  })();
 
   const load = async () => {
     if (!user) return;
