@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,18 +36,81 @@ type Cliente = {
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function Clientes() {
-  const { user, effectiveUser } = useAuth();
-  const [items, setItems] = useState<Cliente[]>([]);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [selectedCobranca, setSelectedCobranca] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  // Reset to first page when search or filters change
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["clientes", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase
+        .from("clientes")
+        .select("id, nome, cpf, telefone, ativo, created_at, linhas(id,status,msisdn), cobrancas(id,status,valor,vencimento)")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      
+      return sanitize((data as any) ?? [], "clientes_list", user.id) as Cliente[];
+    },
+    enabled: !!user,
+  });
+
+  const createClienteMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof clienteSchema>) => {
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const { data: cli, error: e1 } = await supabase
+        .from("clientes")
+        .insert({
+          user_id: user.id,
+          nome: values.nome,
+          cpf: values.cpf ?? null,
+          telefone: values.telefone ?? null,
+          email: values.email || null,
+        })
+        .select()
+        .single();
+        
+      if (e1 || !cli) throw new Error("Falha ao criar cliente");
+
+      const { data: linha, error: e2 } = await supabase
+        .from("linhas")
+        .insert({ user_id: user.id, cliente_id: cli.id, msisdn: values.msisdn ?? null })
+        .select()
+        .single();
+        
+      if (e2 || !linha) throw new Error("Falha ao criar linha");
+
+      const venc = new Date();
+      venc.setDate(venc.getDate() + 7);
+      
+      const { error: e3 } = await supabase.from("cobrancas").insert({
+        user_id: user.id,
+        cliente_id: cli.id,
+        linha_id: linha.id,
+        vencimento: venc.toISOString().slice(0, 10),
+        is_primeira: true,
+      });
+      
+      if (e3) throw new Error("Falha ao criar cobrança");
+      
+      return cli;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      setOpen(false);
+      toast.success("Cliente cadastrado! Cobrança gerada (pendente).");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   useEffect(() => {
     setCurrentPage(1);
   }, [query, statusFilter]);
@@ -55,11 +119,10 @@ export default function Clientes() {
     (s ?? "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const onlyDigits = (s: string | null | undefined) => (s ?? "").toString().replace(/\D/g, "");
 
-  const filtered = (() => {
+  const filtered = useMemo(() => {
     let result = items;
-
-    // Filter by status
     const today = new Date().toISOString().slice(0, 10);
+    
     if (statusFilter === "ativos") {
       result = result.filter(c => c.ativo);
     } else if (statusFilter === "inadimplentes") {
@@ -81,84 +144,35 @@ export default function Clientes() {
       if (qd && c.linhas?.some((l) => onlyDigits(l.msisdn).includes(qd))) return true;
       return false;
     });
-  })();
-
-  const load = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("clientes")
-      .select("id, nome, cpf, telefone, ativo, created_at, linhas(id,status,msisdn), cobrancas(id,status,valor,vencimento)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    
-    setItems(sanitize((data as any) ?? [], "clientes_list", user.id));
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    load();
-  }, [user]);
+  }, [items, query, statusFilter]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) return;
     const fd = new FormData(e.currentTarget);
-    const parsed = clienteSchema.safeParse({
-      nome: fd.get("nome"),
-      cpf: fd.get("cpf") || undefined,
-      telefone: fd.get("telefone") || undefined,
-      email: fd.get("email") || undefined,
-      msisdn: fd.get("msisdn") || undefined,
-    });
+    const data = {
+      nome: fd.get("nome") as string,
+      cpf: (fd.get("cpf") as string) || undefined,
+      telefone: (fd.get("telefone") as string) || undefined,
+      email: (fd.get("email") as string) || undefined,
+      msisdn: (fd.get("msisdn") as string) || undefined,
+    };
+    
+    const parsed = clienteSchema.safeParse(data);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
     }
-    setSaving(true);
-    const { data: cli, error: e1 } = await supabase
-      .from("clientes")
-      .insert({
-        user_id: user.id,
-        nome: parsed.data.nome,
-        cpf: parsed.data.cpf ?? null,
-        telefone: parsed.data.telefone ?? null,
-        email: parsed.data.email || null,
-      })
-      .select()
-      .single();
-    if (e1 || !cli) {
-      setSaving(false);
-      toast.error("Falha ao criar cliente");
-      return;
-    }
-    const { data: linha, error: e2 } = await supabase
-      .from("linhas")
-      .insert({ user_id: user.id, cliente_id: cli.id, msisdn: parsed.data.msisdn ?? null })
-      .select()
-      .single();
-    if (e2 || !linha) {
-      setSaving(false);
-      toast.error("Falha ao criar linha");
-      return;
-    }
-    const venc = new Date();
-    venc.setDate(venc.getDate() + 7);
-    await supabase.from("cobrancas").insert({
-      user_id: user.id,
-      cliente_id: cli.id,
-      linha_id: linha.id,
-      vencimento: venc.toISOString().slice(0, 10),
-      is_primeira: true,
-    });
-    setSaving(false);
-    setOpen(false);
-    toast.success("Cliente cadastrado! Cobrança gerada (pendente).");
-    load();
+    
+    createClienteMutation.mutate(parsed.data);
   };
 
   const pagarComPix = (cobrancaId: string) => {
     setSelectedCobranca(cobrancaId);
   };
+
+  const paginatedItems = useMemo(() => {
+    return filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  }, [filtered, currentPage]);
 
   return (
     <div className="space-y-6">
@@ -182,8 +196,8 @@ export default function Clientes() {
               <div className="space-y-1.5"><Label htmlFor="email">E-mail</Label><Input id="email" name="email" type="email" /></div>
               <div className="space-y-1.5"><Label htmlFor="msisdn">Linha (MSISDN)</Label><Input id="msisdn" name="msisdn" placeholder="11999999999" /></div>
               <p className="text-xs text-muted-foreground">Plano R$ 99,90 — comissão de R$ 85 ao confirmar pagamento.</p>
-              <Button type="submit" className="w-full" disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />} Cadastrar
+              <Button type="submit" className="w-full" disabled={createClienteMutation.isPending}>
+                {createClienteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Cadastrar
               </Button>
             </form>
           </DialogContent>
@@ -234,7 +248,7 @@ export default function Clientes() {
         </div>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : items.length === 0 ? (
         <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
@@ -311,7 +325,7 @@ export default function Clientes() {
       <PixPaymentDialog 
         cobrancaId={selectedCobranca} 
         onOpenChange={(open) => !open && setSelectedCobranca(null)}
-        onSuccess={load}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["clientes"] })}
       />
     </div>
   );
