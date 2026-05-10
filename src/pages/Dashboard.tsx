@@ -226,7 +226,7 @@ export default function Dashboard() {
 
             <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-primary font-bold">Comissão de Ativação</p>
+                <p className="text-[10px] uppercase tracking-widest text-primary font-bold">GANHO IMEDIATO DE ATIVAÇÃO</p>
                 <p className="text-2xl font-black text-white">{fmt(simulacao.comissaoAtivacao)}</p>
                 <p className="text-[9px] text-primary/70 italic mt-1 font-medium">
                   Valor recebido pelas ativações iniciais realizadas diretamente na sua rede.
@@ -245,7 +245,7 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Comissão de Ativação</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">GANHO IMEDIATO DE ATIVAÇÃO</p>
                 <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`ativacao-${simulacao.comissaoAtivacao}`}>
                   {fmt(simulacao.comissaoAtivacao)}
                 </p>
