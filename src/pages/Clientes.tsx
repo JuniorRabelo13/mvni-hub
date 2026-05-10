@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X } from "lucide-react";
+import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 import { sanitize } from "@/lib/sanitize";
 
@@ -43,6 +43,13 @@ export default function Clientes() {
   const [selectedCobranca, setSelectedCobranca] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
+  // Reset to first page when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, statusFilter]);
 
   const normalize = (s: string | null | undefined) =>
     (s ?? "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -238,38 +245,66 @@ export default function Clientes() {
           Nenhum cliente encontrado para "{query}".
         </CardContent></Card>
       ) : (
-        <div className="grid gap-3">
-          {filtered.map((c) => {
-            const pendentes = c.cobrancas?.filter((x) => x.status === "pendente") ?? [];
-            const linhasAtivas = c.linhas?.filter((l) => l.status === "ativa").length ?? 0;
-            return (
-              <Card key={c.id}>
-                <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-                  <div>
-                    <CardTitle className="text-lg">{c.nome}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{c.telefone ?? c.cpf ?? "—"}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">{linhasAtivas} linha(s)</Badge>
-                    <Badge variant={c.ativo ? "default" : "secondary"}>{c.ativo ? "Ativo" : "Inativo"}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {pendentes.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
-                      <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
-                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => pagarComPix(p.id)}>
-                        <QrCode className="h-3.5 w-3.5" /> Pagar com PIX
-                      </Button>
+        <div className="space-y-4">
+          <div className="grid gap-3">
+            {filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((c) => {
+              const pendentes = c.cobrancas?.filter((x) => x.status === "pendente") ?? [];
+              const linhasAtivas = c.linhas?.filter((l) => l.status === "ativa").length ?? 0;
+              return (
+                <Card key={c.id}>
+                  <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+                    <div>
+                      <CardTitle className="text-lg">{c.nome}</CardTitle>
+                      <p className="text-xs text-muted-foreground">{c.telefone ?? c.cpf ?? "—"}</p>
                     </div>
-                  ))}
-                  {pendentes.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Sem cobranças pendentes.</p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline">{linhasAtivas} linha(s)</Badge>
+                      <Badge variant={c.ativo ? "default" : "secondary"}>{c.ativo ? "Ativo" : "Inativo"}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {pendentes.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+                        <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
+                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => pagarComPix(p.id)}>
+                          <QrCode className="h-3.5 w-3.5" /> Pagar com PIX
+                        </Button>
+                      </div>
+                    ))}
+                    {pendentes.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Sem cobranças pendentes.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {filtered.length > itemsPerPage && (
+            <div className="flex items-center justify-between py-2">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {Math.min(filtered.length, (currentPage - 1) * itemsPerPage + 1)} a {Math.min(filtered.length, currentPage * itemsPerPage)} de {filtered.length} clientes
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filtered.length / itemsPerPage), prev + 1))}
+                  disabled={currentPage === Math.ceil(filtered.length / itemsPerPage)}
+                >
+                  Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
