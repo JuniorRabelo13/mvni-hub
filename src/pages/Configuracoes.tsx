@@ -170,7 +170,7 @@ export default function Configuracoes() {
                 <Label htmlFor={config.chave}>{config.descricao}</Label>
                 <Input 
                   id={config.chave}
-                  type="password"
+                  type={config.chave.includes('key') || config.chave.includes('token') ? "password" : "text"}
                   value={config.valor}
                   onChange={(e) => handleUpdate(config.chave, e.target.value)}
                   placeholder="Insira a chave da API..."
