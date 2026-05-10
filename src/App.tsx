@@ -19,6 +19,8 @@ import AdminLogs from "./pages/AdminLogs";
 import SecurityLogs from "./pages/SecurityLogs";
 import Importacoes from "./pages/Importacoes";
 import NotFound from "./pages/NotFound";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import SaquePix from "./pages/financeiro/SaquePix";
 import ExtratoFinanceiro from "./pages/financeiro/Extrato";
 
@@ -92,6 +94,8 @@ const App = () => (
               <Route path="/agente/mensagens" element={<AgenteMensagens />} />
               <Route path="/agente/configuracoes" element={<AgenteConfig />} />
             </Route>
+            <Route path="/termos" element={<Terms />} />
+            <Route path="/privacidade" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

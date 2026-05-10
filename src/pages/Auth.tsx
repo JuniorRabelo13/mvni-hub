@@ -155,6 +155,11 @@ export default function AuthPage() {
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="h-4 w-4 animate-spin" />} Criar conta
                   </Button>
+                  <p className="text-[10px] text-center text-muted-foreground mt-4 leading-relaxed px-4">
+                    Ao criar uma conta, você concorda com nossos{" "}
+                    <Link to="/termos" className="underline hover:text-primary" target="_blank">Termos de Uso</Link> e{" "}
+                    <Link to="/privacidade" className="underline hover:text-primary" target="_blank">Política de Privacidade</Link>.
+                  </p>
                 </form>
               </TabsContent>
             </Tabs>
