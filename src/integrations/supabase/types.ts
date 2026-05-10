@@ -233,6 +233,47 @@ export type Database = {
         }
         Relationships: []
       }
+      faturas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          mes_referencia: string
+          pago_em: string | null
+          status: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          mes_referencia: string
+          pago_em?: string | null
+          status?: string
+          user_id?: string
+          valor: number
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          mes_referencia?: string
+          pago_em?: string | null
+          status?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faturas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_chunks: {
         Row: {
           created_at: string | null
@@ -1352,6 +1393,15 @@ export type Database = {
           p_user: string
         }
         Returns: undefined
+      }
+      registrar_fatura_idempotente: {
+        Args: {
+          p_cliente_id: string
+          p_mes: string
+          p_user_id: string
+          p_valor: number
+        }
+        Returns: boolean
       }
       resume_import_job: { Args: { p_job_id: string }; Returns: undefined }
       sms_claim_messages: {
