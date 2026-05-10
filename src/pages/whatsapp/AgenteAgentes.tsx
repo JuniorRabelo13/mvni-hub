@@ -397,13 +397,24 @@ export default function AgenteAgentes() {
                       normalizedLocalStatus === "iniciando" || normalizedDbStatus === "iniciando" ||
                       localConnection?.loading === true;
 
+                    const rawNumber = 
+                      localConnection?.phone || 
+                      localConnection?.remoteJid || 
+                      localConnection?.wid || 
+                      localConnection?.sender || 
+                      localConnection?.pushName ||
+                      localConnection?.numero_whatsapp ||
+                      agent.numero_whatsapp;
+
+                    const displayWhatsApp = typeof rawNumber === 'string' && rawNumber !== "Aguardando..." 
+                      ? rawNumber.replace(/@s\.whatsapp\.net/g, "") 
+                      : null;
+
                     return (
                       <tr key={agent.id} className="group hover:bg-zinc-800/20 transition-colors">
                         <td className="px-8 py-7 font-bold text-lg tracking-tight text-white align-middle">
-                          {localConnection?.numero_whatsapp && localConnection?.numero_whatsapp !== "Aguardando..." ? (
-                            localConnection.numero_whatsapp
-                          ) : agent.numero_whatsapp && agent.numero_whatsapp !== "Aguardando..." ? (
-                            agent.numero_whatsapp
+                          {displayWhatsApp ? (
+                            displayWhatsApp
                           ) : (
                             <div className="flex items-center gap-2">
                               <div className="h-4 w-32 bg-zinc-800 animate-pulse rounded-md" />
