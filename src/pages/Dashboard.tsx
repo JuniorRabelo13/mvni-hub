@@ -248,7 +248,7 @@ export default function Dashboard() {
                   {diretos} associados diretos
                 </p>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 relative pr-4 sm:border-r border-white/5">
                 <div className="flex flex-col gap-1">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-widest">GANHO IMEDIATO DE ATIVAÇÃO</p>
                   <Badge className="bg-gradient-gold text-[7px] h-3.5 w-fit px-1 border-none font-bold text-primary-foreground uppercase leading-none">Recebimento único</Badge>
