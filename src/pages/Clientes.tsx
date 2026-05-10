@@ -426,7 +426,7 @@ export default function Clientes() {
               const pendentes = c.cobrancas?.filter((x) => x.status === "pendente") ?? [];
               const linhasAtivas = c.linhas?.filter((l) => l.status === "ativa").length ?? 0;
               return (
-                <Card key={c.id}>
+                <Card key={c.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setSelectedCliente(c)}>
                   <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
                     <div>
                       <CardTitle className="text-lg">{c.nome}</CardTitle>
