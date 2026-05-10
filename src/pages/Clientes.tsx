@@ -487,31 +487,16 @@ export default function Clientes() {
             })}
           </div>
 
-          {filtered.length > itemsPerPage && (
-            <div className="flex items-center justify-between py-2">
-              <p className="text-sm text-muted-foreground">
-                Mostrando {Math.min(filtered.length, (currentPage - 1) * itemsPerPage + 1)} a {Math.min(filtered.length, currentPage * itemsPerPage)} de {filtered.length} clientes
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filtered.length / itemsPerPage), prev + 1))}
-                  disabled={currentPage === Math.ceil(filtered.length / itemsPerPage)}
-                >
-                  Próximo <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <PaginacaoControles
+            currentPage={currentPage}
+            pageSize={pageSize}
+            totalItems={totalCount}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       )}
 
