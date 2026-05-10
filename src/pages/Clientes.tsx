@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle } from "lucide-react";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 import { sanitize } from "@/lib/sanitize";
 
@@ -29,8 +29,8 @@ type Cliente = {
   telefone: string | null;
   ativo: boolean;
   created_at: string;
-  linhas: { id: string; status: string; msisdn: string | null }[];
-  cobrancas: { id: string; status: string; valor: number; vencimento: string }[];
+  linhas: { id: string; status: string; msisdn: string | null; activated_at: string | null; deactivated_at: string | null }[];
+  cobrancas: { id: string; status: string; valor: number; vencimento: string; paid_at: string | null; created_at: string }[];
 };
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -43,6 +43,7 @@ export default function Clientes() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null);
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -99,7 +100,7 @@ export default function Clientes() {
       if (!user) return [];
       const { data } = await supabase
         .from("clientes")
-        .select("id, nome, cpf, telefone, ativo, created_at, linhas(id,status,msisdn), cobrancas(id,status,valor,vencimento)")
+        .select("id, nome, cpf, telefone, ativo, created_at, linhas(id,status,msisdn,activated_at,deactivated_at), cobrancas(id,status,valor,vencimento,paid_at,created_at)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       
@@ -319,24 +320,91 @@ export default function Clientes() {
                       <CardTitle className="text-lg">{c.nome}</CardTitle>
                       <p className="text-xs text-muted-foreground">{c.telefone ?? c.cpf ?? "—"}</p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">{linhasAtivas} linha(s)</Badge>
-                      <Badge variant={c.ativo ? "default" : "secondary"}>{c.ativo ? "Ativo" : "Inativo"}</Badge>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline">{linhasAtivas} linha(s)</Badge>
+                    <Badge variant={c.ativo ? "default" : "secondary"}>{c.ativo ? "Ativo" : "Inativo"}</Badge>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8" 
+                      onClick={() => setExpandedTimeline(expandedTimeline === c.id ? null : c.id)}
+                    >
+                      <History className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {pendentes.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+                      <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
+                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => pagarComPix(p.id)}>
+                        <QrCode className="h-3.5 w-3.5" /> Pagar com PIX
+                      </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {pendentes.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
-                        <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => pagarComPix(p.id)}>
-                          <QrCode className="h-3.5 w-3.5" /> Pagar com PIX
-                        </Button>
+                  ))}
+                  {pendentes.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Sem cobranças pendentes.</p>
+                  )}
+
+                  {expandedTimeline === c.id && (
+                    <div className="mt-4 space-y-3 border-t border-border pt-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Linha do Tempo</p>
+                      <div className="space-y-4">
+                        {(() => {
+                          const events = [
+                            ...(c.cobrancas?.map(cob => ({
+                              date: cob.created_at,
+                              title: `Cobrança gerada: ${fmt(Number(cob.valor))}`,
+                              type: "cobranca",
+                              status: cob.status
+                            })) ?? []),
+                            ...(c.cobrancas?.filter(cob => cob.paid_at).map(cob => ({
+                              date: cob.paid_at!,
+                              title: `Pagamento confirmado: ${fmt(Number(cob.valor))}`,
+                              type: "pagamento",
+                              status: "pago"
+                            })) ?? []),
+                            ...(c.linhas?.filter(l => l.activated_at).map(l => ({
+                              date: l.activated_at!,
+                              title: "Linha ativada",
+                              type: "ativacao",
+                              status: "sucesso"
+                            })) ?? []),
+                            ...(c.linhas?.filter(l => l.deactivated_at).map(l => ({
+                              date: l.deactivated_at!,
+                              title: "Linha suspensa/desativada",
+                              type: "suspensao",
+                              status: "alerta"
+                            })) ?? []),
+                            {
+                              date: c.created_at,
+                              title: "Cliente cadastrado",
+                              type: "cadastro",
+                              status: "info"
+                            }
+                          ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+                          return events.map((ev, i) => (
+                            <div key={i} className="relative flex gap-3 pl-4">
+                              <div className="absolute left-0 top-1.5 h-full w-[1px] bg-border last:h-2" />
+                              <div className={`absolute left-[-4px] top-1.5 h-2 w-2 rounded-full ${
+                                ev.type === "pagamento" ? "bg-emerald-500" : 
+                                ev.type === "suspensao" ? "bg-red-500" : 
+                                ev.type === "ativacao" ? "bg-blue-500" : "bg-muted-foreground"
+                              }`} />
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">{ev.title}</span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {new Date(ev.date).toLocaleString("pt-BR")}
+                                </span>
+                              </div>
+                            </div>
+                          ));
+                        })()}
                       </div>
-                    ))}
-                    {pendentes.length === 0 && (
-                      <p className="text-xs text-muted-foreground">Sem cobranças pendentes.</p>
-                    )}
-                  </CardContent>
+                    </div>
+                  )}
+                </CardContent>
                 </Card>
               );
             })}
