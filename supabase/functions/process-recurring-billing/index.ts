@@ -17,11 +17,41 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log("Iniciando processamento de cobranças recorrentes, inadimplência e suspensão...")
+    console.log("Iniciando processamento de cobranças recorrentes, inadimplência, suspensão e reativação...")
 
     const hoje = new Date()
     const hojeStr = hoje.toISOString().slice(0, 10)
     
+    // 0. Reativar clientes e linhas que pagaram faturas pendentes
+    const { data: quitadas, error: qError } = await supabaseAdmin
+      .from('cobrancas')
+      .select('cliente_id, linha_id')
+      .eq('status', 'pago')
+      .not('paid_at', 'is', null)
+
+    if (!qError && quitadas && quitadas.length > 0) {
+      for (const q of quitadas) {
+        // Verificar se ainda existe ALGUMA cobrança pendente vencida
+        const { count } = await supabaseAdmin
+          .from('cobrancas')
+          .select('id', { count: 'exact', head: true })
+          .eq('cliente_id', q.cliente_id)
+          .eq('status', 'pendente')
+          .lt('vencimento', hojeStr)
+
+        if (count === 0) {
+          // Reativar cliente
+          await supabaseAdmin.from('clientes').update({ ativo: true }).eq('id', q.cliente_id)
+          // Reativar linha específica
+          await supabaseAdmin.from('linhas')
+            .update({ status: 'ativa', activated_at: hoje.toISOString(), deactivated_at: null })
+            .eq('id', q.linha_id)
+            .eq('status', 'suspensa')
+        }
+      }
+      console.log(`${quitadas.length} verificações de reativação processadas.`)
+    }
+
     // Configuração de dias de carência para suspensão automática da linha
     const DIAS_CARENCIA_SUSPENSAO = 5 
     const dataLimiteSuspensao = new Date()
