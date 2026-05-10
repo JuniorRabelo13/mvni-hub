@@ -19,6 +19,8 @@ import AdminLogs from "./pages/AdminLogs";
 import SecurityLogs from "./pages/SecurityLogs";
 import Importacoes from "./pages/Importacoes";
 import NotFound from "./pages/NotFound";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import SaquePix from "./pages/financeiro/SaquePix";
 import ExtratoFinanceiro from "./pages/financeiro/Extrato";
 
