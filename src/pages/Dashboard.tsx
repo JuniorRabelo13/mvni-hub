@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Users, Wallet, Activity, TrendingUp, ArrowRight, Network, Calculator, Info } from "lucide-react";
 import { sanitize } from "@/lib/sanitize";
 
@@ -226,7 +227,10 @@ export default function Dashboard() {
 
             <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-primary font-bold">GANHO IMEDIATO DE ATIVAÇÃO</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-[10px] uppercase tracking-widest text-primary font-bold">GANHO IMEDIATO DE ATIVAÇÃO</p>
+                  <Badge className="bg-gradient-gold text-[8px] h-4 px-1.5 border-none font-bold text-primary-foreground uppercase">Recebimento único</Badge>
+                </div>
                 <p className="text-2xl font-black text-white">{fmt(simulacao.comissaoAtivacao)}</p>
                 <p className="text-[9px] text-primary/70 italic mt-1 font-medium">
                   Pagamento único recebido na entrada de novos associados diretos.
@@ -245,7 +249,10 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">GANHO IMEDIATO DE ATIVAÇÃO</p>
+                <div className="flex flex-col gap-1">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest">GANHO IMEDIATO DE ATIVAÇÃO</p>
+                  <Badge className="bg-gradient-gold text-[7px] h-3.5 w-fit px-1 border-none font-bold text-primary-foreground uppercase leading-none">Recebimento único</Badge>
+                </div>
                 <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`ativacao-${simulacao.comissaoAtivacao}`}>
                   {fmt(simulacao.comissaoAtivacao)}
                 </p>
