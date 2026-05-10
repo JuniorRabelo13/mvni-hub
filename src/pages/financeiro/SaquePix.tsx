@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Wallet, ArrowUpRight, CheckCircle2, Clock, AlertTriangle, Landmark, Receipt, Loader2 } from "lucide-react";
+import { Wallet, ArrowUpRight, CheckCircle2, Clock, AlertTriangle, Landmark, Receipt, Loader2, FileDown, Download } from "lucide-react";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
