@@ -101,6 +101,25 @@ export default function AppLayout() {
           </div>
         </div>
 
+        {isMasterAdmin && (
+          <div className="px-3 mb-3">
+            <NavLink
+              to="/master/dashboard"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm font-bold transition-all shadow-sm",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 ring-1 ring-primary/50"
+                    : "bg-gradient-to-r from-amber-500/20 to-primary/10 text-amber-300 hover:from-amber-500/30 hover:to-primary/20 hover:text-amber-200 border border-amber-500/30",
+                )
+              }
+            >
+              <Crown className="h-5 w-5 shrink-0" />
+              <span>Master Owner</span>
+            </NavLink>
+          </div>
+        )}
+
         <nav className="flex-1 space-y-4 px-3 overflow-y-auto pt-4">
           {isMasterAdmin && (
             <div className="space-y-1">
