@@ -216,7 +216,7 @@ export default function Clientes() {
               return (
                 <Card key={c.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setSelectedCliente(c)}>
                   <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-                    <div><CardTitle className="text-lg">{c.nome}</CardTitle><p className="text-xs text-muted-foreground">{c.telefone ?? c.cpf ?? "—"}</p></div>
+                    <div><CardTitle className="text-lg">{c.nome}</CardTitle><p className="text-xs text-muted-foreground">{c.telefone ? maskPhone(c.telefone) : c.cpf ? maskCPF(c.cpf) : "—"}</p></div>
                     <div className="flex flex-wrap gap-2">
                       {(() => { const health = getHealthScore(c); return (<div className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${health.bg} ${health.color}`}><Activity className="h-3 w-3" />{health.label} ({health.score}%)</div>); })()}
                       <Badge variant="outline">{linhasAtivas} linha(s)</Badge>
