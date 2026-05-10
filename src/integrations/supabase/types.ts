@@ -41,6 +41,36 @@ export type Database = {
         }
         Relationships: []
       }
+      auditoria: {
+        Row: {
+          created_at: string | null
+          dados_antes: Json | null
+          dados_depois: Json | null
+          id: string
+          operacao: string
+          tabela: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dados_antes?: Json | null
+          dados_depois?: Json | null
+          id?: string
+          operacao: string
+          tabela: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string | null
+          dados_antes?: Json | null
+          dados_depois?: Json | null
+          id?: string
+          operacao?: string
+          tabela?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           ativo: boolean
@@ -394,6 +424,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      logs: {
+        Row: {
+          acao: string
+          created_at: string | null
+          detalhes: Json | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string
+          user_id?: string
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
