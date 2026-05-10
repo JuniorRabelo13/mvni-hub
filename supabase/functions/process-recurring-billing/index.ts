@@ -17,31 +17,56 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log("Iniciando processamento de cobranças recorrentes e inadimplência...")
+    console.log("Iniciando processamento de cobranças recorrentes, inadimplência e suspensão...")
 
-    const hoje = new Date().toISOString().slice(0, 10)
+    const hoje = new Date()
+    const hojeStr = hoje.toISOString().slice(0, 10)
+    
+    // Configuração de dias de carência para suspensão automática da linha
+    const DIAS_CARENCIA_SUSPENSAO = 5 
+    const dataLimiteSuspensao = new Date()
+    dataLimiteSuspensao.setDate(hoje.getDate() - DIAS_CARENCIA_SUSPENSAO)
+    const dataLimiteSuspensaoStr = dataLimiteSuspensao.toISOString().slice(0, 10)
 
-    // 1. Marcar clientes como inadimplentes se tiverem cobranças vencidas
+    // 1. Marcar clientes como inadimplentes e SUSPENDER LINHAS se tiverem cobranças vencidas
     const { data: vencidas, error: vError } = await supabaseAdmin
       .from('cobrancas')
-      .select('cliente_id')
+      .select('cliente_id, linha_id, vencimento')
       .eq('status', 'pendente')
-      .lt('vencimento', hoje)
+      .lt('vencimento', hojeStr)
 
     if (vError) throw vError
 
+    let inadimplentesTotal = 0
     if (vencidas && vencidas.length > 0) {
-      const idsInadimplentes = [...new Set(vencidas.map(v => v.cliente_id))]
-      const { error: updError } = await supabaseAdmin
-        .from('clientes')
-        .update({ ativo: false }) // Desativa o cliente por inadimplência
-        .in('id', idsInadimplentes)
+      const idsClientesInadimplentes = [...new Set(vencidas.map(v => v.cliente_id))]
+      inadimplentesTotal = idsClientesInadimplentes.length
       
-      if (updError) console.error("Erro ao atualizar status de inadimplentes:", updError)
-      else console.log(`${idsInadimplentes.length} clientes marcados como inadimplentes/inativos.`)
+      // Atualizar status do cliente para inativo/inadimplente
+      await supabaseAdmin
+        .from('clientes')
+        .update({ ativo: false })
+        .in('id', idsClientesInadimplentes)
+
+      // Identificar linhas para suspensão automática (vencidas há mais de X dias)
+      const idsLinhasParaSuspender = vencidas
+        .filter(v => v.vencimento <= dataLimiteSuspensaoStr)
+        .map(v => v.linha_id)
+
+      if (idsLinhasParaSuspender.length > 0) {
+        await supabaseAdmin
+          .from('linhas')
+          .update({ 
+            status: 'suspensa',
+            deactivated_at: hoje.toISOString()
+          })
+          .in('id', idsLinhasParaSuspender)
+        
+        console.log(`${idsLinhasParaSuspender.length} linhas suspensas automaticamente.`)
+      }
     }
 
-    // 2. Buscar todos os clientes ativos (que não estão inadimplentes) para gerar novas cobranças
+    // 2. Buscar todos os clientes ativos para gerar novas cobranças recorrentes
     const { data: clientes, error: cliError } = await supabaseAdmin
       .from('clientes')
       .select('id, user_id, ativo, linhas(id, status)')
@@ -55,13 +80,12 @@ serve(async (req) => {
       const linhasAtivas = cliente.linhas?.filter(l => l.status === 'ativa') || []
       
       for (const linha of linhasAtivas) {
-        // Verificar se já existe uma cobrança futura para evitar duplicidade
         const { data: existente } = await supabaseAdmin
           .from('cobrancas')
           .select('id')
           .eq('cliente_id', cliente.id)
           .eq('linha_id', linha.id)
-          .gte('vencimento', hoje)
+          .gte('vencimento', hojeStr)
           .limit(1)
 
         if (!existente || existente.length === 0) {
@@ -80,11 +104,7 @@ serve(async (req) => {
               is_primeira: false
             })
 
-          if (!insError) {
-            cobrancasGeradas++
-          } else {
-            console.error(`Erro ao gerar cobrança para cliente ${cliente.id}:`, insError)
-          }
+          if (!insError) cobrancasGeradas++
         }
       }
     }
@@ -93,7 +113,7 @@ serve(async (req) => {
       JSON.stringify({ 
         message: "Processamento concluído", 
         cobrancas_geradas: cobrancasGeradas,
-        inadimplentes_processados: vencidas?.length || 0
+        inadimplentes_processados: inadimplentesTotal
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
