@@ -18,6 +18,7 @@ import { useClientesPaginados, type Cliente } from "@/hooks/useClientesPaginados
 import { PaginacaoControles } from "@/components/PaginacaoControles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SeletorPlano } from "@/components/SeletorPlano";
+import { TimelineAuditoria } from "@/components/TimelineAuditoria";
 
 const clienteSchema = z.object({
   nome: z.string().trim().min(2).max(80),
