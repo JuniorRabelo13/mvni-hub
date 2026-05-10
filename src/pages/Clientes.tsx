@@ -219,6 +219,36 @@ export default function Clientes() {
     setSelectedCobranca(cobrancaId);
   };
 
+  const metrics = useMemo(() => {
+    const active = items.filter(c => c.ativo);
+    const mrr = active.length * 99.90;
+    
+    let totalRevenue = 0;
+    let overdueRevenue = 0;
+    const today = new Date().toISOString().slice(0, 10);
+    
+    items.forEach(c => {
+      c.cobrancas?.forEach(cob => {
+        if (cob.status === "pago") {
+          totalRevenue += Number(cob.valor);
+        } else if (cob.status === "pendente" && cob.vencimento < today) {
+          overdueRevenue += Number(cob.valor);
+        }
+      });
+    });
+
+    const activeCount = active.length;
+    const averageTicket = activeCount > 0 ? mrr / activeCount : 0;
+
+    return {
+      mrr,
+      totalRevenue,
+      overdueRevenue,
+      activeCount,
+      averageTicket
+    };
+  }, [items]);
+
   const paginatedItems = useMemo(() => {
     return filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [filtered, currentPage]);
