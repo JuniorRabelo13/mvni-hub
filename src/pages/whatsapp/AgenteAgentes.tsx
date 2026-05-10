@@ -133,10 +133,11 @@ export default function AgenteAgentes() {
               connected: true,
               conectado: true,
               loading: false,
-              qr: null,
-              updatedAt: new Date().toISOString(),
-            },
-          }));
+               qr: null,
+               numero_whatsapp: connectedPhone || "Aguardando...",
+               updatedAt: new Date().toISOString(),
+             },
+           }));
 
           setConnectionStatus("conectado");
           setQrCode(null);
@@ -379,8 +380,10 @@ export default function AgenteAgentes() {
                     return (
                       <tr key={agent.id} className="group hover:bg-zinc-800/20 transition-colors">
                         <td className="px-8 py-7 font-bold text-lg tracking-tight text-white">
-                          {agent.numero_whatsapp && agent.numero_whatsapp !== "Aguardando..." 
-                            ? agent.numero_whatsapp 
+                          {localConnection?.numero_whatsapp && localConnection?.numero_whatsapp !== "Aguardando..."
+                            ? localConnection.numero_whatsapp
+                            : agent.numero_whatsapp && agent.numero_whatsapp !== "Aguardando..."
+                            ? agent.numero_whatsapp
                             : "Aguardando..."}
                         </td>
                         <td className="px-8 py-7 text-center">
