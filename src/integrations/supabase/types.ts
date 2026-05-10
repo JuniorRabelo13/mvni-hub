@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_alertas_fraude: {
+        Row: {
+          created_at: string | null
+          detalhes: Json | null
+          id: string
+          resolvido: boolean | null
+          score_risco: number | null
+          tipo: string
+          user_ids: string[]
+        }
+        Insert: {
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string
+          resolvido?: boolean | null
+          score_risco?: number | null
+          tipo: string
+          user_ids: string[]
+        }
+        Update: {
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string
+          resolvido?: boolean | null
+          score_risco?: number | null
+          tipo?: string
+          user_ids?: string[]
+        }
+        Relationships: []
+      }
       admin_logs: {
         Row: {
           action: string
@@ -327,6 +357,33 @@ export type Database = {
           },
         ]
       }
+      fingerprints_login: {
+        Row: {
+          created_at: string | null
+          fingerprint_hash: string | null
+          id: string
+          ip_address: unknown
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          fingerprint_hash?: string | null
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          fingerprint_hash?: string | null
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       import_chunks: {
         Row: {
           created_at: string | null
@@ -441,6 +498,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      indicacoes: {
+        Row: {
+          created_at: string | null
+          id: string
+          indicado_user_id: string
+          indicador_user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          indicado_user_id: string
+          indicador_user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          indicado_user_id?: string
+          indicador_user_id?: string
+        }
+        Relationships: []
       }
       leads: {
         Row: {
@@ -1598,6 +1676,36 @@ export type Database = {
         }
         Relationships: []
       }
+      view_admin_alertas_fraude: {
+        Row: {
+          created_at: string | null
+          detalhes: Json | null
+          id: string | null
+          resolvido: boolean | null
+          score_risco: number | null
+          tipo: string | null
+          user_ids: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string | null
+          resolvido?: boolean | null
+          score_risco?: number | null
+          tipo?: string | null
+          user_ids?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          detalhes?: Json | null
+          id?: string | null
+          resolvido?: boolean | null
+          score_risco?: number | null
+          tipo?: string | null
+          user_ids?: string[] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       aprovar_saque: { Args: { p_saque_id: string }; Returns: undefined }
@@ -1645,6 +1753,10 @@ export type Database = {
           p_valor: number
         }
         Returns: undefined
+      }
+      detectar_ciclo_indicacao: {
+        Args: { p_indicado_id: string; p_indicador_id: string }
+        Returns: boolean
       }
       fail_import_chunk: {
         Args: { p_chunk_id: string; p_erro: string }
