@@ -9,11 +9,18 @@ interface TimelineAuditoriaProps {
   clienteId: string;
 }
 
+interface AuditLog {
+  id: string;
+  origem: 'sistema' | 'humano';
+  created_at: string;
+  dados_antes: { ativo: boolean };
+  dados_depois: { ativo: boolean };
+}
+
 export function TimelineAuditoria({ clienteId }: TimelineAuditoriaProps) {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["auditoria-cliente", clienteId],
     queryFn: async () => {
-      // Buscamos registros onde o ID do cliente está contido nos metadados da auditoria
       const { data, error } = await supabase
         .from("auditoria")
         .select("*")
@@ -23,7 +30,15 @@ export function TimelineAuditoria({ clienteId }: TimelineAuditoriaProps) {
         .limit(10);
 
       if (error) throw error;
-      return data;
+      
+      // Mapeamento manual para garantir tipagem correta do JSONB
+      return (data || []).map(item => ({
+        id: item.id,
+        origem: (item as any).origem || 'humano',
+        created_at: item.created_at,
+        dados_antes: (item.dados_antes as any) || {},
+        dados_depois: (item.dados_depois as any) || {}
+      })) as AuditLog[];
     },
   });
 
@@ -72,7 +87,7 @@ export function TimelineAuditoria({ clienteId }: TimelineAuditoriaProps) {
                 <span className="capitalize">{log.origem}</span>
                 <span className="text-muted-foreground">•</span>
                 <span className="text-muted-foreground">
-                  {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: ptBR })}
+                  {formatDistanceToNow(new Date(log.created_at!), { addSuffix: true, locale: ptBR })}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-sm">
@@ -80,11 +95,6 @@ export function TimelineAuditoria({ clienteId }: TimelineAuditoriaProps) {
                 <ArrowRight className="h-3 w-3 text-muted-foreground" />
                 {getStatusBadge(log.dados_depois.ativo)}
               </div>
-              {log.origem === 'humano' && (
-                <p className="text-[10px] text-muted-foreground italic">
-                  Alterado via Dashboard
-                </p>
-              )}
             </div>
           </div>
         ))}
