@@ -179,67 +179,16 @@ export default function Clientes() {
     (s ?? "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const onlyDigits = (s: string | null | undefined) => (s ?? "").toString().replace(/\D/g, "");
 
-  const filtered = useMemo(() => {
-    let result = items;
-    const today = new Date().toISOString().slice(0, 10);
-    
-    if (statusFilter === "ativos") {
-      result = result.filter(c => c.ativo);
-    } else if (statusFilter === "inadimplentes") {
-      result = result.filter(c => c.cobrancas?.some(p => p.status === "pendente" && p.vencimento < today));
-    } else if (statusFilter === "suspensos") {
-      result = result.filter(c => !c.ativo);
-    } else if (statusFilter === "vencendo_hoje") {
-      result = result.filter(c => c.cobrancas?.some(p => p.status === "pendente" && p.vencimento === today));
-    }
-
-    const q = query.trim();
-    if (!q) return result;
-    const qn = normalize(q);
-    const qd = onlyDigits(q);
-    return result.filter((c) => {
-      if (normalize(c.nome).includes(qn)) return true;
-      if (qd && onlyDigits(c.cpf).includes(qd)) return true;
-      if (qd && onlyDigits(c.telefone).includes(qd)) return true;
-      if (qd && c.linhas?.some((l) => onlyDigits(l.msisdn).includes(qd))) return true;
-      return false;
-    });
-  }, [items, query, statusFilter]);
-
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const data = {
-      nome: fd.get("nome") as string,
-      cpf: (fd.get("cpf") as string) || undefined,
-      telefone: (fd.get("telefone") as string) || undefined,
-      email: (fd.get("email") as string) || undefined,
-      msisdn: (fd.get("msisdn") as string) || undefined,
-    };
-    
-    const parsed = clienteSchema.safeParse(data);
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
-      return;
-    }
-    
-    createClienteMutation.mutate(parsed.data);
-  };
-
-  const pagarComPix = (cobrancaId: string) => {
-    setSelectedCobranca(cobrancaId);
-  };
-
   const metrics = useMemo(() => {
-    const active = items.filter(c => c.ativo);
+    const active = allItemsForMetrics.filter(c => c.ativo);
     const mrr = active.length * 99.90;
     
     let totalRevenue = 0;
     let overdueRevenue = 0;
     const today = new Date().toISOString().slice(0, 10);
     
-    items.forEach(c => {
-      c.cobrancas?.forEach(cob => {
+    allItemsForMetrics.forEach(c => {
+      (c.cobrancas as any[])?.forEach(cob => {
         if (cob.status === "pago") {
           totalRevenue += Number(cob.valor);
         } else if (cob.status === "pendente" && cob.vencimento < today) {
@@ -251,16 +200,13 @@ export default function Clientes() {
     const activeCount = active.length;
     const averageTicket = activeCount > 0 ? mrr / activeCount : 0;
 
-    return {
-      mrr,
-      totalRevenue,
-      overdueRevenue,
-      activeCount,
-      averageTicket
-    };
-  }, [items]);
+    return { mrr, totalRevenue, overdueRevenue, activeCount, averageTicket };
+  }, [allItemsForMetrics]);
 
-  // Removido useMemo redundante
+  // O filtro agora é feito server-side via hook
+  const filtered = items;
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
   const getHealthScore = (cliente: Cliente) => {
     let score = 100;
