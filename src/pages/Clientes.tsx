@@ -45,6 +45,54 @@ export default function Clientes() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel("clientes-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "clientes",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["clientes", user.id] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "cobrancas",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["clientes", user.id] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "linhas",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["clientes", user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
+
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["clientes", user?.id],
     queryFn: async () => {
