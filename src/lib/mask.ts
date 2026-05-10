@@ -21,15 +21,15 @@ export function maskSensitiveInfo(text: string): string {
   if (!text) return text;
   
   // Mask CPF in text (000.000.000-00 or 00000000000)
-  let masked = text.replace(/(\d{3})\.\d{3}\.\d{3}-(\d{2})|(\d{3})\d{6}(\d{2})/g, (match, p1, p2, p3, p4) => {
-    const first = p1 || p3;
-    const last = p2 || p4;
-    return `${first}.***.***-${last}`;
-  });
+  let masked = text.replace(/(\d{3})\.\d{3}\.\d{3}-(\d{2})/g, "$1.***.***-$2");
+  masked = masked.replace(/(\d{3})\d{6}(\d{2})/g, "$1.***.***-$2");
 
-  // Mask Phone in text ( (00) 00000-0000 or (00) 0000-0000 or 00000000000 )
-  // This is trickier because phones vary. Let's do a basic one for common formats.
-  masked = masked.replace(/(\(\d{2}\)\s)\d{4,5}-\(\d{4}\)/g, "$1****-$2");
+  // Mask Phone in text ( (00) 00000-0000 or (00) 0000-0000 )
+  masked = masked.replace(/(\(\d{2}\)\s?)\d{4,5}-\d{4}/g, (match, p1) => {
+    const parts = match.split("-");
+    const last = parts[parts.length - 1];
+    return `${p1}*****-${last}`;
+  });
   
   return masked;
 }
