@@ -232,7 +232,7 @@ export default function SaquePix() {
                   <Button type="submit" className="w-full h-12 text-lg" disabled={Number(valorSaque) < 50}>Solicitar Saque via Pix</Button>
                 ) : (
                   <div className="space-y-3 p-4 bg-muted/50 rounded-lg border border-primary/20">
-                    <p className="text-sm text-center">Confirmar saque de <span className="font-bold">{fmt(Number(valorSaque))}</span> para o Pix <span className="font-bold">{dadosBancarios?.chave_pix}</span>?</p>
+                    <p className="text-sm text-center">Confirmar saque de <span className="font-bold">{fmt(Number(valorSaque))}</span> para o Pix <span className="font-bold">{maskSensitiveInfo(dadosBancarios?.chave_pix || "")}</span>?</p>
                     <div className="flex gap-2">
                       <Button type="button" variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>Cancelar</Button>
                       <Button type="button" className="flex-1" onClick={() => requestWithdrawalMutation.mutate(Number(valorSaque))} disabled={requestWithdrawalMutation.isPending}>Confirmar</Button>
