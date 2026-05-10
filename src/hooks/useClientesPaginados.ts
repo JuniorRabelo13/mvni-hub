@@ -9,6 +9,8 @@ export type Cliente = {
   telefone: string | null;
   ativo: boolean;
   created_at: string;
+  plano_id: string | null;
+  planos: { nome: string; valor: number } | null;
   linhas: { id: string; status: string; msisdn: string | null; activated_at: string | null; deactivated_at: string | null }[];
   cobrancas: { id: string; status: string; valor: number; vencimento: string; paid_at: string | null; created_at: string }[];
 };
@@ -36,19 +38,17 @@ export function useClientesPaginados(
       let supabaseQuery = supabase
         .from("clientes")
         .select(
-          "id, nome, cpf, telefone, ativo, created_at, linhas(id,status,msisdn,activated_at,deactivated_at), cobrancas(id,status,valor,vencimento,paid_at,created_at)",
+          "id, nome, cpf, telefone, ativo, created_at, plano_id, planos(nome, valor), linhas(id,status,msisdn,activated_at,deactivated_at), cobrancas(id,status,valor,vencimento,paid_at,created_at)",
           { count: "exact" }
         )
         .eq("user_id", userId);
 
-      // Filtros Server-side básicos
       if (filtros.status === "ativos") {
         supabaseQuery = supabaseQuery.eq("ativo", true);
       } else if (filtros.status === "suspensos") {
         supabaseQuery = supabaseQuery.eq("ativo", false);
       }
 
-      // Filtro de busca (se houver query, idealmente usar search index ou filtros ILIKE)
       if (filtros.query) {
         const q = `%${filtros.query}%`;
         supabaseQuery = supabaseQuery.or(`nome.ilike.${q},cpf.ilike.${q},telefone.ilike.${q}`);
@@ -60,10 +60,6 @@ export function useClientesPaginados(
 
       if (error) throw error;
 
-      // Note: filtros complexos como 'inadimplentes' ou 'vencendo_hoje' podem exigir lógica mais avançada
-      // ou tabelas auxiliares/views no Supabase para paginação eficiente.
-      // Aqui estamos mantendo a compatibilidade com a estrutura atual.
-
       const sanitizedData = sanitize((data as any) ?? [], "clientes_list", userId) as Cliente[];
 
       return {
@@ -74,7 +70,6 @@ export function useClientesPaginados(
     enabled: !!userId,
   });
 
-  // Prefetch da próxima página
   const prefetchNextPage = async () => {
     if (query.data && page * pageSize < query.data.count) {
       const nextPage = page + 1;
@@ -87,7 +82,7 @@ export function useClientesPaginados(
           let supabaseQuery = supabase
             .from("clientes")
             .select(
-              "id, nome, cpf, telefone, ativo, created_at, linhas(id,status,msisdn,activated_at,deactivated_at), cobrancas(id,status,valor,vencimento,paid_at,created_at)"
+              "id, nome, cpf, telefone, ativo, created_at, plano_id, planos(nome, valor), linhas(id,status,msisdn,activated_at,deactivated_at), cobrancas(id,status,valor,vencimento,paid_at,created_at)"
             )
             .eq("user_id", userId!);
 
