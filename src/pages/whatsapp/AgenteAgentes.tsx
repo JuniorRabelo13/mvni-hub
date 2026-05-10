@@ -309,6 +309,21 @@ export default function AgenteAgentes() {
     setAgentConnections({});
   };
 
+  const connectedAgentsCount = agents.filter((agent: any) => {
+    const localConnection = agentConnections[agent.id];
+    const normalizedLocalStatus = localConnection?.status?.toLowerCase();
+    const normalizedDbStatus = (agent?.status_conexao || agent?.status || "").toLowerCase();
+    
+    return (
+      normalizedLocalStatus === "conectado" || normalizedLocalStatus === "connected" ||
+      normalizedLocalStatus === "open" || normalizedLocalStatus === "authenticated" ||
+      localConnection?.connected === true || localConnection?.conectado === true ||
+      normalizedDbStatus === "conectado" || normalizedDbStatus === "connected" ||
+      normalizedDbStatus === "open" || normalizedDbStatus === "authenticated" ||
+      agent?.conectado === true
+    );
+  }).length;
+
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === "Escape") handleCloseModal();
