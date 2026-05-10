@@ -19,6 +19,7 @@ import AdminLogs from "./pages/AdminLogs";
 import SecurityLogs from "./pages/SecurityLogs";
 import Importacoes from "./pages/Importacoes";
 import NotFound from "./pages/NotFound";
+import SaquePix from "./pages/financeiro/SaquePix";
 
 // SMS Module Pages
 import SMSDashboard from "./pages/sms/SMSDashboard";
