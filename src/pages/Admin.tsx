@@ -15,6 +15,7 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const isAdmin = (user as any)?.role === 'admin';
 
   // Proteção de rota no frontend
