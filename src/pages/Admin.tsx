@@ -48,7 +48,28 @@ export default function AdminDashboard() {
     },
   });
 
-  if (loadingMetrics || loadingChart) {
+  const { data: alerts = [], isLoading: loadingAlerts } = useQuery({
+    queryKey: ["admin-fraud-alerts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("view_admin_alertas_fraude").select("*");
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin,
+  });
+
+  const resolveAlertMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("admin_alertas_fraude").update({ resolvido: true }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-fraud-alerts"] });
+      toast.success("Alerta marcado como resolvido.");
+    },
+  });
+
+  if (loadingMetrics || loadingChart || loadingAlerts) {
     return (
       <div className="p-8 space-y-6">
         <Skeleton className="h-10 w-64" />
