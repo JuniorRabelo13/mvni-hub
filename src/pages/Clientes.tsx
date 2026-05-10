@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, CheckCircle2, Clock, Loader2, QrCode } from "lucide-react";
+import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X } from "lucide-react";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 import { sanitize } from "@/lib/sanitize";
 
@@ -41,6 +41,25 @@ export default function Clientes() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedCobranca, setSelectedCobranca] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+
+  const normalize = (s: string | null | undefined) =>
+    (s ?? "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const onlyDigits = (s: string | null | undefined) => (s ?? "").toString().replace(/\D/g, "");
+
+  const filtered = (() => {
+    const q = query.trim();
+    if (!q) return items;
+    const qn = normalize(q);
+    const qd = onlyDigits(q);
+    return items.filter((c) => {
+      if (normalize(c.nome).includes(qn)) return true;
+      if (qd && onlyDigits(c.cpf).includes(qd)) return true;
+      if (qd && onlyDigits(c.telefone).includes(qd)) return true;
+      if (qd && c.linhas?.some((l) => onlyDigits(l.msisdn).includes(qd))) return true;
+      return false;
+    });
+  })();
 
   const load = async () => {
     if (!user) return;
@@ -149,15 +168,41 @@ export default function Clientes() {
         </Dialog>
       </header>
 
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por nome, telefone, CPF ou linha…"
+          className="pl-9 pr-9"
+          aria-label="Buscar clientes"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
+            aria-label="Limpar busca"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : items.length === 0 ? (
         <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
           Nenhum cliente ainda. Cadastre o primeiro para começar a faturar.
         </CardContent></Card>
+      ) : filtered.length === 0 ? (
+        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
+          Nenhum cliente encontrado para "{query}".
+        </CardContent></Card>
       ) : (
         <div className="grid gap-3">
-          {items.map((c) => {
+          {filtered.map((c) => {
             const pendentes = c.cobrancas?.filter((x) => x.status === "pendente") ?? [];
             const linhasAtivas = c.linhas?.filter((l) => l.status === "ativa").length ?? 0;
             return (
