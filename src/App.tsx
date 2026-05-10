@@ -46,6 +46,9 @@ import AgenteConfig from "./pages/whatsapp/AgenteConfig";
 import AgenteMensagens from "./pages/whatsapp/AgenteMensagens";
 import AgenteAgentes from "./pages/whatsapp/AgenteAgentes";
 
+// Master Admin Pages
+import MasterDashboard from "./pages/master-admin/Dashboard";
+
 const queryClient = new QueryClient();
 
 const App = () => (
