@@ -207,6 +207,28 @@ export default function Clientes() {
   const filtered = items;
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const data = {
+      nome: fd.get("nome") as string,
+      cpf: (fd.get("cpf") as string) || undefined,
+      telefone: (fd.get("telefone") as string) || undefined,
+      email: (fd.get("email") as string) || undefined,
+      msisdn: (fd.get("msisdn") as string) || undefined,
+    };
+    
+    const parsed = clienteSchema.safeParse(data);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    
+    createClienteMutation.mutate(parsed.data);
+  };
+
+  const pagarComPix = (cobrancaId: string) => {
+    setSelectedCobranca(cobrancaId);
+  };
 
   const getHealthScore = (cliente: Cliente) => {
     let score = 100;
