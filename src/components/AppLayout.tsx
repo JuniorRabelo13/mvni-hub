@@ -1,17 +1,41 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Network, Wallet, LogOut, Sparkles, Receipt, Settings, ShieldCheck, ScrollText, ShieldAlert, FileUp, MessageSquare, PhoneCall, History, Settings2, UserPlus } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Users, 
+  Network, 
+  Wallet, 
+  LogOut, 
+  Sparkles, 
+  Receipt, 
+  Settings, 
+  ShieldCheck, 
+  ScrollText, 
+  ShieldAlert, 
+  FileUp, 
+  MessageSquare, 
+  PhoneCall, 
+  History, 
+  Settings2, 
+  UserPlus,
+  Crown,
+  BarChart4,
+  Cpu,
+  ShieldQuestion,
+  AlertTriangle,
+  Database
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { Badge } from "@/components/ui/badge";
-import { EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMasterAdmin } from "@/hooks/useIsMasterAdmin";
 
 export default function AppLayout() {
   const { user, effectiveUser, signOut, viewAs, isViewingAs } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
+  const { data: isMasterAdmin } = useIsMasterAdmin();
 
   useEffect(() => {
     async function checkRole() {
@@ -42,6 +66,15 @@ export default function AppLayout() {
     { to: "/agente/configuracoes", label: "Ajustes IA", icon: Settings2 },
   ];
 
+  const masterItems = [
+    { to: "/master/dashboard", label: "BI Executivo", icon: BarChart4 },
+    { to: "/master/clientes", label: "Base Global", icon: Users },
+    { to: "/master/telecom", label: "Infra Telecom", icon: Database },
+    { to: "/master/automacoes", label: "IA & Workers", icon: Cpu },
+    { to: "/master/alertas", label: "Centro Crítico", icon: AlertTriangle },
+    { to: "/master/config", label: "Master Config", icon: Settings },
+  ];
+
   if (isAdmin) {
     navItems.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
     navItems.push({ to: "/admin/logs", label: "Logs Admin", icon: ScrollText });
@@ -68,8 +101,34 @@ export default function AppLayout() {
         </div>
 
         <nav className="flex-1 space-y-4 px-3 overflow-y-auto pt-4">
+          {isMasterAdmin && (
+            <div className="space-y-1">
+              <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
+                <Crown className="h-3 w-3" /> Master Owner
+              </p>
+              {masterItems.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-primary/10 text-primary border-l-2 border-primary"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground",
+                    )
+                  }
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </NavLink>
+              ))}
+              <div className="h-px bg-sidebar-border mx-3 my-4" />
+            </div>
+          )}
+
           <div className="space-y-1">
-            <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2">Sistema</p>
+            <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2">Sistema Operacional</p>
             {navItems.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
@@ -114,9 +173,12 @@ export default function AppLayout() {
         </nav>
 
         <div className="border-t border-sidebar-border p-4">
-          <div className="mb-3 truncate text-xs text-muted-foreground">{user?.email}</div>
+          <div className="mb-3 truncate text-xs text-muted-foreground flex items-center gap-2">
+            {isMasterAdmin && <Crown className="h-3 w-3 text-primary shrink-0" />}
+            <span className="truncate">{user?.email}</span>
+          </div>
           <Button variant="outline" size="sm" className="w-full" onClick={handleSignOut}>
-            <LogOut className="h-3.5 w-3.5" /> Sair
+            <LogOut className="h-3.5 w-3.5 mr-2" /> Sair
           </Button>
         </div>
       </aside>
