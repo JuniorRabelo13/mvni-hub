@@ -195,6 +195,73 @@ export default function AdminDashboard() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Seção Anti-Fraude */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2 border-red-500/20 bg-red-500/5">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" /> Alertas de Fraude Pendentes
+            </CardTitle>
+            <Badge variant="destructive">{alerts.length} alertas</Badge>
+          </CardHeader>
+          <CardContent>
+            {alerts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <CheckCircle2 className="h-8 w-8 text-emerald-500 mb-2" />
+                <p>Nenhuma atividade suspeita detectada na rede.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {alerts.map((alert: any) => (
+                  <div key={alert.id} className="py-4 flex items-center justify-between first:pt-0 last:pb-0">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm capitalize">{alert.tipo.replace('_', ' ')}</span>
+                        <Badge variant="outline" className={`text-[10px] ${alert.score_risco > 7 ? 'text-red-600 bg-red-50' : 'text-amber-600 bg-amber-50'}`}>
+                          Risco {alert.score_risco}/10
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        IDs envolvidos: {alert.user_ids.map((id: string) => id.slice(0, 8)).join(', ')}
+                      </p>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => resolveAlertMutation.mutate(alert.id)}
+                      disabled={resolveAlertMutation.isPending}
+                    >
+                      Marcar como Resolvido
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Fingerprint className="h-5 w-5 text-primary" /> Sistema Anti-Fraude
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-3 bg-muted rounded-lg text-xs space-y-2">
+              <p><strong>Monitoramento Ativo:</strong></p>
+              <ul className="list-disc pl-4 space-y-1 opacity-80">
+                <li>Detecção recursiva de redes circulares</li>
+                <li>Mapeamento de IP/Browser Fingerprinting</li>
+                <li>Identificação de multi-contas vinculadas</li>
+              </ul>
+            </div>
+            <Button variant="ghost" className="w-full text-xs" onClick={() => queryClient.invalidateQueries({ queryKey: ["admin-fraud-alerts"] })}>
+              <RefreshCcw className="h-3 w-3 mr-2" /> Forçar Varredura Agora
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
