@@ -42,17 +42,32 @@ export default function Clientes() {
   const [saving, setSaving] = useState(false);
   const [selectedCobranca, setSelectedCobranca] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
 
   const normalize = (s: string | null | undefined) =>
     (s ?? "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const onlyDigits = (s: string | null | undefined) => (s ?? "").toString().replace(/\D/g, "");
 
   const filtered = (() => {
+    let result = items;
+
+    // Filter by status
+    const today = new Date().toISOString().slice(0, 10);
+    if (statusFilter === "ativos") {
+      result = result.filter(c => c.ativo);
+    } else if (statusFilter === "inadimplentes") {
+      result = result.filter(c => c.cobrancas?.some(p => p.status === "pendente" && p.vencimento < today));
+    } else if (statusFilter === "suspensos") {
+      result = result.filter(c => !c.ativo);
+    } else if (statusFilter === "vencendo_hoje") {
+      result = result.filter(c => c.cobrancas?.some(p => p.status === "pendente" && p.vencimento === today));
+    }
+
     const q = query.trim();
-    if (!q) return items;
+    if (!q) return result;
     const qn = normalize(q);
     const qd = onlyDigits(q);
-    return items.filter((c) => {
+    return result.filter((c) => {
       if (normalize(c.nome).includes(qn)) return true;
       if (qd && onlyDigits(c.cpf).includes(qd)) return true;
       if (qd && onlyDigits(c.telefone).includes(qd)) return true;
@@ -168,26 +183,48 @@ export default function Clientes() {
         </Dialog>
       </header>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por nome, telefone, CPF ou linha…"
-          className="pl-9 pr-9"
-          aria-label="Buscar clientes"
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={() => setQuery("")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
-            aria-label="Limpar busca"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: "todos", label: "Todos" },
+            { id: "ativos", label: "Ativos" },
+            { id: "inadimplentes", label: "Inadimplentes" },
+            { id: "suspensos", label: "Suspensos" },
+            { id: "vencendo_hoje", label: "Vencendo Hoje" },
+          ].map((f) => (
+            <Button
+              key={f.id}
+              variant={statusFilter === f.id ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter(f.id as any)}
+              className="h-8 rounded-full px-4 text-xs font-medium"
+            >
+              {f.label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nome, telefone, CPF ou linha…"
+            className="pl-9 pr-9"
+            aria-label="Buscar clientes"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
