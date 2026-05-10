@@ -263,7 +263,7 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="space-y-1 pt-2 sm:pt-0 sm:text-right border-t sm:border-t-0 sm:border-l border-white/5 sm:pl-4">
-                <p className="text-[10px] text-primary uppercase tracking-widest font-bold">Total Estimado Mensal</p>
+                <p className="text-[10px] text-primary uppercase tracking-widest font-bold">GANHO RECORRENTE MENSAL</p>
                 <p className="text-3xl font-black text-gradient-gold transition-all duration-300 animate-in fade-in zoom-in-95" key={`total-${simulacao.total}`}>
                   {fmt(simulacao.total)}
                 </p>
