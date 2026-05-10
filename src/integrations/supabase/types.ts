@@ -1585,6 +1585,10 @@ export type Database = {
         Returns: boolean
       }
       increment_job_progress: { Args: { p_job_id: string }; Returns: undefined }
+      liberar_transacao_wallet: {
+        Args: { p_transacao_id: string; p_valor: number; p_wallet_id: string }
+        Returns: undefined
+      }
       log_rpc_call: {
         Args: { p_function_name: string; p_status: string; p_user_id: string }
         Returns: undefined
