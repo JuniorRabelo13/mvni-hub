@@ -953,6 +953,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles: {
+        Row: {
+          email: string | null
+          id: string
+          last_login: string | null
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          email?: string | null
+          id: string
+          last_login?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          last_login?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1393,7 +1417,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_mrr_consolidado: {
+        Row: {
+          afiliado_email: string | null
+          afiliado_id: string | null
+          clientes_ativos: number | null
+          clientes_inativos: number | null
+          mrr_atual: number | null
+          ultimo_acesso: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_next_day_volume: {
@@ -1450,6 +1484,13 @@ export type Database = {
         Returns: {
           cnpj: string
           erro: string
+        }[]
+      }
+      get_mrr_historico: {
+        Args: { p_meses: number }
+        Returns: {
+          mes: string
+          mrr_total: number
         }[]
       }
       has_role: {
