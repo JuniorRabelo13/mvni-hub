@@ -48,6 +48,7 @@ export type Database = {
           dados_depois: Json | null
           id: string
           operacao: string
+          origem: string | null
           tabela: string
           user_id: string
         }
@@ -57,6 +58,7 @@ export type Database = {
           dados_depois?: Json | null
           id?: string
           operacao: string
+          origem?: string | null
           tabela: string
           user_id?: string
         }
@@ -66,6 +68,7 @@ export type Database = {
           dados_depois?: Json | null
           id?: string
           operacao?: string
+          origem?: string | null
           tabela?: string
           user_id?: string
         }
