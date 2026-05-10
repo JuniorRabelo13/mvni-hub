@@ -96,10 +96,10 @@ serve(async (req) => {
       }
     }
 
-    // 2. Buscar todos os clientes ativos para gerar novas cobranças recorrentes
+    // 2. Buscar todos os clientes ativos para gerar novas cobranças recorrentes com base no plano
     const { data: clientes, error: cliError } = await supabaseAdmin
       .from('clientes')
-      .select('id, user_id, ativo, linhas(id, status)')
+      .select('id, user_id, ativo, plano_id, planos(valor), linhas(id, status)')
       .eq('ativo', true)
 
     if (cliError) throw cliError
@@ -122,13 +122,16 @@ serve(async (req) => {
           const vencimento = new Date()
           vencimento.setMonth(vencimento.getMonth() + 1)
           
+          // Valor do plano associado ao cliente (fallback para 99.90 caso plano não carregue)
+          const valorFatura = (cliente.planos as any)?.valor || 99.90;
+          
           const { error: insError } = await supabaseAdmin
             .from('cobrancas')
             .insert({
               user_id: cliente.user_id,
               cliente_id: cliente.id,
               linha_id: linha.id,
-              valor: 99.90,
+              valor: valorFatura,
               vencimento: vencimento.toISOString().slice(0, 10),
               status: 'pendente',
               is_primeira: false

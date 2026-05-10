@@ -79,6 +79,7 @@ export type Database = {
           email: string | null
           id: string
           nome: string
+          plano_id: string | null
           telefone: string | null
           updated_at: string
           user_id: string
@@ -90,6 +91,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome: string
+          plano_id?: string | null
           telefone?: string | null
           updated_at?: string
           user_id: string
@@ -101,11 +103,20 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string
+          plano_id?: string | null
           telefone?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clientes_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "planos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cobrancas: {
         Row: {
@@ -487,6 +498,36 @@ export type Database = {
           detalhes?: Json | null
           id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      planos: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          descricao: string | null
+          features: Json | null
+          id: string
+          nome: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          features?: Json | null
+          id?: string
+          nome: string
+          valor: number
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          features?: Json | null
+          id?: string
+          nome?: string
+          valor?: number
         }
         Relationships: []
       }
