@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle } from "lucide-react";
+import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle, Activity } from "lucide-react";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 import { sanitize } from "@/lib/sanitize";
 
@@ -222,6 +222,34 @@ export default function Clientes() {
   const paginatedItems = useMemo(() => {
     return filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [filtered, currentPage]);
+
+  const getHealthScore = (cliente: Cliente) => {
+    let score = 100;
+    const today = new Date().toISOString().slice(0, 10);
+    const cobrancas = cliente.cobrancas || [];
+    
+    // Impacto de atrasos e pendências
+    const pendentesAtrasadas = cobrancas.filter(c => c.status === "pendente" && c.vencimento < today);
+    score -= pendentesAtrasadas.length * 30;
+    
+    // Impacto de histórico de pagamentos
+    const pagas = cobrancas.filter(c => c.status === "pago");
+    if (pagas.length > 0) {
+      score += Math.min(pagas.length * 5, 20); // Recompensa por recorrência
+    } else if (cobrancas.length > 0) {
+      score -= 10; // Penalidade por nunca ter pago
+    }
+    
+    // Estado atual do cliente
+    if (!cliente.ativo) score -= 50;
+    
+    // Normalizar entre 0 e 100
+    score = Math.max(0, Math.min(100, score));
+    
+    if (score >= 80) return { label: "Saudável", color: "text-emerald-500", bg: "bg-emerald-500/10", score };
+    if (score >= 50) return { label: "Risco Moderado", color: "text-amber-500", bg: "bg-amber-500/10", score };
+    return { label: "Risco de Churn", color: "text-red-500", bg: "bg-red-500/10", score };
+  };
 
   return (
     <div className="space-y-6">
