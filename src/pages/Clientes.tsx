@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,9 @@ import { toast } from "sonner";
 import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle, Activity, TrendingUp, Users, Wallet, AlertCircle, BarChart3, Mail, Phone, Hash, Calendar, PhoneCall, CreditCard } from "lucide-react";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 import { sanitize } from "@/lib/sanitize";
+import { useClientesPaginados, type Cliente } from "@/hooks/useClientesPaginados";
+import { PaginacaoControles } from "@/components/PaginacaoControles";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const clienteSchema = z.object({
   nome: z.string().trim().min(2).max(80),
@@ -22,17 +25,6 @@ const clienteSchema = z.object({
   email: z.string().trim().email().max(255).optional().or(z.literal("")),
   msisdn: z.string().trim().max(20).optional(),
 });
-
-type Cliente = {
-  id: string;
-  nome: string;
-  cpf: string | null;
-  telefone: string | null;
-  ativo: boolean;
-  created_at: string;
-  linhas: { id: string; status: string; msisdn: string | null; activated_at: string | null; deactivated_at: string | null }[];
-  cobrancas: { id: string; status: string; valor: number; vencimento: string; paid_at: string | null; created_at: string }[];
-};
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -44,51 +36,24 @@ export default function Clientes() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
-  const itemsPerPage = 20;
 
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = supabase
       .channel("clientes-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "clientes",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "clientes", filter: `user_id=eq.${user.id}` }, () => {
           queryClient.invalidateQueries({ queryKey: ["clientes", user.id] });
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "cobrancas",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
+        })
+      .on("postgres_changes", { event: "*", schema: "public", table: "cobrancas", filter: `user_id=eq.${user.id}` }, () => {
           queryClient.invalidateQueries({ queryKey: ["clientes", user.id] });
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "linhas",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
+        })
+      .on("postgres_changes", { event: "*", schema: "public", table: "linhas", filter: `user_id=eq.${user.id}` }, () => {
           queryClient.invalidateQueries({ queryKey: ["clientes", user.id] });
-        }
-      )
+        })
       .subscribe();
 
     return () => {
@@ -96,60 +61,57 @@ export default function Clientes() {
     };
   }, [user?.id, queryClient]);
 
-  const { data: items = [], isLoading } = useQuery({
-    queryKey: ["clientes", user?.id],
+  const { data: paginatedData, isLoading, prefetchNextPage } = useClientesPaginados(user?.id, currentPage, pageSize, { query, status: statusFilter });
+  const items = paginatedData?.data || [];
+  const totalCount = paginatedData?.count || 0;
+
+  useEffect(() => {
+    prefetchNextPage();
+  }, [currentPage, items, prefetchNextPage]);
+
+  const { data: allItemsForMetrics = [] } = useQuery({
+    queryKey: ["clientes-metrics", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data } = await supabase
-        .from("clientes")
-        .select("id, nome, cpf, telefone, ativo, created_at, linhas(id,status,msisdn,activated_at,deactivated_at), cobrancas(id,status,valor,vencimento,paid_at,created_at)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      
-      return sanitize((data as any) ?? [], "clientes_list", user.id) as Cliente[];
+      const { data } = await supabase.from("clientes").select("id, ativo, cobrancas(status, valor, vencimento)").eq("user_id", user.id);
+      return data || [];
     },
     enabled: !!user,
   });
 
+  const metrics = useMemo(() => {
+    const active = allItemsForMetrics.filter((c: any) => c.ativo);
+    const mrr = active.length * 99.90;
+    
+    let totalRevenue = 0;
+    let overdueRevenue = 0;
+    const today = new Date().toISOString().slice(0, 10);
+    
+    allItemsForMetrics.forEach((c: any) => {
+      (c.cobrancas as any[])?.forEach(cob => {
+        if (cob.status === "pago") totalRevenue += Number(cob.valor);
+        else if (cob.status === "pendente" && cob.vencimento < today) overdueRevenue += Number(cob.valor);
+      });
+    });
+
+    const activeCount = active.length;
+    const averageTicket = activeCount > 0 ? mrr / activeCount : 0;
+    return { mrr, totalRevenue, overdueRevenue, activeCount, averageTicket };
+  }, [allItemsForMetrics]);
+
+  const filtered = items;
+
   const createClienteMutation = useMutation({
     mutationFn: async (values: z.infer<typeof clienteSchema>) => {
       if (!user) throw new Error("Usuário não autenticado");
-      
-      const { data: cli, error: e1 } = await supabase
-        .from("clientes")
-        .insert({
-          user_id: user.id,
-          nome: values.nome,
-          cpf: values.cpf ?? null,
-          telefone: values.telefone ?? null,
-          email: values.email || null,
-        })
-        .select()
-        .single();
-        
+      const { data: cli, error: e1 } = await supabase.from("clientes").insert({ user_id: user.id, nome: values.nome, cpf: values.cpf ?? null, telefone: values.telefone ?? null, email: values.email || null }).select().single();
       if (e1 || !cli) throw new Error("Falha ao criar cliente");
-
-      const { data: linha, error: e2 } = await supabase
-        .from("linhas")
-        .insert({ user_id: user.id, cliente_id: cli.id, msisdn: values.msisdn ?? null })
-        .select()
-        .single();
-        
+      const { data: linha, error: e2 } = await supabase.from("linhas").insert({ user_id: user.id, cliente_id: cli.id, msisdn: values.msisdn ?? null }).select().single();
       if (e2 || !linha) throw new Error("Falha ao criar linha");
-
       const venc = new Date();
       venc.setDate(venc.getDate() + 7);
-      
-      const { error: e3 } = await supabase.from("cobrancas").insert({
-        user_id: user.id,
-        cliente_id: cli.id,
-        linha_id: linha.id,
-        vencimento: venc.toISOString().slice(0, 10),
-        is_primeira: true,
-      });
-      
+      const { error: e3 } = await supabase.from("cobrancas").insert({ user_id: user.id, cliente_id: cli.id, linha_id: linha.id, vencimento: venc.toISOString().slice(0, 10), is_primeira: true });
       if (e3) throw new Error("Falha ao criar cobrança");
-      
       return cli;
     },
     onSuccess: () => {
@@ -162,122 +124,28 @@ export default function Clientes() {
     },
   });
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [query, statusFilter]);
-
-  const normalize = (s: string | null | undefined) =>
-    (s ?? "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const onlyDigits = (s: string | null | undefined) => (s ?? "").toString().replace(/\D/g, "");
-
-  const filtered = useMemo(() => {
-    let result = items;
-    const today = new Date().toISOString().slice(0, 10);
-    
-    if (statusFilter === "ativos") {
-      result = result.filter(c => c.ativo);
-    } else if (statusFilter === "inadimplentes") {
-      result = result.filter(c => c.cobrancas?.some(p => p.status === "pendente" && p.vencimento < today));
-    } else if (statusFilter === "suspensos") {
-      result = result.filter(c => !c.ativo);
-    } else if (statusFilter === "vencendo_hoje") {
-      result = result.filter(c => c.cobrancas?.some(p => p.status === "pendente" && p.vencimento === today));
-    }
-
-    const q = query.trim();
-    if (!q) return result;
-    const qn = normalize(q);
-    const qd = onlyDigits(q);
-    return result.filter((c) => {
-      if (normalize(c.nome).includes(qn)) return true;
-      if (qd && onlyDigits(c.cpf).includes(qd)) return true;
-      if (qd && onlyDigits(c.telefone).includes(qd)) return true;
-      if (qd && c.linhas?.some((l) => onlyDigits(l.msisdn).includes(qd))) return true;
-      return false;
-    });
-  }, [items, query, statusFilter]);
-
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const data = {
-      nome: fd.get("nome") as string,
-      cpf: (fd.get("cpf") as string) || undefined,
-      telefone: (fd.get("telefone") as string) || undefined,
-      email: (fd.get("email") as string) || undefined,
-      msisdn: (fd.get("msisdn") as string) || undefined,
-    };
-    
+    const data = { nome: fd.get("nome") as string, cpf: (fd.get("cpf") as string) || undefined, telefone: (fd.get("telefone") as string) || undefined, email: (fd.get("email") as string) || undefined, msisdn: (fd.get("msisdn") as string) || undefined };
     const parsed = clienteSchema.safeParse(data);
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
-      return;
-    }
-    
+    if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     createClienteMutation.mutate(parsed.data);
   };
 
-  const pagarComPix = (cobrancaId: string) => {
-    setSelectedCobranca(cobrancaId);
-  };
-
-  const metrics = useMemo(() => {
-    const active = items.filter(c => c.ativo);
-    const mrr = active.length * 99.90;
-    
-    let totalRevenue = 0;
-    let overdueRevenue = 0;
-    const today = new Date().toISOString().slice(0, 10);
-    
-    items.forEach(c => {
-      c.cobrancas?.forEach(cob => {
-        if (cob.status === "pago") {
-          totalRevenue += Number(cob.valor);
-        } else if (cob.status === "pendente" && cob.vencimento < today) {
-          overdueRevenue += Number(cob.valor);
-        }
-      });
-    });
-
-    const activeCount = active.length;
-    const averageTicket = activeCount > 0 ? mrr / activeCount : 0;
-
-    return {
-      mrr,
-      totalRevenue,
-      overdueRevenue,
-      activeCount,
-      averageTicket
-    };
-  }, [items]);
-
-  const paginatedItems = useMemo(() => {
-    return filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  }, [filtered, currentPage]);
+  const pagarComPix = (cobrancaId: string) => setSelectedCobranca(cobrancaId);
 
   const getHealthScore = (cliente: Cliente) => {
     let score = 100;
     const today = new Date().toISOString().slice(0, 10);
     const cobrancas = cliente.cobrancas || [];
-    
-    // Impacto de atrasos e pendências
     const pendentesAtrasadas = cobrancas.filter(c => c.status === "pendente" && c.vencimento < today);
     score -= pendentesAtrasadas.length * 30;
-    
-    // Impacto de histórico de pagamentos
     const pagas = cobrancas.filter(c => c.status === "pago");
-    if (pagas.length > 0) {
-      score += Math.min(pagas.length * 5, 20); // Recompensa por recorrência
-    } else if (cobrancas.length > 0) {
-      score -= 10; // Penalidade por nunca ter pago
-    }
-    
-    // Estado atual do cliente
+    if (pagas.length > 0) score += Math.min(pagas.length * 5, 20);
+    else if (cobrancas.length > 0) score -= 10;
     if (!cliente.ativo) score -= 50;
-    
-    // Normalizar entre 0 e 100
     score = Math.max(0, Math.min(100, score));
-    
     if (score >= 80) return { label: "Saudável", color: "text-emerald-500", bg: "bg-emerald-500/10", score };
     if (score >= 50) return { label: "Risco Moderado", color: "text-amber-500", bg: "bg-amber-500/10", score };
     return { label: "Risco de Churn", color: "text-red-500", bg: "bg-red-500/10", score };
@@ -305,371 +173,103 @@ export default function Clientes() {
               <div className="space-y-1.5"><Label htmlFor="email">E-mail</Label><Input id="email" name="email" type="email" /></div>
               <div className="space-y-1.5"><Label htmlFor="msisdn">Linha (MSISDN)</Label><Input id="msisdn" name="msisdn" placeholder="11999999999" /></div>
               <p className="text-xs text-muted-foreground">Plano R$ 99,90 — comissão de R$ 85 ao confirmar pagamento.</p>
-              <Button type="submit" className="w-full" disabled={createClienteMutation.isPending}>
-                {createClienteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Cadastrar
-              </Button>
+              <Button type="submit" className="w-full" disabled={createClienteMutation.isPending}>{createClienteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Cadastrar</Button>
             </form>
           </DialogContent>
         </Dialog>
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              <span className="text-[10px] uppercase font-bold tracking-wider">MRR</span>
-            </div>
-            <span className="text-xl font-bold">{fmt(metrics.mrr)}</span>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Wallet className="h-4 w-4 text-emerald-500" />
-              <span className="text-[10px] uppercase font-bold tracking-wider">Receita Total</span>
-            </div>
-            <span className="text-xl font-bold">{fmt(metrics.totalRevenue)}</span>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <AlertCircle className="h-4 w-4 text-red-500" />
-              <span className="text-[10px] uppercase font-bold tracking-wider">Inadimplência</span>
-            </div>
-            <span className="text-xl font-bold text-red-500">{fmt(metrics.overdueRevenue)}</span>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4 flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Users className="h-4 w-4 text-blue-500" />
-              <span className="text-[10px] uppercase font-bold tracking-wider">Ativos</span>
-            </div>
-            <span className="text-xl font-bold">{metrics.activeCount}</span>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-2 md:col-span-1">
-          <CardContent className="p-4 flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <BarChart3 className="h-4 w-4 text-amber-500" />
-              <span className="text-[10px] uppercase font-bold tracking-wider">Ticket Médio</span>
-            </div>
-            <span className="text-xl font-bold">{fmt(metrics.averageTicket)}</span>
-          </CardContent>
-        </Card>
+        <Card className="bg-primary/5 border-primary/20"><CardContent className="p-4 flex flex-col gap-1"><div className="flex items-center gap-2 text-muted-foreground"><TrendingUp className="h-4 w-4 text-primary" /><span className="text-[10px] uppercase font-bold tracking-wider">MRR</span></div><span className="text-xl font-bold">{fmt(metrics.mrr)}</span></CardContent></Card>
+        <Card><CardContent className="p-4 flex flex-col gap-1"><div className="flex items-center gap-2 text-muted-foreground"><Wallet className="h-4 w-4 text-emerald-500" /><span className="text-[10px] uppercase font-bold tracking-wider">Receita Total</span></div><span className="text-xl font-bold">{fmt(metrics.totalRevenue)}</span></CardContent></Card>
+        <Card><CardContent className="p-4 flex flex-col gap-1"><div className="flex items-center gap-2 text-muted-foreground"><AlertCircle className="h-4 w-4 text-red-500" /><span className="text-[10px] uppercase font-bold tracking-wider">Inadimplência</span></div><span className="text-xl font-bold text-red-500">{fmt(metrics.overdueRevenue)}</span></CardContent></Card>
+        <Card><CardContent className="p-4 flex flex-col gap-1"><div className="flex items-center gap-2 text-muted-foreground"><Users className="h-4 w-4 text-blue-500" /><span className="text-[10px] uppercase font-bold tracking-wider">Ativos</span></div><span className="text-xl font-bold">{metrics.activeCount}</span></CardContent></Card>
+        <Card className="col-span-2 md:col-span-1"><CardContent className="p-4 flex flex-col gap-1"><div className="flex items-center gap-2 text-muted-foreground"><BarChart3 className="h-4 w-4 text-amber-500" /><span className="text-[10px] uppercase font-bold tracking-wider">Ticket Médio</span></div><span className="text-xl font-bold">{fmt(metrics.averageTicket)}</span></CardContent></Card>
       </div>
 
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          {[
-            { id: "todos", label: "Todos" },
-            { id: "ativos", label: "Ativos" },
-            { id: "inadimplentes", label: "Inadimplentes" },
-            { id: "suspensos", label: "Suspensos" },
-            { id: "vencendo_hoje", label: "Vencendo Hoje" },
-          ].map((f) => (
-            <Button
-              key={f.id}
-              variant={statusFilter === f.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter(f.id as any)}
-              className="h-8 rounded-full px-4 text-xs font-medium"
-            >
-              {f.label}
-            </Button>
+          {[{ id: "todos", label: "Todos" }, { id: "ativos", label: "Ativos" }, { id: "inadimplentes", label: "Inadimplentes" }, { id: "suspensos", label: "Suspensos" }, { id: "vencendo_hoje", label: "Vencendo Hoje" }].map((f) => (
+            <Button key={f.id} variant={statusFilter === f.id ? "default" : "outline"} size="sm" onClick={() => { setStatusFilter(f.id as any); setCurrentPage(1); }} className="h-8 rounded-full px-4 text-xs font-medium">{f.label}</Button>
           ))}
         </div>
-
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nome, telefone, CPF ou linha…"
-            className="pl-9 pr-9"
-            aria-label="Buscar clientes"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
-              aria-label="Limpar busca"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+          <Input type="search" value={query} onChange={(e) => { setQuery(e.target.value); setCurrentPage(1); }} placeholder="Buscar por nome, telefone, CPF ou linha…" className="pl-9 pr-9" aria-label="Buscar clientes" />
+          {query && (<button type="button" onClick={() => { setQuery(""); setCurrentPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground" aria-label="Limpar busca"><X className="h-4 w-4" /></button>)}
         </div>
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando…</p>
-      ) : items.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
-          Nenhum cliente ainda. Cadastre o primeiro para começar a faturar.
-        </CardContent></Card>
-      ) : filtered.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
-          Nenhum cliente encontrado para "{query}".
-        </CardContent></Card>
+        <div className="space-y-3">{[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}</div>
+      ) : totalCount === 0 ? (
+        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Nenhum cliente encontrado.</CardContent></Card>
       ) : (
         <div className="space-y-4">
           <div className="grid gap-3">
-            {filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((c) => {
+            {items.map((c) => {
               const pendentes = c.cobrancas?.filter((x) => x.status === "pendente") ?? [];
               const linhasAtivas = c.linhas?.filter((l) => l.status === "ativa").length ?? 0;
               return (
                 <Card key={c.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setSelectedCliente(c)}>
                   <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-                    <div>
-                      <CardTitle className="text-lg">{c.nome}</CardTitle>
-                      <p className="text-xs text-muted-foreground">{c.telefone ?? c.cpf ?? "—"}</p>
+                    <div><CardTitle className="text-lg">{c.nome}</CardTitle><p className="text-xs text-muted-foreground">{c.telefone ?? c.cpf ?? "—"}</p></div>
+                    <div className="flex flex-wrap gap-2">
+                      {(() => { const health = getHealthScore(c); return (<div className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${health.bg} ${health.color}`}><Activity className="h-3 w-3" />{health.label} ({health.score}%)</div>); })()}
+                      <Badge variant="outline">{linhasAtivas} linha(s)</Badge>
+                      <Badge variant={c.ativo ? "default" : "secondary"}>{c.ativo ? "Ativo" : "Inativo"}</Badge>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setExpandedTimeline(expandedTimeline === c.id ? null : c.id); }}><History className="h-4 w-4" /></Button>
                     </div>
-                  <div className="flex flex-wrap gap-2">
-                    {(() => {
-                      const health = getHealthScore(c);
-                      return (
-                        <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${health.bg} ${health.color}`}>
-                          <Activity className="h-3 w-3" />
-                          {health.label} ({health.score}%)
-                        </div>
-                      );
-                    })()}
-                    <Badge variant="outline">{linhasAtivas} linha(s)</Badge>
-                    <Badge variant={c.ativo ? "default" : "secondary"}>{c.ativo ? "Ativo" : "Inativo"}</Badge>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedTimeline(expandedTimeline === c.id ? null : c.id);
-                      }}
-                    >
-                      <History className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4" onClick={(e) => e.stopPropagation()}>
-                  {pendentes.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
-                      <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
-                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => pagarComPix(p.id)}>
-                        <QrCode className="h-3.5 w-3.5" /> Pagar com PIX
-                      </Button>
-                    </div>
-                  ))}
-                  {pendentes.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Sem cobranças pendentes.</p>
-                  )}
-
-                  {expandedTimeline === c.id && (
-                    <div className="mt-4 space-y-3 border-t border-border pt-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Linha do Tempo</p>
-                      <div className="space-y-4">
-                        {(() => {
-                          const events = [
-                            ...(c.cobrancas?.map(cob => ({
-                              date: cob.created_at,
-                              title: `Cobrança gerada: ${fmt(Number(cob.valor))}`,
-                              type: "cobranca",
-                              status: cob.status
-                            })) ?? []),
-                            ...(c.cobrancas?.filter(cob => cob.paid_at).map(cob => ({
-                              date: cob.paid_at!,
-                              title: `Pagamento confirmado: ${fmt(Number(cob.valor))}`,
-                              type: "pagamento",
-                              status: "pago"
-                            })) ?? []),
-                            ...(c.linhas?.filter(l => l.activated_at).map(l => ({
-                              date: l.activated_at!,
-                              title: "Linha ativada",
-                              type: "ativacao",
-                              status: "sucesso"
-                            })) ?? []),
-                            ...(c.linhas?.filter(l => l.deactivated_at).map(l => ({
-                              date: l.deactivated_at!,
-                              title: "Linha suspensa/desativada",
-                              type: "suspensao",
-                              status: "alerta"
-                            })) ?? []),
-                            {
-                              date: c.created_at,
-                              title: "Cliente cadastrado",
-                              type: "cadastro",
-                              status: "info"
-                            }
-                          ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-                          return events.map((ev, i) => (
-                            <div key={i} className="relative flex gap-3 pl-4">
-                              <div className="absolute left-0 top-1.5 h-full w-[1px] bg-border last:h-2" />
-                              <div className={`absolute left-[-4px] top-1.5 h-2 w-2 rounded-full ${
-                                ev.type === "pagamento" ? "bg-emerald-500" : 
-                                ev.type === "suspensao" ? "bg-red-500" : 
-                                ev.type === "ativacao" ? "bg-blue-500" : "bg-muted-foreground"
-                              }`} />
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium">{ev.title}</span>
-                                <span className="text-[10px] text-muted-foreground">
-                                  {new Date(ev.date).toLocaleString("pt-BR")}
-                                </span>
-                              </div>
-                            </div>
-                          ));
-                        })()}
+                  </CardHeader>
+                  <CardContent className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                    {pendentes.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+                        <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
+                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => pagarComPix(p.id)}><QrCode className="h-3.5 w-3.5" /> Pagar com PIX</Button>
                       </div>
-                    </div>
-                  )}
-                </CardContent>
+                    ))}
+                    {pendentes.length === 0 && <p className="text-xs text-muted-foreground">Sem cobranças pendentes.</p>}
+                    {expandedTimeline === c.id && (
+                      <div className="mt-4 space-y-3 border-t border-border pt-4">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Linha do Tempo</p>
+                        <div className="space-y-4">
+                          {(() => {
+                            const events = [
+                              ...(c.cobrancas?.map(cob => ({ date: cob.created_at, title: `Cobrança gerada: ${fmt(Number(cob.valor))}`, type: "cobranca", status: cob.status })) ?? []),
+                              ...(c.cobrancas?.filter(cob => cob.paid_at).map(cob => ({ date: cob.paid_at!, title: `Pagamento confirmado: ${fmt(Number(cob.valor))}`, type: "pagamento", status: "pago" })) ?? []),
+                              ...(c.linhas?.filter(l => l.activated_at).map(l => ({ date: l.activated_at!, title: "Linha ativada", type: "ativacao", status: "sucesso" })) ?? []),
+                              ...(c.linhas?.filter(l => l.deactivated_at).map(l => ({ date: l.deactivated_at!, title: "Linha suspensa/desativada", type: "suspensao", status: "alerta" })) ?? []),
+                              { date: c.created_at, title: "Cliente cadastrado", type: "cadastro", status: "info" }
+                            ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                            return events.map((ev, i) => (
+                              <div key={i} className="relative flex gap-3 pl-4">
+                                <div className="absolute left-0 top-1.5 h-full w-[1px] bg-border last:h-2" />
+                                <div className={`absolute left-[-4px] top-1.5 h-2 w-2 rounded-full ${ev.type === "pagamento" ? "bg-emerald-500" : ev.type === "suspensao" ? "bg-red-500" : ev.type === "ativacao" ? "bg-blue-500" : "bg-muted-foreground"}`} />
+                                <div className="flex flex-col"><span className="text-sm font-medium">{ev.title}</span><span className="text-[10px] text-muted-foreground">{new Date(ev.date).toLocaleString("pt-BR")}</span></div>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
                 </Card>
               );
             })}
           </div>
-
-          {filtered.length > itemsPerPage && (
-            <div className="flex items-center justify-between py-2">
-              <p className="text-sm text-muted-foreground">
-                Mostrando {Math.min(filtered.length, (currentPage - 1) * itemsPerPage + 1)} a {Math.min(filtered.length, currentPage * itemsPerPage)} de {filtered.length} clientes
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filtered.length / itemsPerPage), prev + 1))}
-                  disabled={currentPage === Math.ceil(filtered.length / itemsPerPage)}
-                >
-                  Próximo <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <PaginacaoControles currentPage={currentPage} pageSize={pageSize} totalItems={totalCount} onPageChange={setCurrentPage} onPageSizeChange={(newSize) => { setPageSize(newSize); setCurrentPage(1); }} />
         </div>
       )}
-
-      <PixPaymentDialog 
-        cobrancaId={selectedCobranca} 
-        onOpenChange={(open) => !open && setSelectedCobranca(null)}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["clientes"] })}
-      />
-
+      <PixPaymentDialog cobrancaId={selectedCobranca} onOpenChange={(open) => !open && setSelectedCobranca(null)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ["clientes"] })} />
       <Sheet open={!!selectedCliente} onOpenChange={(open) => !open && setSelectedCliente(null)}>
         <SheetContent className="sm:max-w-md overflow-y-auto">
           {selectedCliente && (
             <>
-              <SheetHeader className="pb-6 border-b">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
-                    {selectedCliente.nome.charAt(0)}
-                  </div>
-                  <div>
-                    <SheetTitle className="text-xl">{selectedCliente.nome}</SheetTitle>
-                    <SheetDescription>Detalhes completos do cliente</SheetDescription>
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Badge variant={selectedCliente.ativo ? "default" : "secondary"}>
-                    {selectedCliente.ativo ? "Ativo" : "Inativo"}
-                  </Badge>
-                  {(() => {
-                    const health = getHealthScore(selectedCliente);
-                    return (
-                      <Badge variant="outline" className={`${health.color} ${health.bg} border-none`}>
-                        Score: {health.score}%
-                      </Badge>
-                    );
-                  })()}
-                </div>
-              </SheetHeader>
-
+              <SheetHeader className="pb-6 border-b"><div className="flex items-center gap-3 mb-2"><div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">{selectedCliente.nome.charAt(0)}</div><div><SheetTitle className="text-xl">{selectedCliente.nome}</SheetTitle><SheetDescription>Detalhes completos do cliente</SheetDescription></div></div><div className="flex gap-2 pt-2"><Badge variant={selectedCliente.ativo ? "default" : "secondary"}>{selectedCliente.ativo ? "Ativo" : "Inativo"}</Badge>{(() => { const health = getHealthScore(selectedCliente); return (<Badge variant="outline" className={`${health.color} ${health.bg} border-none`}>Score: {health.score}%</Badge>); })()}</div></SheetHeader>
               <div className="py-6 space-y-8">
-                {/* Informações Pessoais */}
-                <section className="space-y-4">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <Users className="h-4 w-4" /> Dados Cadastrais
-                  </h3>
-                  <div className="grid gap-3">
-                    <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30">
-                      <Hash className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground">CPF</p>
-                        <p className="font-medium">{selectedCliente.cpf || "Não informado"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Telefone</p>
-                        <p className="font-medium">{selectedCliente.telefone || "Não informado"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Desde</p>
-                        <p className="font-medium">{new Date(selectedCliente.created_at).toLocaleDateString("pt-BR")}</p>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Linhas Ativas */}
-                <section className="space-y-4">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <PhoneCall className="h-4 w-4" /> Linhas e Conectividade
-                  </h3>
-                  <div className="space-y-2">
-                    {selectedCliente.linhas?.map(linha => (
-                      <div key={linha.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                        <div className="flex items-center gap-3">
-                          <div className={`h-2 w-2 rounded-full ${linha.status === 'ativa' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                          <div>
-                            <p className="text-sm font-bold">{linha.msisdn || "Sem número"}</p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-tight">{linha.status}</p>
-                          </div>
-                        </div>
-                        {linha.activated_at && (
-                          <span className="text-[10px] text-muted-foreground">Ativada em {new Date(linha.activated_at).toLocaleDateString("pt-BR")}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                {/* Histórico Financeiro */}
-                <section className="space-y-4">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" /> Histórico Financeiro
-                  </h3>
-                  <div className="space-y-3">
-                    {selectedCliente.cobrancas?.sort((a, b) => new Date(b.vencimento).getTime() - new Date(a.vencimento).getTime()).map(cob => (
-                      <div key={cob.id} className="p-3 rounded-lg bg-muted/30 flex items-center justify-between border-l-4 border-l-border" style={{ borderLeftColor: cob.status === 'pago' ? '#10b981' : '#f59e0b' }}>
-                        <div>
-                          <p className="text-sm font-bold">{fmt(Number(cob.valor))}</p>
-                          <p className="text-[10px] text-muted-foreground">Venc. {new Date(cob.vencimento).toLocaleDateString("pt-BR")}</p>
-                        </div>
-                        <Badge variant={cob.status === 'pago' ? 'default' : 'outline'} className={cob.status === 'pago' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}>
-                          {cob.status.charAt(0).toUpperCase() + cob.status.slice(1)}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                <section className="space-y-4"><h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4" /> Dados Cadastrais</h3><div className="grid gap-3"><div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30"><Hash className="h-4 w-4 text-muted-foreground" /><div><p className="text-[10px] uppercase font-bold text-muted-foreground">CPF</p><p className="font-medium">{selectedCliente.cpf || "Não informado"}</p></div></div><div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30"><Phone className="h-4 w-4 text-muted-foreground" /><div><p className="text-[10px] uppercase font-bold text-muted-foreground">Telefone</p><p className="font-medium">{selectedCliente.telefone || "Não informado"}</p></div></div><div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30"><Calendar className="h-4 w-4 text-muted-foreground" /><div><p className="text-[10px] uppercase font-bold text-muted-foreground">Desde</p><p className="font-medium">{new Date(selectedCliente.created_at).toLocaleDateString("pt-BR")}</p></div></div></div></section>
+                <section className="space-y-4"><h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><PhoneCall className="h-4 w-4" /> Linhas e Conectividade</h3><div className="space-y-2">{selectedCliente.linhas?.map(linha => (<div key={linha.id} className="flex items-center justify-between p-3 rounded-lg border border-border"><div className="flex items-center gap-3"><div className={`h-2 w-2 rounded-full ${linha.status === 'ativa' ? 'bg-emerald-500' : 'bg-red-500'}`} /><div><p className="text-sm font-bold">{linha.msisdn || "Sem número"}</p><p className="text-[10px] text-muted-foreground uppercase tracking-tight">{linha.status}</p></div></div>{linha.activated_at && (<span className="text-[10px] text-muted-foreground">Ativada em {new Date(linha.activated_at).toLocaleDateString("pt-BR")}</span>)}</div>))}</div></section>
+                <section className="space-y-4"><h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CreditCard className="h-4 w-4" /> Histórico Financeiro</h3><div className="space-y-3">{selectedCliente.cobrancas?.sort((a, b) => new Date(b.vencimento).getTime() - new Date(a.vencimento).getTime()).map(cob => (<div key={cob.id} className="p-3 rounded-lg bg-muted/30 flex items-center justify-between border-l-4 border-l-border" style={{ borderLeftColor: cob.status === 'pago' ? '#10b981' : '#f59e0b' }}><div><p className="text-sm font-bold">{fmt(Number(cob.valor))}</p><p className="text-[10px] text-muted-foreground">Venc. {new Date(cob.vencimento).toLocaleDateString("pt-BR")}</p></div><Badge variant={cob.status === 'pago' ? 'default' : 'outline'} className={cob.status === 'pago' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}>{cob.status.charAt(0).toUpperCase() + cob.status.slice(1)}</Badge></div>))}</div></section>
               </div>
             </>
           )}
