@@ -956,6 +956,50 @@ export type Database = {
         }
         Relationships: []
       }
+      transacoes_wallet: {
+        Row: {
+          created_at: string | null
+          data_liberacao: string | null
+          descricao: string | null
+          id: string
+          referencia_id: string | null
+          status: string
+          tipo: string
+          valor: number
+          wallet_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_liberacao?: string | null
+          descricao?: string | null
+          id?: string
+          referencia_id?: string | null
+          status?: string
+          tipo: string
+          valor: number
+          wallet_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_liberacao?: string | null
+          descricao?: string | null
+          id?: string
+          referencia_id?: string | null
+          status?: string
+          tipo?: string
+          valor?: number
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transacoes_wallet_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           email: string | null
@@ -997,6 +1041,33 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          id: string
+          saldo_a_liberar: number
+          saldo_bloqueado: number
+          saldo_disponivel: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          saldo_a_liberar?: number
+          saldo_bloqueado?: number
+          saldo_disponivel?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          saldo_a_liberar?: number
+          saldo_bloqueado?: number
+          saldo_disponivel?: number
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -1468,6 +1539,16 @@ export type Database = {
       }
       cleanup_import_data: { Args: never; Returns: undefined }
       cleanup_old_imports: { Args: never; Returns: undefined }
+      creditar_wallet: {
+        Args: {
+          p_dias_carencia?: number
+          p_referencia_id: string
+          p_tipo: string
+          p_user_id: string
+          p_valor: number
+        }
+        Returns: undefined
+      }
       fail_import_chunk: {
         Args: { p_chunk_id: string; p_erro: string }
         Returns: undefined
