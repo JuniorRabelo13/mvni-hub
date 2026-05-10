@@ -301,6 +301,13 @@ export default function Dashboard() {
             </div>
           </div>
 
+          <div className="flex items-start gap-3 rounded-xl bg-primary/5 p-4 border border-primary/10">
+            <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              As comissões de ativação são pagamentos únicos. Os ganhos recorrentes são gerados mensalmente enquanto os associados permanecerem ativos.
+            </p>
+          </div>
+
           <div className="flex items-start gap-2 rounded-xl bg-blue-500/5 p-4 border border-blue-500/10">
             <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
             <p className="text-[11px] text-blue-400/80 leading-relaxed">
