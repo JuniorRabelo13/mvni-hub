@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { buildApiUrl } from "./utils/api-config";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, QrCode as QrCodeIcon, X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 export default function AgenteAgentes() {
@@ -321,7 +322,8 @@ export default function AgenteAgentes() {
   }, []);
 
   return (
-    <div className="p-6 md:p-10 text-white min-h-screen bg-black">
+    <TooltipProvider>
+      <div className="p-6 md:p-10 text-white min-h-screen bg-black">
       <div className="max-w-[1400px] mx-auto">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-12">
           <div>
@@ -399,14 +401,32 @@ export default function AgenteAgentes() {
                         <td className="px-8 py-7 align-middle">
                           <div className="flex flex-col items-center gap-2 text-center">
                             <div className="flex items-center gap-2.5">
-                              <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${
-                                isConnected ? "bg-green-500 shadow-green-500/20" : isStarting ? "bg-yellow-500 shadow-yellow-500/20" : "bg-red-500 shadow-red-500/20"
-                              }`} />
-                              <span className={`text-xs font-black uppercase tracking-widest ${
-                                isConnected ? "text-green-500" : isStarting ? "text-yellow-500" : "text-red-500"
-                              }`}>
-                                {isConnected ? "CONECTADO" : isStarting ? "INICIANDO" : "DESCONECTADO"}
-                              </span>
+                              {isConnected ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-2.5 cursor-help">
+                                      <div className="w-2.5 h-2.5 rounded-full shadow-lg bg-green-500 shadow-green-500/20" />
+                                      <span className="text-xs font-black uppercase tracking-widest text-green-500">
+                                        CONECTADO
+                                      </span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>WhatsApp conectado e sincronizado em tempo real.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <>
+                                  <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${
+                                    isStarting ? "bg-yellow-500 shadow-yellow-500/20" : "bg-red-500 shadow-red-500/20"
+                                  }`} />
+                                  <span className={`text-xs font-black uppercase tracking-widest ${
+                                    isStarting ? "text-yellow-500" : "text-red-500"
+                                  }`}>
+                                    {isStarting ? "INICIANDO" : "DESCONECTADO"}
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -540,5 +560,6 @@ export default function AgenteAgentes() {
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 }
