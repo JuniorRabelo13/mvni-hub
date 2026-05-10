@@ -410,6 +410,17 @@ export default function AgenteAgentes() {
                     const displayWhatsApp = typeof rawNumber === 'string' && rawNumber !== "Aguardando..." 
                       ? rawNumber.replace(/@s\.whatsapp\.net/g, "") 
                       : null;
+                    if (isConnected) {
+                      console.log(`[DEBUG Agent ${agent.id}]:`, {
+                        phone: localConnection?.phone,
+                        remoteJid: localConnection?.remoteJid,
+                        wid: localConnection?.wid,
+                        pushName: localConnection?.pushName,
+                        sender: localConnection?.sender,
+                        session_id: agent.session_id,
+                        db_numero: agent.numero
+                      });
+                    }
 
                     return (
                       <tr key={agent.id} className="group hover:bg-zinc-800/20 transition-colors">
