@@ -168,15 +168,41 @@ export default function Clientes() {
         </Dialog>
       </header>
 
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por nome, telefone, CPF ou linha…"
+          className="pl-9 pr-9"
+          aria-label="Buscar clientes"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground"
+            aria-label="Limpar busca"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : items.length === 0 ? (
         <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
           Nenhum cliente ainda. Cadastre o primeiro para começar a faturar.
         </CardContent></Card>
+      ) : filtered.length === 0 ? (
+        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">
+          Nenhum cliente encontrado para "{query}".
+        </CardContent></Card>
       ) : (
         <div className="grid gap-3">
-          {items.map((c) => {
+          {filtered.map((c) => {
             const pendentes = c.cobrancas?.filter((x) => x.status === "pendente") ?? [];
             const linhasAtivas = c.linhas?.filter((l) => l.status === "ativa").length ?? 0;
             return (
