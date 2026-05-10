@@ -311,6 +311,58 @@ export default function Clientes() {
         </Dialog>
       </header>
 
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <span className="text-[10px] uppercase font-bold tracking-wider">MRR</span>
+            </div>
+            <span className="text-xl font-bold">{fmt(metrics.mrr)}</span>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Wallet className="h-4 w-4 text-emerald-500" />
+              <span className="text-[10px] uppercase font-bold tracking-wider">Receita Total</span>
+            </div>
+            <span className="text-xl font-bold">{fmt(metrics.totalRevenue)}</span>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <span className="text-[10px] uppercase font-bold tracking-wider">Inadimplência</span>
+            </div>
+            <span className="text-xl font-bold text-red-500">{fmt(metrics.overdueRevenue)}</span>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Users className="h-4 w-4 text-blue-500" />
+              <span className="text-[10px] uppercase font-bold tracking-wider">Ativos</span>
+            </div>
+            <span className="text-xl font-bold">{metrics.activeCount}</span>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-2 md:col-span-1">
+          <CardContent className="p-4 flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <BarChart3 className="h-4 w-4 text-amber-500" />
+              <span className="text-[10px] uppercase font-bold tracking-wider">Ticket Médio</span>
+            </div>
+            <span className="text-xl font-bold">{fmt(metrics.averageTicket)}</span>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
           {[
