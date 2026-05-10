@@ -404,7 +404,8 @@ export default function AgenteAgentes() {
                       localConnection?.sender || 
                       localConnection?.pushName ||
                       localConnection?.numero_whatsapp ||
-                      agent.numero_whatsapp;
+                      agent.numero_whatsapp ||
+                      (isConnected ? (agent.session_id || agent.numero) : null);
 
                     const displayWhatsApp = typeof rawNumber === 'string' && rawNumber !== "Aguardando..." 
                       ? rawNumber.replace(/@s\.whatsapp\.net/g, "") 
