@@ -44,6 +44,7 @@ export default function Clientes() {
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null);
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const itemsPerPage = 20;
 
   useEffect(() => {
