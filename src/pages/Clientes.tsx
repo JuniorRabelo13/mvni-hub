@@ -325,7 +325,7 @@ export default function Clientes() {
       <PixPaymentDialog 
         cobrancaId={selectedCobranca} 
         onOpenChange={(open) => !open && setSelectedCobranca(null)}
-        onSuccess={load}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["clientes"] })}
       />
     </div>
   );
