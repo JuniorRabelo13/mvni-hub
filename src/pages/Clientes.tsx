@@ -448,13 +448,16 @@ export default function Clientes() {
                       variant="ghost" 
                       size="icon" 
                       className="h-8 w-8" 
-                      onClick={() => setExpandedTimeline(expandedTimeline === c.id ? null : c.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedTimeline(expandedTimeline === c.id ? null : c.id);
+                      }}
                     >
                       <History className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4" onClick={(e) => e.stopPropagation()}>
                   {pendentes.map((p) => (
                     <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
                       <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
