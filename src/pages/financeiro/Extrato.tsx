@@ -29,6 +29,7 @@ import {
 import { format, subMonths, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { maskSensitiveInfo } from "@/lib/mask";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -301,7 +302,7 @@ export default function ExtratoFinanceiro() {
                       </div>
                     </td>
                     <td className="px-4 py-4 font-medium text-card-foreground">
-                      {tx.descricao}
+                      {maskSensitiveInfo(tx.descricao)}
                       {tx.referencia_id && (
                         <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">REF: {tx.referencia_id.slice(0, 8)}</p>
                       )}
