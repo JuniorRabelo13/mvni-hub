@@ -382,6 +382,9 @@ export default function AgenteAgentes() {
                     const normalizedLocalStatus = localConnection?.status?.toLowerCase();
                     const normalizedDbStatus = (agent?.status_conexao || agent?.status || "").toLowerCase();
                     
+                    const isReconnecting = 
+                      normalizedLocalStatus === "reconectando" || normalizedDbStatus === "reconectando";
+
                     const isConnected = 
                       normalizedLocalStatus === "conectado" || normalizedLocalStatus === "connected" ||
                       normalizedLocalStatus === "open" || normalizedLocalStatus === "authenticated" ||
@@ -430,6 +433,13 @@ export default function AgenteAgentes() {
                                     <p>WhatsApp conectado e sincronizado em tempo real.</p>
                                   </TooltipContent>
                                 </Tooltip>
+                              ) : isReconnecting ? (
+                                <>
+                                  <div className="w-2.5 h-2.5 rounded-full shadow-lg bg-yellow-500 shadow-yellow-500/20 animate-pulse" />
+                                  <span className="text-xs font-black uppercase tracking-widest text-yellow-500">
+                                    RECONECTANDO...
+                                  </span>
+                                </>
                               ) : (
                                 <>
                                   <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${
