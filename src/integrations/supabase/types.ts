@@ -501,6 +501,44 @@ export type Database = {
         }
         Relationships: []
       }
+      notificacoes_enviadas: {
+        Row: {
+          cliente_id: string
+          detalhes: string | null
+          enviado_em: string | null
+          id: string
+          referencia_mes: string
+          status: string
+          tipo: string
+        }
+        Insert: {
+          cliente_id: string
+          detalhes?: string | null
+          enviado_em?: string | null
+          id?: string
+          referencia_mes: string
+          status: string
+          tipo: string
+        }
+        Update: {
+          cliente_id?: string
+          detalhes?: string | null
+          enviado_em?: string | null
+          id?: string
+          referencia_mes?: string
+          status?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_enviadas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       planos: {
         Row: {
           ativo: boolean | null
