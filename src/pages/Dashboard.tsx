@@ -267,6 +267,9 @@ export default function Dashboard() {
                 <p className="text-3xl font-black text-gradient-gold transition-all duration-300 animate-in fade-in zoom-in-95" key={`total-${simulacao.total}`}>
                   {fmt(simulacao.total)}
                 </p>
+                <p className="text-[9px] text-primary/70 italic mt-1 font-medium">
+                  Valor previsto para entrar todos os meses com a rede ativa.
+                </p>
               </div>
             </div>
 
