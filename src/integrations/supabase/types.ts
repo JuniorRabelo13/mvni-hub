@@ -44,6 +44,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_alerts: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          message: string | null
+          resolved: boolean | null
+          severity: string | null
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          resolved?: boolean | null
+          severity?: string | null
+          title: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          resolved?: boolean | null
+          severity?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       admin_logs: {
         Row: {
           action: string
@@ -1834,6 +1864,7 @@ export type Database = {
           valor: string
         }[]
       }
+      get_global_metrics: { Args: never; Returns: Json }
       get_import_errors: {
         Args: { p_job_id: string }
         Returns: {
@@ -1916,7 +1947,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "master_admin"
       cobranca_status: "pendente" | "pago" | "atrasado" | "cancelado"
       comissao_tipo: "venda" | "recorrencia"
       linha_status: "ativa" | "suspensa" | "cancelada"
@@ -2060,7 +2091,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "master_admin"],
       cobranca_status: ["pendente", "pago", "atrasado", "cancelado"],
       comissao_tipo: ["venda", "recorrencia"],
       linha_status: ["ativa", "suspensa", "cancelada"],
