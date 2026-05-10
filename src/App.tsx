@@ -94,6 +94,8 @@ const App = () => (
               <Route path="/agente/mensagens" element={<AgenteMensagens />} />
               <Route path="/agente/configuracoes" element={<AgenteConfig />} />
             </Route>
+            <Route path="/termos" element={<Terms />} />
+            <Route path="/privacidade" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
