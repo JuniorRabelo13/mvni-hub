@@ -542,5 +542,6 @@ export default function AgenteAgentes() {
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 }
