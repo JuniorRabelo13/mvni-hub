@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle, Activity, TrendingUp, Users, Wallet, AlertCircle, BarChart3 } from "lucide-react";
+import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle, Activity, TrendingUp, Users, Wallet, AlertCircle, BarChart3, Mail, Phone, Hash, Calendar, PhoneCall, CreditCard } from "lucide-react";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 import { sanitize } from "@/lib/sanitize";
 
@@ -44,6 +45,7 @@ export default function Clientes() {
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null);
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -424,7 +426,7 @@ export default function Clientes() {
               const pendentes = c.cobrancas?.filter((x) => x.status === "pendente") ?? [];
               const linhasAtivas = c.linhas?.filter((l) => l.status === "ativa").length ?? 0;
               return (
-                <Card key={c.id}>
+                <Card key={c.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setSelectedCliente(c)}>
                   <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
                     <div>
                       <CardTitle className="text-lg">{c.nome}</CardTitle>
@@ -446,13 +448,16 @@ export default function Clientes() {
                       variant="ghost" 
                       size="icon" 
                       className="h-8 w-8" 
-                      onClick={() => setExpandedTimeline(expandedTimeline === c.id ? null : c.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedTimeline(expandedTimeline === c.id ? null : c.id);
+                      }}
                     >
                       <History className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4" onClick={(e) => e.stopPropagation()}>
                   {pendentes.map((p) => (
                     <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
                       <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
@@ -562,6 +567,114 @@ export default function Clientes() {
         onOpenChange={(open) => !open && setSelectedCobranca(null)}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ["clientes"] })}
       />
+
+      <Sheet open={!!selectedCliente} onOpenChange={(open) => !open && setSelectedCliente(null)}>
+        <SheetContent className="sm:max-w-md overflow-y-auto">
+          {selectedCliente && (
+            <>
+              <SheetHeader className="pb-6 border-b">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
+                    {selectedCliente.nome.charAt(0)}
+                  </div>
+                  <div>
+                    <SheetTitle className="text-xl">{selectedCliente.nome}</SheetTitle>
+                    <SheetDescription>Detalhes completos do cliente</SheetDescription>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Badge variant={selectedCliente.ativo ? "default" : "secondary"}>
+                    {selectedCliente.ativo ? "Ativo" : "Inativo"}
+                  </Badge>
+                  {(() => {
+                    const health = getHealthScore(selectedCliente);
+                    return (
+                      <Badge variant="outline" className={`${health.color} ${health.bg} border-none`}>
+                        Score: {health.score}%
+                      </Badge>
+                    );
+                  })()}
+                </div>
+              </SheetHeader>
+
+              <div className="py-6 space-y-8">
+                {/* Informações Pessoais */}
+                <section className="space-y-4">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Users className="h-4 w-4" /> Dados Cadastrais
+                  </h3>
+                  <div className="grid gap-3">
+                    <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30">
+                      <Hash className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">CPF</p>
+                        <p className="font-medium">{selectedCliente.cpf || "Não informado"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Telefone</p>
+                        <p className="font-medium">{selectedCliente.telefone || "Não informado"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Desde</p>
+                        <p className="font-medium">{new Date(selectedCliente.created_at).toLocaleDateString("pt-BR")}</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Linhas Ativas */}
+                <section className="space-y-4">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <PhoneCall className="h-4 w-4" /> Linhas e Conectividade
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedCliente.linhas?.map(linha => (
+                      <div key={linha.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-2 w-2 rounded-full ${linha.status === 'ativa' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                          <div>
+                            <p className="text-sm font-bold">{linha.msisdn || "Sem número"}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-tight">{linha.status}</p>
+                          </div>
+                        </div>
+                        {linha.activated_at && (
+                          <span className="text-[10px] text-muted-foreground">Ativada em {new Date(linha.activated_at).toLocaleDateString("pt-BR")}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Histórico Financeiro */}
+                <section className="space-y-4">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" /> Histórico Financeiro
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedCliente.cobrancas?.sort((a, b) => new Date(b.vencimento).getTime() - new Date(a.vencimento).getTime()).map(cob => (
+                      <div key={cob.id} className="p-3 rounded-lg bg-muted/30 flex items-center justify-between border-l-4 border-l-border" style={{ borderLeftColor: cob.status === 'pago' ? '#10b981' : '#f59e0b' }}>
+                        <div>
+                          <p className="text-sm font-bold">{fmt(Number(cob.valor))}</p>
+                          <p className="text-[10px] text-muted-foreground">Venc. {new Date(cob.vencimento).toLocaleDateString("pt-BR")}</p>
+                        </div>
+                        <Badge variant={cob.status === 'pago' ? 'default' : 'outline'} className={cob.status === 'pago' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}>
+                          {cob.status.charAt(0).toUpperCase() + cob.status.slice(1)}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
