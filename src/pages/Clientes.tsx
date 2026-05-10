@@ -200,8 +200,8 @@ export default function Clientes() {
               <div className="space-y-1.5"><Label htmlFor="email">E-mail</Label><Input id="email" name="email" type="email" /></div>
               <div className="space-y-1.5"><Label htmlFor="msisdn">Linha (MSISDN)</Label><Input id="msisdn" name="msisdn" placeholder="11999999999" /></div>
               <p className="text-xs text-muted-foreground">Plano R$ 99,90 — comissão de R$ 85 ao confirmar pagamento.</p>
-              <Button type="submit" className="w-full" disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />} Cadastrar
+              <Button type="submit" className="w-full" disabled={createClienteMutation.isPending}>
+                {createClienteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Cadastrar
               </Button>
             </form>
           </DialogContent>
