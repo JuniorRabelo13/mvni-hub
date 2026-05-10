@@ -112,6 +112,7 @@ export type Database = {
           email: string | null
           id: string
           nome: string
+          notify_whatsapp: boolean | null
           plano_id: string | null
           telefone: string | null
           updated_at: string
@@ -124,6 +125,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome: string
+          notify_whatsapp?: boolean | null
           plano_id?: string | null
           telefone?: string | null
           updated_at?: string
@@ -136,6 +138,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string
+          notify_whatsapp?: boolean | null
           plano_id?: string | null
           telefone?: string | null
           updated_at?: string
@@ -1477,6 +1480,41 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_logs: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message_body: string | null
+          status: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_body?: string | null
+          status?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_body?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_logs_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_messages: {
         Row: {
           agente_id: string | null
@@ -1662,6 +1700,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_templates: {
+        Row: {
+          body: string
+          created_at: string | null
+          id: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          id?: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          id?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
