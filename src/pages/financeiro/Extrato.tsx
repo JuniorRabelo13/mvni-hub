@@ -29,6 +29,7 @@ import {
 import { format, subMonths, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { maskSensitiveInfo } from "@/lib/mask";
 
 const ITEMS_PER_PAGE = 20;
 
