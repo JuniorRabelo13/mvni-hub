@@ -407,8 +407,25 @@ export default function AgenteAgentes() {
                       agent.numero_whatsapp ||
                       (isConnected ? (agent.session_id || agent.numero) : null);
 
+                    const formatPhoneNumber = (num: string) => {
+                      const cleaned = num.replace(/\D/g, "");
+                      if (cleaned.length === 13 && cleaned.startsWith("55")) {
+                        const ddd = cleaned.substring(2, 4);
+                        const part1 = cleaned.substring(4, 9);
+                        const part2 = cleaned.substring(9);
+                        return `(${ddd}) ${part1}-${part2}`;
+                      }
+                      if (cleaned.length === 12 && cleaned.startsWith("55")) {
+                        const ddd = cleaned.substring(2, 4);
+                        const part1 = cleaned.substring(4, 8);
+                        const part2 = cleaned.substring(8);
+                        return `(${ddd}) ${part1}-${part2}`;
+                      }
+                      return num;
+                    };
+
                     const displayWhatsApp = typeof rawNumber === 'string' && rawNumber !== "Aguardando..." 
-                      ? rawNumber.replace(/@s\.whatsapp\.net/g, "") 
+                      ? formatPhoneNumber(rawNumber.replace(/@s\.whatsapp\.net/g, "")) 
                       : null;
                     if (isConnected) {
                       console.log(`[DEBUG Agent ${agent.id}]:`, {
