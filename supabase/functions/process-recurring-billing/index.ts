@@ -17,9 +17,31 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log("Iniciando processamento de cobranças recorrentes...")
+    console.log("Iniciando processamento de cobranças recorrentes e inadimplência...")
 
-    // 1. Buscar todos os clientes ativos
+    const hoje = new Date().toISOString().slice(0, 10)
+
+    // 1. Marcar clientes como inadimplentes se tiverem cobranças vencidas
+    const { data: vencidas, error: vError } = await supabaseAdmin
+      .from('cobrancas')
+      .select('cliente_id')
+      .eq('status', 'pendente')
+      .lt('vencimento', hoje)
+
+    if (vError) throw vError
+
+    if (vencidas && vencidas.length > 0) {
+      const idsInadimplentes = [...new Set(vencidas.map(v => v.cliente_id))]
+      const { error: updError } = await supabaseAdmin
+        .from('clientes')
+        .update({ ativo: false }) // Desativa o cliente por inadimplência
+        .in('id', idsInadimplentes)
+      
+      if (updError) console.error("Erro ao atualizar status de inadimplentes:", updError)
+      else console.log(`${idsInadimplentes.length} clientes marcados como inadimplentes/inativos.`)
+    }
+
+    // 2. Buscar todos os clientes ativos (que não estão inadimplentes) para gerar novas cobranças
     const { data: clientes, error: cliError } = await supabaseAdmin
       .from('clientes')
       .select('id, user_id, ativo, linhas(id, status)')
@@ -28,15 +50,12 @@ serve(async (req) => {
     if (cliError) throw cliError
 
     let cobrancasGeradas = 0
-    const hoje = new Date().toISOString().slice(0, 10)
 
     for (const cliente of clientes) {
-      // Para cada linha ativa do cliente
       const linhasAtivas = cliente.linhas?.filter(l => l.status === 'ativa') || []
       
       for (const linha of linhasAtivas) {
-        // Verificar se já existe uma cobrança pendente para este mês
-        // Lógica simplificada: ver se existe cobrança com vencimento nos próximos 30 dias
+        // Verificar se já existe uma cobrança futura para evitar duplicidade
         const { data: existente } = await supabaseAdmin
           .from('cobrancas')
           .select('id')
@@ -46,7 +65,6 @@ serve(async (req) => {
           .limit(1)
 
         if (!existente || existente.length === 0) {
-          // Gerar nova cobrança
           const vencimento = new Date()
           vencimento.setMonth(vencimento.getMonth() + 1)
           
@@ -56,7 +74,7 @@ serve(async (req) => {
               user_id: cliente.user_id,
               cliente_id: cliente.id,
               linha_id: linha.id,
-              valor: 99.90, // Valor padrão do plano
+              valor: 99.90,
               vencimento: vencimento.toISOString().slice(0, 10),
               status: 'pendente',
               is_primeira: false
@@ -74,7 +92,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         message: "Processamento concluído", 
-        cobrancas_geradas: cobrancasGeradas 
+        cobrancas_geradas: cobrancasGeradas,
+        inadimplentes_processados: vencidas?.length || 0
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
