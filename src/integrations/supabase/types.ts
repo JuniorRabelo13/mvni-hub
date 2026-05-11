@@ -821,6 +821,48 @@ export type Database = {
         }
         Relationships: []
       }
+      saas_plans: {
+        Row: {
+          automation_limit: number
+          commission_rate: number
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          lines_limit: number
+          monthly_price: number
+          name: string
+          updated_at: string | null
+          whatsapp_limit: number
+        }
+        Insert: {
+          automation_limit?: number
+          commission_rate?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          lines_limit?: number
+          monthly_price?: number
+          name: string
+          updated_at?: string | null
+          whatsapp_limit?: number
+        }
+        Update: {
+          automation_limit?: number
+          commission_rate?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          lines_limit?: number
+          monthly_price?: number
+          name?: string
+          updated_at?: string | null
+          whatsapp_limit?: number
+        }
+        Relationships: []
+      }
       security_logs: {
         Row: {
           campo_detectado: string
