@@ -1888,6 +1888,25 @@ export type Database = {
           total_revenue: number
         }[]
       }
+      get_master_audit_logs: {
+        Args: {
+          p_end_date?: string
+          p_event_type?: string
+          p_limit?: number
+          p_start_date?: string
+          p_user_id?: string
+        }
+        Returns: {
+          actor_id: string
+          actor_name: string
+          event_message: string
+          event_time: string
+          event_type: string
+          log_id: string
+          metadata: Json
+          target_id: string
+        }[]
+      }
       get_master_lines_report: { Args: never; Returns: Json }
       get_master_whatsapp_report: { Args: never; Returns: Json }
       get_master_workers_report: { Args: never; Returns: Json }
