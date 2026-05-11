@@ -51,6 +51,7 @@ import MasterDashboard from "./pages/master-admin/Dashboard";
 import MasterFinanceiro from "./pages/master-admin/Financeiro";
 import MasterAfiliados from "./pages/master-admin/Afiliados";
 import MasterLinhas from "./pages/master-admin/Linhas";
+import MasterWhatsApp from "./pages/master-admin/WhatsApp";
 
 const queryClient = new QueryClient();
 
