@@ -50,6 +50,7 @@ import AgenteAgentes from "./pages/whatsapp/AgenteAgentes";
 import MasterDashboard from "./pages/master-admin/Dashboard";
 import MasterFinanceiro from "./pages/master-admin/Financeiro";
 import MasterAfiliados from "./pages/master-admin/Afiliados";
+import MasterLinhas from "./pages/master-admin/Linhas";
 
 const queryClient = new QueryClient();
 
