@@ -286,6 +286,50 @@ export type Database = {
           },
         ]
       }
+      commissions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          paid_at: string | null
+          profile_id: string | null
+          reference_id: string | null
+          status: string | null
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          paid_at?: string | null
+          profile_id?: string | null
+          reference_id?: string | null
+          status?: string | null
+          type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          paid_at?: string | null
+          profile_id?: string | null
+          reference_id?: string | null
+          status?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracoes: {
         Row: {
           chave: string
@@ -1987,6 +2031,15 @@ export type Database = {
       fail_import_chunk: {
         Args: { p_chunk_id: string; p_erro: string }
         Returns: undefined
+      }
+      get_commission_ranking: {
+        Args: { limit_count?: number }
+        Returns: {
+          nome: string
+          paid_commissions: number
+          profile_id: string
+          total_commissions: number
+        }[]
       }
       get_configuracoes_safe: {
         Args: never
