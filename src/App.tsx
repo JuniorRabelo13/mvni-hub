@@ -102,6 +102,7 @@ const App = () => (
               {/* Master Admin Routes */}
               <Route path="/master/dashboard" element={<MasterDashboard />} />
               <Route path="/master/financeiro" element={<MasterFinanceiro />} />
+              <Route path="/master/afiliados" element={<MasterAfiliados />} />
               <Route path="/master/clientes" element={<Dashboard />} />
               <Route path="/master/telecom" element={<Dashboard />} />
               <Route path="/master/automacoes" element={<Dashboard />} />
