@@ -1890,6 +1890,7 @@ export type Database = {
       }
       get_master_lines_report: { Args: never; Returns: Json }
       get_master_whatsapp_report: { Args: never; Returns: Json }
+      get_master_workers_report: { Args: never; Returns: Json }
       get_mrr_historico: {
         Args: { p_meses: number }
         Returns: {
