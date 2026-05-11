@@ -1888,6 +1888,7 @@ export type Database = {
           total_revenue: number
         }[]
       }
+      get_master_lines_report: { Args: never; Returns: Json }
       get_mrr_historico: {
         Args: { p_meses: number }
         Returns: {
