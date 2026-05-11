@@ -654,6 +654,27 @@ export type Database = {
         }
         Relationships: []
       }
+      master_permissions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       notificacoes_enviadas: {
         Row: {
           cliente_id: string
@@ -722,6 +743,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_permissions: {
+        Row: {
+          permission_id: string
+          profile_id: string
+        }
+        Insert: {
+          permission_id: string
+          profile_id: string
+        }
+        Update: {
+          permission_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "master_permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_permissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -729,6 +780,7 @@ export type Database = {
           gestor_id: string | null
           id: string
           indicador_id: string | null
+          is_blocked: boolean | null
           nome: string
           role: string | null
           status: Database["public"]["Enums"]["user_status"]
@@ -741,6 +793,7 @@ export type Database = {
           gestor_id?: string | null
           id: string
           indicador_id?: string | null
+          is_blocked?: boolean | null
           nome: string
           role?: string | null
           status?: Database["public"]["Enums"]["user_status"]
@@ -753,6 +806,7 @@ export type Database = {
           gestor_id?: string | null
           id?: string
           indicador_id?: string | null
+          is_blocked?: boolean | null
           nome?: string
           role?: string | null
           status?: Database["public"]["Enums"]["user_status"]
@@ -1245,6 +1299,44 @@ export type Database = {
             columns: ["wallet_id"]
             isOneToOne: false
             referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_activity_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: string | null
+          profile_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          profile_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          profile_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_logs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

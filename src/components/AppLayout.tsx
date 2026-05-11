@@ -78,6 +78,7 @@ export default function AppLayout() {
     { to: "/master/workers", label: "IA & Workers", icon: Cpu },
     { to: "/master/alertas", label: "Centro Crítico", icon: AlertTriangle },
     { to: "/master/auditoria", label: "Auditoria Global", icon: ClipboardList },
+    { to: "/master/usuarios", label: "Usuários & Permissões", icon: ShieldCheck },
     { to: "/master/config", label: "Master Config", icon: Settings },
   ];
 
