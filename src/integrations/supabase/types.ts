@@ -461,6 +461,50 @@ export type Database = {
         }
         Relationships: []
       }
+      fraud_alerts: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: string | null
+          is_resolved: boolean | null
+          profile_id: string | null
+          score_impact: number | null
+          severity: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          is_resolved?: boolean | null
+          profile_id?: string | null
+          score_impact?: number | null
+          severity: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          is_resolved?: boolean | null
+          profile_id?: string | null
+          score_impact?: number | null
+          severity?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_alerts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_chunks: {
         Row: {
           created_at: string | null
@@ -826,6 +870,7 @@ export type Database = {
           indicador_id: string | null
           is_blocked: boolean | null
           nome: string
+          risk_score: number | null
           role: string | null
           status: Database["public"]["Enums"]["user_status"]
           telefone: string | null
@@ -839,6 +884,7 @@ export type Database = {
           indicador_id?: string | null
           is_blocked?: boolean | null
           nome: string
+          risk_score?: number | null
           role?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           telefone?: string | null
@@ -852,6 +898,7 @@ export type Database = {
           indicador_id?: string | null
           is_blocked?: boolean | null
           nome?: string
+          risk_score?: number | null
           role?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           telefone?: string | null
