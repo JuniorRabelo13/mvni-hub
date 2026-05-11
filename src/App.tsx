@@ -61,6 +61,7 @@ import MasterInfraestrutura from "./pages/master-admin/Infraestrutura";
 import MasterUsuarios from "./pages/master-admin/Usuarios";
 import MasterComissoes from "./pages/master-admin/Comissoes";
 import MasterAntifraude from "./pages/master-admin/Antifraude";
+import MasterProjecoes from "./pages/master-admin/Projecoes";
 
 const queryClient = new QueryClient();
 
