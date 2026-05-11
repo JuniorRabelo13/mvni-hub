@@ -1873,6 +1873,21 @@ export type Database = {
           erro: string
         }[]
       }
+      get_master_affiliates_report: {
+        Args: never
+        Returns: {
+          affiliate_email: string
+          affiliate_id: string
+          affiliate_name: string
+          churn_count: number
+          churn_rate: number
+          monthly_recurring: number
+          overdue_count: number
+          overdue_rate: number
+          total_clients: number
+          total_revenue: number
+        }[]
+      }
       get_mrr_historico: {
         Args: { p_meses: number }
         Returns: {

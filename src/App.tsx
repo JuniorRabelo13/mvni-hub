@@ -49,6 +49,7 @@ import AgenteAgentes from "./pages/whatsapp/AgenteAgentes";
 // Master Admin Pages
 import MasterDashboard from "./pages/master-admin/Dashboard";
 import MasterFinanceiro from "./pages/master-admin/Financeiro";
+import MasterAfiliados from "./pages/master-admin/Afiliados";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +102,7 @@ const App = () => (
               {/* Master Admin Routes */}
               <Route path="/master/dashboard" element={<MasterDashboard />} />
               <Route path="/master/financeiro" element={<MasterFinanceiro />} />
+              <Route path="/master/afiliados" element={<MasterAfiliados />} />
               <Route path="/master/clientes" element={<Dashboard />} />
               <Route path="/master/telecom" element={<Dashboard />} />
               <Route path="/master/automacoes" element={<Dashboard />} />
