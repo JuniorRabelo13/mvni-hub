@@ -763,6 +763,39 @@ export type Database = {
         }
         Relationships: []
       }
+      master_projections_history: {
+        Row: {
+          actual_revenue: number | null
+          created_at: string | null
+          estimated_profit: number | null
+          id: string
+          month_year: string
+          projected_churn: number | null
+          projected_expansion_rate: number | null
+          projected_revenue: number | null
+        }
+        Insert: {
+          actual_revenue?: number | null
+          created_at?: string | null
+          estimated_profit?: number | null
+          id?: string
+          month_year: string
+          projected_churn?: number | null
+          projected_expansion_rate?: number | null
+          projected_revenue?: number | null
+        }
+        Update: {
+          actual_revenue?: number | null
+          created_at?: string | null
+          estimated_profit?: number | null
+          id?: string
+          month_year?: string
+          projected_churn?: number | null
+          projected_expansion_rate?: number | null
+          projected_revenue?: number | null
+        }
+        Relationships: []
+      }
       notificacoes_enviadas: {
         Row: {
           cliente_id: string
