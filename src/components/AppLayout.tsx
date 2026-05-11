@@ -115,7 +115,7 @@ export default function AppLayout() {
         {isMasterAdmin && (
           <div className="px-3 mb-3">
             <NavLink
-              to="/master/dashboard"
+              to="/master/central"
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm font-bold transition-all shadow-sm",
