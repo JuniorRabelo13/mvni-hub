@@ -70,6 +70,7 @@ export default function AppLayout() {
   ];
 
   const masterItems = [
+    { to: "/master/central", label: "Central Estratégica", icon: LayoutDashboard },
     { to: "/master/dashboard", label: "BI Executivo", icon: BarChart4 },
     { to: "/master/projecoes", label: "Projeções Futuras", icon: TrendingUp },
     { to: "/master/financeiro", label: "Financeiro Global", icon: Wallet },
