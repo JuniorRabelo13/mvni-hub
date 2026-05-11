@@ -60,6 +60,7 @@ import MasterPlanos from "./pages/master-admin/Planos";
 import MasterInfraestrutura from "./pages/master-admin/Infraestrutura";
 import MasterUsuarios from "./pages/master-admin/Usuarios";
 import MasterComissoes from "./pages/master-admin/Comissoes";
+import MasterAntifraude from "./pages/master-admin/Antifraude";
 
 const queryClient = new QueryClient();
 
