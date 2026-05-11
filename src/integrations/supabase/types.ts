@@ -1907,6 +1907,19 @@ export type Database = {
           target_id: string
         }[]
       }
+      get_master_critical_alerts: {
+        Args: never
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          is_resolved: boolean
+          metadata: Json
+          severity: string
+          title: string
+        }[]
+      }
       get_master_lines_report: { Args: never; Returns: Json }
       get_master_whatsapp_report: { Args: never; Returns: Json }
       get_master_workers_report: { Args: never; Returns: Json }
