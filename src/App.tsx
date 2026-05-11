@@ -124,6 +124,7 @@ const App = () => (
               <Route path="/master/planos" element={<MasterPlanos />} />
               <Route path="/master/infraestrutura" element={<MasterInfraestrutura />} />
               <Route path="/master/usuarios" element={<MasterUsuarios />} />
+              <Route path="/master/comissoes" element={<MasterComissoes />} />
               <Route path="/master/config" element={<Dashboard />} />
             </Route>
             <Route path="/termos" element={<Terms />} />
