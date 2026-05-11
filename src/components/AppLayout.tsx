@@ -69,6 +69,7 @@ export default function AppLayout() {
 
   const masterItems = [
     { to: "/master/dashboard", label: "BI Executivo", icon: BarChart4 },
+    { to: "/master/financeiro", label: "Financeiro Global", icon: Wallet },
     { to: "/master/clientes", label: "Base Global", icon: Users },
     { to: "/master/telecom", label: "Infra Telecom", icon: Database },
     { to: "/master/automacoes", label: "IA & Workers", icon: Cpu },
