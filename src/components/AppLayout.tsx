@@ -24,7 +24,8 @@ import {
   ShieldQuestion,
   AlertTriangle,
   Database,
-  EyeOff
+  EyeOff,
+  ClipboardList
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
