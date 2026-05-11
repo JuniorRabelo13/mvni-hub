@@ -113,6 +113,7 @@ const App = () => (
               <Route path="/master/telecom" element={<Dashboard />} />
               <Route path="/master/whatsapp" element={<MasterWhatsApp />} />
               <Route path="/master/workers" element={<MasterWorkers />} />
+              <Route path="/master/auditoria" element={<MasterAuditoria />} />
               <Route path="/master/alertas" element={<Dashboard />} />
               <Route path="/master/config" element={<Dashboard />} />
             </Route>
