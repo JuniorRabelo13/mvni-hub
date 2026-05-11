@@ -168,7 +168,7 @@ const MasterCentral = () => {
                     </div>
                     <span className="text-xs font-bold text-muted-foreground">{item.load}% Carga</span>
                   </div>
-                  <Progress value={item.load} className="h-1.5 bg-white/5" indicatorClassName="bg-primary" />
+                  <Progress value={item.load} className="h-1.5 bg-white/5" />
                 </div>
               ))}
             </CardContent>
