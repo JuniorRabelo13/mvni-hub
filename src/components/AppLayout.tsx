@@ -71,6 +71,7 @@ export default function AppLayout() {
 
   const masterItems = [
     { to: "/master/dashboard", label: "BI Executivo", icon: BarChart4 },
+    { to: "/master/projecoes", label: "Projeções Futuras", icon: TrendingUp },
     { to: "/master/financeiro", label: "Financeiro Global", icon: Wallet },
     { to: "/master/comissoes", label: "Gestão Comissões", icon: TrendingUp },
     { to: "/master/afiliados", label: "Rede Afiliados", icon: Users },

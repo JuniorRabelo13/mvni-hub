@@ -61,6 +61,7 @@ import MasterInfraestrutura from "./pages/master-admin/Infraestrutura";
 import MasterUsuarios from "./pages/master-admin/Usuarios";
 import MasterComissoes from "./pages/master-admin/Comissoes";
 import MasterAntifraude from "./pages/master-admin/Antifraude";
+import MasterProjecoes from "./pages/master-admin/Projecoes";
 
 const queryClient = new QueryClient();
 
@@ -127,6 +128,7 @@ const App = () => (
               <Route path="/master/usuarios" element={<MasterUsuarios />} />
               <Route path="/master/comissoes" element={<MasterComissoes />} />
               <Route path="/master/antifraude" element={<MasterAntifraude />} />
+              <Route path="/master/projecoes" element={<MasterProjecoes />} />
               <Route path="/master/config" element={<Dashboard />} />
             </Route>
             <Route path="/termos" element={<Terms />} />
