@@ -106,6 +106,7 @@ const App = () => (
               <Route path="/master/financeiro" element={<MasterFinanceiro />} />
               <Route path="/master/afiliados" element={<MasterAfiliados />} />
               <Route path="/master/linhas" element={<MasterLinhas />} />
+              <Route path="/master/whatsapp" element={<MasterWhatsApp />} />
               <Route path="/master/clientes" element={<Dashboard />} />
               <Route path="/master/telecom" element={<Dashboard />} />
               <Route path="/master/automacoes" element={<Dashboard />} />
