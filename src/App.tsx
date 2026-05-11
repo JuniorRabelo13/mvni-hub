@@ -113,6 +113,7 @@ const App = () => (
               <Route path="/agente/configuracoes" element={<AgenteConfig />} />
 
               {/* Master Admin Routes */}
+              <Route path="/master/central" element={<MasterCentral />} />
               <Route path="/master/dashboard" element={<MasterDashboard />} />
               <Route path="/master/financeiro" element={<MasterFinanceiro />} />
               <Route path="/master/afiliados" element={<MasterAfiliados />} />
