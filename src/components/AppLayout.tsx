@@ -25,7 +25,8 @@ import {
   AlertTriangle,
   Database,
   EyeOff,
-  ClipboardList
+  ClipboardList,
+  TrendingUp
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,7 @@ export default function AppLayout() {
   const masterItems = [
     { to: "/master/dashboard", label: "BI Executivo", icon: BarChart4 },
     { to: "/master/financeiro", label: "Financeiro Global", icon: Wallet },
+    { to: "/master/comissoes", label: "Gestão Comissões", icon: TrendingUp },
     { to: "/master/afiliados", label: "Rede Afiliados", icon: Users },
     { to: "/master/clientes", label: "Base Global", icon: Users },
     { to: "/master/whatsapp", label: "WhatsApp Engine", icon: MessageSquare },
