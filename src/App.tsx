@@ -49,6 +49,7 @@ import AgenteAgentes from "./pages/whatsapp/AgenteAgentes";
 // Master Admin Pages
 import MasterDashboard from "./pages/master-admin/Dashboard";
 import MasterFinanceiro from "./pages/master-admin/Financeiro";
+import MasterAfiliados from "./pages/master-admin/Afiliados";
 
 const queryClient = new QueryClient();
 
