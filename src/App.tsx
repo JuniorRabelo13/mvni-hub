@@ -54,6 +54,7 @@ import MasterLinhas from "./pages/master-admin/Linhas";
 import MasterWhatsApp from "./pages/master-admin/WhatsApp";
 import MasterWorkers from "./pages/master-admin/Workers";
 import MasterAuditoria from "./pages/master-admin/Auditoria";
+import MasterAlertas from "./pages/master-admin/Alertas";
 
 const queryClient = new QueryClient();
 
@@ -111,10 +112,9 @@ const App = () => (
               <Route path="/master/whatsapp" element={<MasterWhatsApp />} />
               <Route path="/master/clientes" element={<Dashboard />} />
               <Route path="/master/telecom" element={<Dashboard />} />
-              <Route path="/master/whatsapp" element={<MasterWhatsApp />} />
               <Route path="/master/workers" element={<MasterWorkers />} />
               <Route path="/master/auditoria" element={<MasterAuditoria />} />
-              <Route path="/master/alertas" element={<Dashboard />} />
+              <Route path="/master/alertas" element={<MasterAlertas />} />
               <Route path="/master/config" element={<Dashboard />} />
             </Route>
             <Route path="/termos" element={<Terms />} />
