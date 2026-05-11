@@ -57,6 +57,7 @@ import MasterAuditoria from "./pages/master-admin/Auditoria";
 import MasterAlertas from "./pages/master-admin/Alertas";
 import MasterGateways from "./pages/master-admin/Gateways";
 import MasterPlanos from "./pages/master-admin/Planos";
+import MasterInfraestrutura from "./pages/master-admin/Infraestrutura";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +120,7 @@ const App = () => (
               <Route path="/master/alertas" element={<MasterAlertas />} />
               <Route path="/master/gateways" element={<MasterGateways />} />
               <Route path="/master/planos" element={<MasterPlanos />} />
+              <Route path="/master/infraestrutura" element={<MasterInfraestrutura />} />
               <Route path="/master/config" element={<Dashboard />} />
             </Route>
             <Route path="/termos" element={<Terms />} />
