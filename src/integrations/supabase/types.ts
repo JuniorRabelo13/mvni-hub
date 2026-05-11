@@ -1864,6 +1864,7 @@ export type Database = {
           valor: string
         }[]
       }
+      get_global_finance_metrics: { Args: never; Returns: Json }
       get_global_metrics: { Args: never; Returns: Json }
       get_import_errors: {
         Args: { p_job_id: string }
