@@ -126,6 +126,7 @@ const App = () => (
               <Route path="/master/infraestrutura" element={<MasterInfraestrutura />} />
               <Route path="/master/usuarios" element={<MasterUsuarios />} />
               <Route path="/master/comissoes" element={<MasterComissoes />} />
+              <Route path="/master/antifraude" element={<MasterAntifraude />} />
               <Route path="/master/config" element={<Dashboard />} />
             </Route>
             <Route path="/termos" element={<Terms />} />
