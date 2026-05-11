@@ -1920,6 +1920,22 @@ export type Database = {
           title: string
         }[]
       }
+      get_master_gateways_report: {
+        Args: never
+        Returns: {
+          active_subscriptions: number
+          failed_count: number
+          gateway_id: string
+          gateway_name: string
+          last_processed: string
+          status: string
+          success_rate: number
+          volume_card: number
+          volume_pix: number
+          volume_total: number
+          webhook_health: number
+        }[]
+      }
       get_master_lines_report: { Args: never; Returns: Json }
       get_master_whatsapp_report: { Args: never; Returns: Json }
       get_master_workers_report: { Args: never; Returns: Json }
