@@ -128,6 +128,7 @@ const App = () => (
               <Route path="/master/usuarios" element={<MasterUsuarios />} />
               <Route path="/master/comissoes" element={<MasterComissoes />} />
               <Route path="/master/antifraude" element={<MasterAntifraude />} />
+              <Route path="/master/projecoes" element={<MasterProjecoes />} />
               <Route path="/master/config" element={<Dashboard />} />
             </Route>
             <Route path="/termos" element={<Terms />} />
