@@ -796,6 +796,36 @@ export type Database = {
         }
         Relationships: []
       }
+      master_system_health: {
+        Row: {
+          active_workers: number | null
+          created_at: string | null
+          error_rate_24h: number | null
+          id: string
+          online_whatsapp_instances: number | null
+          status: string
+          uptime_percentage: number | null
+        }
+        Insert: {
+          active_workers?: number | null
+          created_at?: string | null
+          error_rate_24h?: number | null
+          id?: string
+          online_whatsapp_instances?: number | null
+          status: string
+          uptime_percentage?: number | null
+        }
+        Update: {
+          active_workers?: number | null
+          created_at?: string | null
+          error_rate_24h?: number | null
+          id?: string
+          online_whatsapp_instances?: number | null
+          status?: string
+          uptime_percentage?: number | null
+        }
+        Relationships: []
+      }
       notificacoes_enviadas: {
         Row: {
           cliente_id: string

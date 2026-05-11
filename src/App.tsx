@@ -62,6 +62,7 @@ import MasterUsuarios from "./pages/master-admin/Usuarios";
 import MasterComissoes from "./pages/master-admin/Comissoes";
 import MasterAntifraude from "./pages/master-admin/Antifraude";
 import MasterProjecoes from "./pages/master-admin/Projecoes";
+import MasterCentral from "./pages/master-admin/Central";
 
 const queryClient = new QueryClient();
 
@@ -112,6 +113,7 @@ const App = () => (
               <Route path="/agente/configuracoes" element={<AgenteConfig />} />
 
               {/* Master Admin Routes */}
+              <Route path="/master/central" element={<MasterCentral />} />
               <Route path="/master/dashboard" element={<MasterDashboard />} />
               <Route path="/master/financeiro" element={<MasterFinanceiro />} />
               <Route path="/master/afiliados" element={<MasterAfiliados />} />
