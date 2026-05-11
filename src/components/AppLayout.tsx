@@ -73,6 +73,7 @@ export default function AppLayout() {
     { to: "/master/afiliados", label: "Rede Afiliados", icon: Users },
     { to: "/master/clientes", label: "Base Global", icon: Users },
     { to: "/master/afiliados", label: "Rede Afiliados", icon: Users },
+    { to: "/master/whatsapp", label: "WhatsApp Engine", icon: MessageSquare },
     { to: "/master/linhas", label: "Infra Telecom", icon: Database },
     { to: "/master/automacoes", label: "IA & Workers", icon: Cpu },
     { to: "/master/alertas", label: "Centro Crítico", icon: AlertTriangle },
