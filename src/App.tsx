@@ -53,6 +53,7 @@ import MasterAfiliados from "./pages/master-admin/Afiliados";
 import MasterLinhas from "./pages/master-admin/Linhas";
 import MasterWhatsApp from "./pages/master-admin/WhatsApp";
 import MasterWorkers from "./pages/master-admin/Workers";
+import MasterAuditoria from "./pages/master-admin/Auditoria";
 
 const queryClient = new QueryClient();
 
