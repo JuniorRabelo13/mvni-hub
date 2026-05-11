@@ -24,7 +24,8 @@ import {
   ShieldQuestion,
   AlertTriangle,
   Database,
-  EyeOff
+  EyeOff,
+  ClipboardList
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,7 @@ export default function AppLayout() {
     { to: "/master/linhas", label: "Infra Telecom", icon: Database },
     { to: "/master/workers", label: "IA & Workers", icon: Cpu },
     { to: "/master/alertas", label: "Centro Crítico", icon: AlertTriangle },
+    { to: "/master/auditoria", label: "Auditoria Global", icon: ClipboardList },
     { to: "/master/config", label: "Master Config", icon: Settings },
   ];
 
