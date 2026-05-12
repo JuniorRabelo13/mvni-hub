@@ -15,6 +15,7 @@ import {
   Target
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from "recharts";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
