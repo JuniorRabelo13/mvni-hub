@@ -134,10 +134,14 @@ export default function MasterFinanceiro() {
         
         <Card className="border-primary/20 bg-zinc-950/50 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Projeção de Faturamento</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              Projeção de Faturamento
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">Histórico realizado e projeção para o ano corrente</p>
           </CardHeader>
-          <CardContent className="h-[300px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-zinc-800 rounded-lg m-4">
-            Curva de Crescimento Estimada
+          <CardContent className="h-[300px] p-4">
+            <RevenueProjectionChart metrics={metrics} />
           </CardContent>
         </Card>
       </div>
