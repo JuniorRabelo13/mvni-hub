@@ -1,23 +1,32 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
-  AlertTriangle, 
-  Activity,
-  ArrowUpRight,
-  ArrowDownRight,
-  DollarSign,
-  BarChart3,
-  PieChart,
-  Target
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn as cnUtil } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
+import {
+  TrendingUp, TrendingDown, Wallet, AlertTriangle, Activity,
+  ArrowUpRight, ArrowDownRight, DollarSign, BarChart3, PieChart, Target,
+  CalendarIcon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, LineChart, Line, Area, AreaChart, Legend } from "recharts";
 
+type PeriodKey = "7d" | "30d" | "12m" | "custom";
+const PERIODS: { key: PeriodKey; label: string }[] = [
+  { key: "7d", label: "Últimos 7 dias" },
+  { key: "30d", label: "Últimos 30 dias" },
+  { key: "12m", label: "Últimos 12 meses" },
+  { key: "custom", label: "Personalizado" },
+];
+
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 
 export default function MasterFinanceiro() {
   const { data: metrics, isLoading } = useQuery({
