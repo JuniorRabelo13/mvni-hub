@@ -121,10 +121,14 @@ export default function MasterFinanceiro() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-primary/20 bg-zinc-950/50 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Composição da Receita</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              Composição da Receita
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">Distribuição por categoria no mês vigente</p>
           </CardHeader>
-          <CardContent className="h-[300px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-zinc-800 rounded-lg m-4">
-            Gráfico de Distribuição por Produto
+          <CardContent className="h-[300px] p-4">
+            <RevenueCompositionChart metrics={metrics} />
           </CardContent>
         </Card>
         
