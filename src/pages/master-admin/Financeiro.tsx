@@ -1,25 +1,37 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
-  AlertTriangle, 
-  Activity,
-  ArrowUpRight,
-  ArrowDownRight,
-  DollarSign,
-  BarChart3,
-  PieChart,
-  Target
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn as cnUtil } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
+import {
+  TrendingUp, TrendingDown, Wallet, AlertTriangle, Activity,
+  ArrowUpRight, ArrowDownRight, DollarSign, BarChart3, PieChart, Target,
+  CalendarIcon
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, LineChart, Line, Area, AreaChart, Legend } from "recharts";
 
+type PeriodKey = "7d" | "30d" | "12m" | "custom";
+const PERIODS: { key: PeriodKey; label: string }[] = [
+  { key: "7d", label: "Últimos 7 dias" },
+  { key: "30d", label: "Últimos 30 dias" },
+  { key: "12m", label: "Últimos 12 meses" },
+  { key: "custom", label: "Personalizado" },
+];
+
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+
 export default function MasterFinanceiro() {
+  const [period, setPeriod] = useState<PeriodKey>("30d");
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["global-finance-metrics"],
     queryFn: async () => {
@@ -28,6 +40,14 @@ export default function MasterFinanceiro() {
       return data as any;
     }
   });
+
+  const periodLabel = useMemo(() => {
+    if (period === "custom" && customRange?.from && customRange?.to) {
+      return `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`;
+    }
+    return PERIODS.find(p => p.key === period)?.label ?? "";
+  }, [period, customRange]);
+
 
   if (isLoading) {
     return (
@@ -118,6 +138,50 @@ export default function MasterFinanceiro() {
         />
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-zinc-950/40 backdrop-blur-sm p-3">
+        <div className="flex items-center gap-2">
+          <CalendarIcon className="h-4 w-4 text-primary" />
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Período dos gráficos</span>
+          <span className="text-xs text-primary font-semibold ml-1">{periodLabel}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {PERIODS.map(p => (
+            <Button
+              key={p.key}
+              variant={period === p.key ? "default" : "outline"}
+              size="sm"
+              className={cnUtil("h-8 text-xs", period === p.key && "bg-primary text-primary-foreground shadow-gold-sm")}
+              onClick={() => setPeriod(p.key)}
+            >
+              {p.label}
+            </Button>
+          ))}
+          {period === "custom" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs">
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  {customRange?.from && customRange?.to
+                    ? `${format(customRange.from, "dd/MM")} – ${format(customRange.to, "dd/MM")}`
+                    : "Selecionar datas"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="range"
+                  selected={customRange}
+                  onSelect={setCustomRange}
+                  numberOfMonths={2}
+                  locale={ptBR}
+                  initialFocus
+                  className={cnUtil("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-primary/20 bg-zinc-950/50 backdrop-blur-sm">
           <CardHeader>
@@ -125,10 +189,10 @@ export default function MasterFinanceiro() {
               <BarChart3 className="h-4 w-4 text-primary" />
               Composição da Receita
             </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">Distribuição por categoria no mês vigente</p>
+            <p className="text-xs text-muted-foreground mt-1">Distribuição por categoria · {periodLabel}</p>
           </CardHeader>
           <CardContent className="h-[300px] p-4">
-            <RevenueCompositionChart metrics={metrics} />
+            <RevenueCompositionChart metrics={metrics} period={period} customRange={customRange} />
           </CardContent>
         </Card>
         
@@ -138,10 +202,10 @@ export default function MasterFinanceiro() {
               <TrendingUp className="h-4 w-4 text-primary" />
               Projeção de Faturamento
             </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">Histórico realizado e projeção para o ano corrente</p>
+            <p className="text-xs text-muted-foreground mt-1">Histórico realizado e projeção · {periodLabel}</p>
           </CardHeader>
           <CardContent className="h-[300px] p-4">
-            <RevenueProjectionChart metrics={metrics} />
+            <RevenueProjectionChart metrics={metrics} period={period} customRange={customRange} />
           </CardContent>
         </Card>
       </div>
@@ -175,17 +239,29 @@ function MetricCard({ title, value, description, icon: Icon, trend, trendValue, 
   );
 }
 
-function RevenueCompositionChart({ metrics }: { metrics: any }) {
-  const monthRevenue = Number(metrics?.revenue_month) || 0;
-  const mrr = Number(metrics?.mrr) || 0;
-  const overdue = Number(metrics?.overdue_revenue) || 0;
-  const profit = Number(metrics?.estimated_profit) || 0;
+function getPeriodScale(period: PeriodKey, customRange?: DateRange): number {
+  if (period === "7d") return 7 / 30;
+  if (period === "30d") return 1;
+  if (period === "12m") return 12;
+  if (period === "custom" && customRange?.from && customRange?.to) {
+    const days = Math.max(1, Math.round((+customRange.to - +customRange.from) / 86400000) + 1);
+    return days / 30;
+  }
+  return 1;
+}
 
-  // Estimativa de composição derivada das métricas globais disponíveis
+function RevenueCompositionChart({ metrics, period, customRange }: { metrics: any; period: PeriodKey; customRange?: DateRange }) {
+  const scale = getPeriodScale(period, customRange);
+  const monthRevenue = (Number(metrics?.revenue_month) || 0) * scale;
+  const mrr = (Number(metrics?.mrr) || 0) * scale;
+  const overdue = (Number(metrics?.overdue_revenue) || 0) * scale;
+  const profit = (Number(metrics?.estimated_profit) || 0) * scale;
+
   const recurring = Math.max(mrr, 0);
   const activations = Math.max(monthRevenue - recurring * 0.6, monthRevenue * 0.25);
   const indirect = Math.max(profit * 0.15, monthRevenue * 0.08);
   const services = Math.max(monthRevenue - (recurring + activations + indirect), monthRevenue * 0.05);
+
 
   const data = [
     { categoria: "Recorrente", valor: Math.round(recurring), fill: "hsl(var(--primary))" },
@@ -234,21 +310,72 @@ function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }
 
-function RevenueProjectionChart({ metrics }: { metrics: any }) {
-  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const currentMonth = new Date().getMonth();
+function RevenueProjectionChart({ metrics, period, customRange }: { metrics: any; period: PeriodKey; customRange?: DateRange }) {
   const monthRevenue = Number(metrics?.revenue_month) || 50000;
   const growthRate = (Number(metrics?.growth_rate) || 5) / 100;
+  const today = new Date();
 
-  // Reconstrói histórico aproximado a partir da receita do mês atual e taxa de crescimento
-  const data = months.map((mes, i) => {
-    const diff = i - currentMonth;
-    const value = monthRevenue * Math.pow(1 + growthRate, diff);
-    const isProjected = i > currentMonth;
+  // Define quantidade de buckets e granularidade conforme o período
+  let buckets: { label: string; offset: number; unit: "day" | "month" }[] = [];
+  if (period === "7d") {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      buckets.push({ label: format(d, "dd/MM"), offset: -i, unit: "day" });
+    }
+  } else if (period === "30d") {
+    for (let i = 29; i >= 0; i -= 3) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      buckets.push({ label: format(d, "dd/MM"), offset: -i, unit: "day" });
+    }
+  } else if (period === "12m") {
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      buckets.push({ label: format(d, "MMM/yy", { locale: ptBR }), offset: -i, unit: "month" });
+    }
+  } else if (period === "custom" && customRange?.from && customRange?.to) {
+    const totalDays = Math.max(1, Math.round((+customRange.to - +customRange.from) / 86400000) + 1);
+    const useMonths = totalDays > 60;
+    const steps = Math.min(useMonths ? Math.ceil(totalDays / 30) : Math.min(totalDays, 14), 14);
+    for (let i = 0; i < steps; i++) {
+      const t = +customRange.from + ((+customRange.to - +customRange.from) * i) / Math.max(steps - 1, 1);
+      const d = new Date(t);
+      buckets.push({
+        label: useMonths ? format(d, "MMM/yy", { locale: ptBR }) : format(d, "dd/MM"),
+        offset: useMonths ? -(steps - 1 - i) : -(steps - 1 - i),
+        unit: useMonths ? "month" : "day",
+      });
+    }
+  } else {
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      buckets.push({ label: format(d, "MMM/yy", { locale: ptBR }), offset: -i, unit: "month" });
+    }
+  }
+
+  // Adiciona projeções futuras (~30% dos buckets)
+  const futureCount = Math.max(2, Math.round(buckets.length * 0.3));
+  const lastUnit = buckets[buckets.length - 1]?.unit ?? "month";
+  for (let i = 1; i <= futureCount; i++) {
+    if (lastUnit === "day") {
+      const d = new Date(today); d.setDate(today.getDate() + i);
+      buckets.push({ label: format(d, "dd/MM"), offset: i, unit: "day" });
+    } else {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      buckets.push({ label: format(d, "MMM/yy", { locale: ptBR }), offset: i, unit: "month" });
+    }
+  }
+
+  const dailyBase = monthRevenue / 30;
+  const data = buckets.map((b) => {
+    const periods = b.offset; // negativo = passado, positivo = futuro
+    const base = b.unit === "day" ? dailyBase : monthRevenue;
+    const monthlyEquivalent = b.unit === "day" ? periods / 30 : periods;
+    const value = base * Math.pow(1 + growthRate, monthlyEquivalent);
+    const isFuture = b.offset > 0;
     return {
-      mes,
-      realizado: isProjected ? null : Math.round(value),
-      projetado: isProjected ? Math.round(value) : (i === currentMonth ? Math.round(value) : null),
+      mes: b.label,
+      realizado: isFuture ? null : Math.round(value),
+      projetado: isFuture ? Math.round(value) : (b.offset === 0 ? Math.round(value) : null),
     };
   });
 
