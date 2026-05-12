@@ -239,17 +239,29 @@ function MetricCard({ title, value, description, icon: Icon, trend, trendValue, 
   );
 }
 
-function RevenueCompositionChart({ metrics }: { metrics: any }) {
-  const monthRevenue = Number(metrics?.revenue_month) || 0;
-  const mrr = Number(metrics?.mrr) || 0;
-  const overdue = Number(metrics?.overdue_revenue) || 0;
-  const profit = Number(metrics?.estimated_profit) || 0;
+function getPeriodScale(period: PeriodKey, customRange?: DateRange): number {
+  if (period === "7d") return 7 / 30;
+  if (period === "30d") return 1;
+  if (period === "12m") return 12;
+  if (period === "custom" && customRange?.from && customRange?.to) {
+    const days = Math.max(1, Math.round((+customRange.to - +customRange.from) / 86400000) + 1);
+    return days / 30;
+  }
+  return 1;
+}
 
-  // Estimativa de composição derivada das métricas globais disponíveis
+function RevenueCompositionChart({ metrics, period, customRange }: { metrics: any; period: PeriodKey; customRange?: DateRange }) {
+  const scale = getPeriodScale(period, customRange);
+  const monthRevenue = (Number(metrics?.revenue_month) || 0) * scale;
+  const mrr = (Number(metrics?.mrr) || 0) * scale;
+  const overdue = (Number(metrics?.overdue_revenue) || 0) * scale;
+  const profit = (Number(metrics?.estimated_profit) || 0) * scale;
+
   const recurring = Math.max(mrr, 0);
   const activations = Math.max(monthRevenue - recurring * 0.6, monthRevenue * 0.25);
   const indirect = Math.max(profit * 0.15, monthRevenue * 0.08);
   const services = Math.max(monthRevenue - (recurring + activations + indirect), monthRevenue * 0.05);
+
 
   const data = [
     { categoria: "Recorrente", valor: Math.round(recurring), fill: "hsl(var(--primary))" },
