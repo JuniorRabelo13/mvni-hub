@@ -202,10 +202,10 @@ export default function MasterFinanceiro() {
               <TrendingUp className="h-4 w-4 text-primary" />
               Projeção de Faturamento
             </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">Histórico realizado e projeção para o ano corrente</p>
+            <p className="text-xs text-muted-foreground mt-1">Histórico realizado e projeção · {periodLabel}</p>
           </CardHeader>
           <CardContent className="h-[300px] p-4">
-            <RevenueProjectionChart metrics={metrics} />
+            <RevenueProjectionChart metrics={metrics} period={period} customRange={customRange} />
           </CardContent>
         </Card>
       </div>
