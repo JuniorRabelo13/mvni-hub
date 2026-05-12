@@ -138,6 +138,50 @@ export default function MasterFinanceiro() {
         />
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-zinc-950/40 backdrop-blur-sm p-3">
+        <div className="flex items-center gap-2">
+          <CalendarIcon className="h-4 w-4 text-primary" />
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Período dos gráficos</span>
+          <span className="text-xs text-primary font-semibold ml-1">{periodLabel}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {PERIODS.map(p => (
+            <Button
+              key={p.key}
+              variant={period === p.key ? "default" : "outline"}
+              size="sm"
+              className={cnUtil("h-8 text-xs", period === p.key && "bg-primary text-primary-foreground shadow-gold-sm")}
+              onClick={() => setPeriod(p.key)}
+            >
+              {p.label}
+            </Button>
+          ))}
+          {period === "custom" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs">
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  {customRange?.from && customRange?.to
+                    ? `${format(customRange.from, "dd/MM")} – ${format(customRange.to, "dd/MM")}`
+                    : "Selecionar datas"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="range"
+                  selected={customRange}
+                  onSelect={setCustomRange}
+                  numberOfMonths={2}
+                  locale={ptBR}
+                  initialFocus
+                  className={cnUtil("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-primary/20 bg-zinc-950/50 backdrop-blur-sm">
           <CardHeader>
@@ -145,10 +189,10 @@ export default function MasterFinanceiro() {
               <BarChart3 className="h-4 w-4 text-primary" />
               Composição da Receita
             </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">Distribuição por categoria no mês vigente</p>
+            <p className="text-xs text-muted-foreground mt-1">Distribuição por categoria · {periodLabel}</p>
           </CardHeader>
           <CardContent className="h-[300px] p-4">
-            <RevenueCompositionChart metrics={metrics} />
+            <RevenueCompositionChart metrics={metrics} period={period} customRange={customRange} />
           </CardContent>
         </Card>
         
