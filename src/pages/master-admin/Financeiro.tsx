@@ -310,21 +310,72 @@ function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(" ");
 }
 
-function RevenueProjectionChart({ metrics }: { metrics: any }) {
-  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const currentMonth = new Date().getMonth();
+function RevenueProjectionChart({ metrics, period, customRange }: { metrics: any; period: PeriodKey; customRange?: DateRange }) {
   const monthRevenue = Number(metrics?.revenue_month) || 50000;
   const growthRate = (Number(metrics?.growth_rate) || 5) / 100;
+  const today = new Date();
 
-  // Reconstrói histórico aproximado a partir da receita do mês atual e taxa de crescimento
-  const data = months.map((mes, i) => {
-    const diff = i - currentMonth;
-    const value = monthRevenue * Math.pow(1 + growthRate, diff);
-    const isProjected = i > currentMonth;
+  // Define quantidade de buckets e granularidade conforme o período
+  let buckets: { label: string; offset: number; unit: "day" | "month" }[] = [];
+  if (period === "7d") {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      buckets.push({ label: format(d, "dd/MM"), offset: -i, unit: "day" });
+    }
+  } else if (period === "30d") {
+    for (let i = 29; i >= 0; i -= 3) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      buckets.push({ label: format(d, "dd/MM"), offset: -i, unit: "day" });
+    }
+  } else if (period === "12m") {
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      buckets.push({ label: format(d, "MMM/yy", { locale: ptBR }), offset: -i, unit: "month" });
+    }
+  } else if (period === "custom" && customRange?.from && customRange?.to) {
+    const totalDays = Math.max(1, Math.round((+customRange.to - +customRange.from) / 86400000) + 1);
+    const useMonths = totalDays > 60;
+    const steps = Math.min(useMonths ? Math.ceil(totalDays / 30) : Math.min(totalDays, 14), 14);
+    for (let i = 0; i < steps; i++) {
+      const t = +customRange.from + ((+customRange.to - +customRange.from) * i) / Math.max(steps - 1, 1);
+      const d = new Date(t);
+      buckets.push({
+        label: useMonths ? format(d, "MMM/yy", { locale: ptBR }) : format(d, "dd/MM"),
+        offset: useMonths ? -(steps - 1 - i) : -(steps - 1 - i),
+        unit: useMonths ? "month" : "day",
+      });
+    }
+  } else {
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      buckets.push({ label: format(d, "MMM/yy", { locale: ptBR }), offset: -i, unit: "month" });
+    }
+  }
+
+  // Adiciona projeções futuras (~30% dos buckets)
+  const futureCount = Math.max(2, Math.round(buckets.length * 0.3));
+  const lastUnit = buckets[buckets.length - 1]?.unit ?? "month";
+  for (let i = 1; i <= futureCount; i++) {
+    if (lastUnit === "day") {
+      const d = new Date(today); d.setDate(today.getDate() + i);
+      buckets.push({ label: format(d, "dd/MM"), offset: i, unit: "day" });
+    } else {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      buckets.push({ label: format(d, "MMM/yy", { locale: ptBR }), offset: i, unit: "month" });
+    }
+  }
+
+  const dailyBase = monthRevenue / 30;
+  const data = buckets.map((b) => {
+    const periods = b.offset; // negativo = passado, positivo = futuro
+    const base = b.unit === "day" ? dailyBase : monthRevenue;
+    const monthlyEquivalent = b.unit === "day" ? periods / 30 : periods;
+    const value = base * Math.pow(1 + growthRate, monthlyEquivalent);
+    const isFuture = b.offset > 0;
     return {
-      mes,
-      realizado: isProjected ? null : Math.round(value),
-      projetado: isProjected ? Math.round(value) : (i === currentMonth ? Math.round(value) : null),
+      mes: b.label,
+      realizado: isFuture ? null : Math.round(value),
+      projetado: isFuture ? Math.round(value) : (b.offset === 0 ? Math.round(value) : null),
     };
   });
 
