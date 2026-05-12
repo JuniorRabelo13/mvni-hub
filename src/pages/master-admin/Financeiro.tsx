@@ -29,6 +29,9 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 
 
 export default function MasterFinanceiro() {
+  const [period, setPeriod] = useState<PeriodKey>("30d");
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["global-finance-metrics"],
     queryFn: async () => {
@@ -37,6 +40,14 @@ export default function MasterFinanceiro() {
       return data as any;
     }
   });
+
+  const periodLabel = useMemo(() => {
+    if (period === "custom" && customRange?.from && customRange?.to) {
+      return `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`;
+    }
+    return PERIODS.find(p => p.key === period)?.label ?? "";
+  }, [period, customRange]);
+
 
   if (isLoading) {
     return (
