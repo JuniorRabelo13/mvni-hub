@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, subMonths, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn as cnUtil } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
@@ -19,6 +19,13 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type PeriodKey = "7d" | "30d" | "12m" | "custom";
 const PERIODS: { key: PeriodKey; label: string }[] = [
@@ -35,6 +42,8 @@ export default function MasterFinanceiro() {
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [isRecalculating, setIsRecalculating] = useState(false);
+  const mesAtualReal = format(new Date(), "yyyy-MM");
+  const [selectedMes, setSelectedMes] = useState(mesAtualReal);
   const queryClient = useQueryClient();
 
   const { data: metrics, isLoading } = useQuery({
@@ -46,20 +55,28 @@ export default function MasterFinanceiro() {
     }
   });
 
-  const mesAtual = new Date().toISOString().substring(0, 7);
+  const mesOptions = useMemo(() => {
+    return Array.from({ length: 6 }).map((_, i) => {
+      const date = subMonths(startOfMonth(new Date()), i);
+      return {
+        value: format(date, "yyyy-MM"),
+        label: format(date, "MMM/yyyy", { locale: ptBR }).replace(/^\w/, (c) => c.toUpperCase())
+      };
+    });
+  }, []);
 
   const handleRecalcular = async () => {
     setIsRecalculating(true);
     try {
       const { data, error } = await supabase.functions.invoke("calcular-comissoes-mes", {
-        body: { mes_referencia: mesAtual },
+        body: { mes_referencia: mesAtualReal },
       });
 
       if (error) throw error;
 
       toast.success("Comissões recalculadas com sucesso");
-      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", mesAtual] });
-      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", mesAtual] });
+      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", mesAtualReal] });
+      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", mesAtualReal] });
     } catch (error: any) {
       console.error("Erro ao recalcular comissões:", error);
       toast.error(error.message || "Erro ao recalcular comissões");
@@ -69,7 +86,7 @@ export default function MasterFinanceiro() {
   };
 
   const { data: masterSummary, isLoading: isLoadingSummary } = useQuery({
-    queryKey: ["master-finance-summary", mesAtual],
+    queryKey: ["master-finance-summary", selectedMes],
     queryFn: async () => {
       const [
         { data: subscriptions },
@@ -78,7 +95,7 @@ export default function MasterFinanceiro() {
         supabase.from("assinaturas").select("valor").eq("status", "ativo"),
         supabase.from("comissoes_mensais")
           .select("valor_total, status")
-          .eq("mes_referencia", mesAtual)
+          .eq("mes_referencia", selectedMes)
       ]);
 
       const receitaBruta = subscriptions?.reduce((acc, sub) => acc + Number(sub.valor), 0) || 0;
@@ -98,7 +115,7 @@ export default function MasterFinanceiro() {
   });
 
   const { data: repasses } = useQuery({
-    queryKey: ["master-repasses-mes", mesAtual],
+    queryKey: ["master-repasses-mes", selectedMes],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comissoes_mensais")
@@ -115,7 +132,7 @@ export default function MasterFinanceiro() {
             nome
           )
         `)
-        .eq("mes_referencia", mesAtual)
+        .eq("mes_referencia", selectedMes)
         .order("valor_total", { ascending: false });
 
       if (error) throw error;
@@ -140,8 +157,8 @@ export default function MasterFinanceiro() {
       if (error) throw error;
 
       toast.success("Repasse marcado como pago");
-      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", mesAtual] });
-      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", mesAtual] });
+      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", selectedMes] });
+      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", selectedMes] });
     } catch (error: any) {
       console.error("Erro ao atualizar repasse:", error);
       toast.error("Erro ao marcar como pago");
@@ -248,20 +265,34 @@ export default function MasterFinanceiro() {
       <Card className="border-primary/20 bg-zinc-950/50 backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Repasses do mês</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 border-primary/30 hover:bg-primary/10"
-            onClick={handleRecalcular}
-            disabled={isRecalculating}
-          >
-            {isRecalculating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            {isRecalculating ? "Calculando..." : "Recalcular mês atual"}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Select value={selectedMes} onValueChange={setSelectedMes}>
+              <SelectTrigger className="w-[140px] h-9 bg-zinc-950/50 border-primary/20">
+                <SelectValue placeholder="Selecionar mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {mesOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-primary/30 hover:bg-primary/10"
+              onClick={handleRecalcular}
+              disabled={isRecalculating}
+            >
+              {isRecalculating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              {isRecalculating ? "Calculando..." : "Recalcular mês atual"}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
