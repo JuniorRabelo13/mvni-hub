@@ -82,13 +82,13 @@ serve(async (req) => {
     // 2. Vencimento Hoje
     const { data: hojeList } = await supabase
       .from('pagamentos')
-      .select('cliente_id, valor, data_vencimento')
+      .select('id, cliente_id, valor, data_vencimento')
       .eq('data_vencimento', dateToday)
       .neq('status', 'pago')
 
     if (hojeList) {
       for (const item of hojeList) {
-        const success = await callNotification(item.cliente_id, 'vencimento_hoje', item.data_vencimento, item.valor)
+        const success = await callNotification(item.cliente_id, 'vencimento_hoje', item.data_vencimento, item.valor, item.id)
         if (success) resumo.vencimento_hoje++
         else resumo.erros++
       }
