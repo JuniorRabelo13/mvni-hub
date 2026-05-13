@@ -41,6 +41,37 @@ export default function MasterFinanceiro() {
     }
   });
 
+  const mesAtual = new Date().toISOString().substring(0, 7);
+
+  const { data: masterSummary, isLoading: isLoadingSummary } = useQuery({
+    queryKey: ["master-finance-summary", mesAtual],
+    queryFn: async () => {
+      const [
+        { data: subscriptions },
+        { data: commissions }
+      ] = await Promise.all([
+        supabase.from("assinaturas").select("valor").eq("status", "ativo"),
+        supabase.from("comissoes_mensais")
+          .select("valor_total, status")
+          .eq("mes_referencia", mesAtual)
+      ]);
+
+      const receitaBruta = subscriptions?.reduce((acc, sub) => acc + Number(sub.valor), 0) || 0;
+      
+      const pendentes = commissions?.filter(c => c.status === "pendente") || [];
+      const totalComissoesPagar = pendentes.reduce((acc, c) => acc + Number(c.valor_total), 0);
+      const representantesPendentes = pendentes.length;
+      const margemEstimada = receitaBruta - totalComissoesPagar;
+
+      return {
+        receitaBruta,
+        totalComissoesPagar,
+        margemEstimada,
+        representantesPendentes
+      };
+    }
+  });
+
   const periodLabel = useMemo(() => {
     if (period === "custom" && customRange?.from && customRange?.to) {
       return `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`;
@@ -49,7 +80,7 @@ export default function MasterFinanceiro() {
   }, [period, customRange]);
 
 
-  if (isLoading) {
+  if (isLoading || isLoadingSummary) {
     return (
       <div className="space-y-6">
         <header>
