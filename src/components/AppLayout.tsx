@@ -84,6 +84,7 @@ export default function AppLayout() {
     { to: "/master/alertas", label: "Centro Crítico", icon: AlertTriangle },
     { to: "/master/antifraude", label: "Antifraude & Risco", icon: ShieldAlert },
     { to: "/master/auditoria", label: "Auditoria Global", icon: ClipboardList },
+    { to: "/master/notificacoes", label: "Histórico Notificações", icon: Bell },
     { to: "/master/usuarios", label: "Usuários & Permissões", icon: ShieldCheck },
     { to: "/master/config", label: "Master Config", icon: Settings },
   ];
