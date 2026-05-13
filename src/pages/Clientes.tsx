@@ -219,8 +219,23 @@ export default function Clientes() {
                     <div><CardTitle className="text-lg">{c.nome}</CardTitle><p className="text-xs text-muted-foreground">{c.telefone ? maskPhone(c.telefone) : c.cpf ? maskCPF(c.cpf) : "—"}</p></div>
                     <div className="flex flex-wrap gap-2">
                       {(() => { const health = getHealthScore(c); return (<div className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${health.bg} ${health.color}`}><Activity className="h-3 w-3" />{health.label} ({health.score}%)</div>); })()}
+                      {c.assinaturas?.[0]?.status && (
+                        <Badge 
+                          variant="secondary" 
+                          className={
+                            c.assinaturas[0].status === 'ativo' ? 'bg-emerald-500 hover:bg-emerald-600 text-white border-none' :
+                            c.assinaturas[0].status === 'inadimplente' ? 'bg-red-500 hover:bg-red-600 text-white border-none' :
+                            c.assinaturas[0].status === 'suspenso' ? 'bg-amber-500 hover:bg-amber-600 text-white border-none' :
+                            c.assinaturas[0].status === 'cancelado' ? 'bg-gray-500 hover:bg-gray-600 text-white border-none' :
+                            ''
+                          }
+                        >
+                          {c.assinaturas[0].status.charAt(0).toUpperCase() + c.assinaturas[0].status.slice(1)}
+                        </Badge>
+                      )}
                       <Badge variant="outline">{linhasAtivas} linha(s)</Badge>
                       <Badge variant={c.ativo ? "default" : "secondary"}>{c.ativo ? "Ativo" : "Inativo"}</Badge>
+
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setExpandedTimeline(expandedTimeline === c.id ? null : c.id); }}><History className="h-4 w-4" /></Button>
                     </div>
                   </CardHeader>
