@@ -99,7 +99,7 @@ export default function Clientes() {
       .on("postgres_changes", { event: "*", schema: "public", table: "clientes", filter: `user_id=eq.${user.id}` }, () => {
           queryClient.invalidateQueries({ queryKey: ["clientes", user.id] });
         })
-      .on("postgres_changes", { event: "*", schema: "public", table: "cobrancas", filter: `user_id=eq.${user.id}` }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "pagamentos", filter: `user_id=eq.${user.id}` }, () => {
           queryClient.invalidateQueries({ queryKey: ["clientes", user.id] });
         })
       .on("postgres_changes", { event: "*", schema: "public", table: "linhas", filter: `user_id=eq.${user.id}` }, () => {
