@@ -265,20 +265,34 @@ export default function MasterFinanceiro() {
       <Card className="border-primary/20 bg-zinc-950/50 backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Repasses do mês</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 border-primary/30 hover:bg-primary/10"
-            onClick={handleRecalcular}
-            disabled={isRecalculating}
-          >
-            {isRecalculating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            {isRecalculating ? "Calculando..." : "Recalcular mês atual"}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Select value={selectedMes} onValueChange={setSelectedMes}>
+              <SelectTrigger className="w-[140px] h-9 bg-zinc-950/50 border-primary/20">
+                <SelectValue placeholder="Selecionar mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {mesOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-primary/30 hover:bg-primary/10"
+              onClick={handleRecalcular}
+              disabled={isRecalculating}
+            >
+              {isRecalculating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              {isRecalculating ? "Calculando..." : "Recalcular mês atual"}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
