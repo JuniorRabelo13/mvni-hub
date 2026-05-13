@@ -19,7 +19,7 @@ import AdminLogs from "./pages/AdminLogs";
 import SecurityLogs from "./pages/SecurityLogs";
 import Importacoes from "./pages/Importacoes";
 import NotFound from "./pages/NotFound";
-import Terms from "./pages/Terms";
+import Termos from "./pages/Termos";
 import Privacy from "./pages/Privacy";
 import SaquePix from "./pages/financeiro/SaquePix";
 import ExtratoFinanceiro from "./pages/financeiro/Extrato";
@@ -133,7 +133,7 @@ const App = () => (
               <Route path="/master/projecoes" element={<MasterProjecoes />} />
               <Route path="/master/config" element={<Dashboard />} />
             </Route>
-            <Route path="/termos" element={<Terms />} />
+            <Route path="/termos" element={<Termos />} />
             <Route path="/privacidade" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
