@@ -19,8 +19,6 @@ verify_jwt = false
 [functions.disparar-notificacoes-dia]
 verify_jwt = false
 
-[cron.notificar-vencimento]
-schedule = "0 11 * * *" # Todo dia às 11:00 UTC (08:00 Brasília)
 
 
 [cron.liberar-saldo-bloqueado]
