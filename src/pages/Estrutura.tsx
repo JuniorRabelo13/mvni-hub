@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Users, Activity, Wallet, Copy } from "lucide-react";
+import { ChevronRight, Users, Activity, Wallet, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -23,10 +23,23 @@ export default function Estrutura() {
   const [filter, setFilter] = useState<Filter>("todos");
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [codigoIndicacao, setCodigoIndicacao] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
+      // Get referral code from usuarios table
+      const { data: userData } = await supabase
+        .from("usuarios")
+        .select("codigo_indicacao")
+        .eq("id", user.id)
+        .maybeSingle();
+      
+      if (userData) {
+        setCodigoIndicacao(userData.codigo_indicacao);
+      }
+
       // Pega todos os profiles (RLS permite leitura para autenticados — necessário para árvore)
       const { data: profs } = await supabase
         .from("profiles")
@@ -96,10 +109,12 @@ export default function Estrutura() {
     });
 
   const copyLink = () => {
-    if (!user) return;
-    const url = `${window.location.origin}/auth?ref=${user.id}`;
+    if (!codigoIndicacao) return;
+    const url = `${window.location.origin}/cadastro?ref=${codigoIndicacao}`;
     navigator.clipboard.writeText(url);
+    setCopied(true);
     toast.success("Link de indicação copiado!");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const renderNode = (p: Profile, depth: number): JSX.Element | null => {
@@ -155,14 +170,45 @@ export default function Estrutura() {
 
   return (
     <div className="space-y-6">
+      <Card className="bg-card/50 border-white/10 backdrop-blur-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Seu link de indicação</CardTitle>
+          <CardDescription>
+            Compartilhe este link. Quem se cadastrar por ele será vinculado à sua rede automaticamente.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 bg-background/50 border border-white/10 rounded-md px-4 py-2 text-sm font-mono truncate flex items-center">
+              {codigoIndicacao ? `${window.location.origin}/cadastro?ref=${codigoIndicacao}` : "Carregando..."}
+            </div>
+            <Button 
+              className="shrink-0 gap-2 min-w-[140px]" 
+              variant={copied ? "default" : "secondary"}
+              onClick={copyLink}
+              disabled={!codigoIndicacao}
+            >
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Copiado!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  Copiar link
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Estrutura de indicações</p>
           <h1 className="mt-1 text-3xl font-bold">Quem entrou através de você</h1>
         </div>
-        <Button variant="outline" onClick={copyLink}>
-          <Copy className="h-4 w-4" /> Copiar link de indicação
-        </Button>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
