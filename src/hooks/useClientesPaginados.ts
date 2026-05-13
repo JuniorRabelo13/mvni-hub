@@ -13,7 +13,7 @@ export type Cliente = {
   plano_id: string | null;
   planos: { nome: string; valor: number } | null;
   linhas: { id: string; status: string; msisdn: string | null; activated_at: string | null; deactivated_at: string | null }[];
-  cobrancas: { id: string; status: string; valor: number; vencimento: string; paid_at: string | null; created_at: string }[];
+  pagamentos: { id: string; status: string; valor: number; data_vencimento: string; data_pagamento: string | null; created_at: string }[];
   assinaturas?: { status: string }[];
 };
 
