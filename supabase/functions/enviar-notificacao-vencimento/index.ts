@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { cliente_id, tipo, data_vencimento, valor } = await req.json()
+    const { cliente_id, tipo, data_vencimento, valor, fatura_id } = await req.json()
     
     // Conectar ao Supabase
     const supabase = createClient(
