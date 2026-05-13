@@ -246,8 +246,22 @@ export default function MasterFinanceiro() {
       </div>
 
       <Card className="border-primary/20 bg-zinc-950/50 backdrop-blur-sm">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Repasses do mês</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-primary/30 hover:bg-primary/10"
+            onClick={handleRecalcular}
+            disabled={isRecalculating}
+          >
+            {isRecalculating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {isRecalculating ? "Calculando..." : "Recalcular mês atual"}
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
