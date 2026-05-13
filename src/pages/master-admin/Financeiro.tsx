@@ -42,6 +42,8 @@ export default function MasterFinanceiro() {
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [isRecalculating, setIsRecalculating] = useState(false);
+  const mesAtualReal = format(new Date(), "yyyy-MM");
+  const [selectedMes, setSelectedMes] = useState(mesAtualReal);
   const queryClient = useQueryClient();
 
   const { data: metrics, isLoading } = useQuery({
@@ -53,20 +55,28 @@ export default function MasterFinanceiro() {
     }
   });
 
-  const mesAtual = new Date().toISOString().substring(0, 7);
+  const mesOptions = useMemo(() => {
+    return Array.from({ length: 6 }).map((_, i) => {
+      const date = subMonths(startOfMonth(new Date()), i);
+      return {
+        value: format(date, "yyyy-MM"),
+        label: format(date, "MMM/yyyy", { locale: ptBR }).replace(/^\w/, (c) => c.toUpperCase())
+      };
+    });
+  }, []);
 
   const handleRecalcular = async () => {
     setIsRecalculating(true);
     try {
       const { data, error } = await supabase.functions.invoke("calcular-comissoes-mes", {
-        body: { mes_referencia: mesAtual },
+        body: { mes_referencia: mesAtualReal },
       });
 
       if (error) throw error;
 
       toast.success("Comissões recalculadas com sucesso");
-      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", mesAtual] });
-      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", mesAtual] });
+      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", mesAtualReal] });
+      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", mesAtualReal] });
     } catch (error: any) {
       console.error("Erro ao recalcular comissões:", error);
       toast.error(error.message || "Erro ao recalcular comissões");
@@ -76,7 +86,7 @@ export default function MasterFinanceiro() {
   };
 
   const { data: masterSummary, isLoading: isLoadingSummary } = useQuery({
-    queryKey: ["master-finance-summary", mesAtual],
+    queryKey: ["master-finance-summary", selectedMes],
     queryFn: async () => {
       const [
         { data: subscriptions },
@@ -85,7 +95,7 @@ export default function MasterFinanceiro() {
         supabase.from("assinaturas").select("valor").eq("status", "ativo"),
         supabase.from("comissoes_mensais")
           .select("valor_total, status")
-          .eq("mes_referencia", mesAtual)
+          .eq("mes_referencia", selectedMes)
       ]);
 
       const receitaBruta = subscriptions?.reduce((acc, sub) => acc + Number(sub.valor), 0) || 0;
@@ -105,7 +115,7 @@ export default function MasterFinanceiro() {
   });
 
   const { data: repasses } = useQuery({
-    queryKey: ["master-repasses-mes", mesAtual],
+    queryKey: ["master-repasses-mes", selectedMes],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comissoes_mensais")
@@ -122,7 +132,7 @@ export default function MasterFinanceiro() {
             nome
           )
         `)
-        .eq("mes_referencia", mesAtual)
+        .eq("mes_referencia", selectedMes)
         .order("valor_total", { ascending: false });
 
       if (error) throw error;
@@ -147,8 +157,8 @@ export default function MasterFinanceiro() {
       if (error) throw error;
 
       toast.success("Repasse marcado como pago");
-      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", mesAtual] });
-      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", mesAtual] });
+      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", selectedMes] });
+      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", selectedMes] });
     } catch (error: any) {
       console.error("Erro ao atualizar repasse:", error);
       toast.error("Erro ao marcar como pago");
