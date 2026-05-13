@@ -338,6 +338,10 @@ export type Database = {
           representante_id: string
           status: string | null
           updated_at: string
+          valor_ativacoes: number | null
+          valor_bonus: number | null
+          valor_recorrencia_direta: number | null
+          valor_recorrencia_indireta: number | null
           valor_total: number
         }
         Insert: {
@@ -347,6 +351,10 @@ export type Database = {
           representante_id: string
           status?: string | null
           updated_at?: string
+          valor_ativacoes?: number | null
+          valor_bonus?: number | null
+          valor_recorrencia_direta?: number | null
+          valor_recorrencia_indireta?: number | null
           valor_total?: number
         }
         Update: {
@@ -356,6 +364,10 @@ export type Database = {
           representante_id?: string
           status?: string | null
           updated_at?: string
+          valor_ativacoes?: number | null
+          valor_bonus?: number | null
+          valor_recorrencia_direta?: number | null
+          valor_recorrencia_indireta?: number | null
           valor_total?: number
         }
         Relationships: [
