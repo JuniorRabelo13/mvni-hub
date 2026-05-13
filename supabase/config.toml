@@ -15,8 +15,6 @@ verify_jwt = false
 [functions.enviar-notificacao-vencimento]
 verify_jwt = false
 
-[cron.process-recurring-billing]
-schedule = "0 0 1 * *" # Meia-noite do dia 1 de cada mês
 
 [functions.disparar-notificacoes-dia]
 verify_jwt = false
