@@ -136,7 +136,77 @@ const MasterUsuarios = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <Card className="lg:col-span-3 bg-card/50 border-white/10 backdrop-blur-sm">
+        <div className="lg:col-span-3 space-y-6">
+          <Card className="bg-card/50 border-white/10 backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                <CardTitle>Representantes cadastrados</CardTitle>
+              </div>
+              <CardDescription>Visualização detalhada dos representantes independentes na rede.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border border-white/10 overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-white/5">
+                    <TableRow className="border-white/10 hover:bg-transparent">
+                      <TableHead className="text-white">Nome</TableHead>
+                      <TableHead className="text-white">Contato</TableHead>
+                      <TableHead className="text-white">Indicado por</TableHead>
+                      <TableHead className="text-white">Cadastro</TableHead>
+                      <TableHead className="text-white">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loadingRep ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Carregando representantes...
+                        </TableCell>
+                      </TableRow>
+                    ) : representantes.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Nenhum representante cadastrado.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      representantes.map((rep, index) => (
+                        <TableRow key={index} className="border-white/10 hover:bg-white/5 transition-colors">
+                          <TableCell className="font-medium text-white">{rep.nome}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col text-xs">
+                              <span>{rep.email}</span>
+                              <span className="text-muted-foreground">{rep.telefone}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">
+                              {rep.indicado_por?.nome || "Cadastro direto"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {format(new Date(rep.created_at), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={cn(
+                              "capitalize",
+                              rep.status === "ativo" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50" : 
+                              rep.status === "suspenso" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/50" : ""
+                            )}>
+                              {rep.status || "Ativo"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/50 border-white/10 backdrop-blur-sm">
           <CardHeader className="pb-3">
             <div className="flex justify-between items-center">
               <CardTitle>Listagem de Equipe</CardTitle>
