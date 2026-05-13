@@ -12,7 +12,7 @@ import type { DateRange } from "react-day-picker";
 import {
   TrendingUp, TrendingDown, Wallet, AlertTriangle, Activity,
   ArrowUpRight, ArrowDownRight, DollarSign, BarChart3, PieChart, Target,
-  CalendarIcon, Check
+  CalendarIcon, Check, RefreshCw, Loader2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, LineChart, Line, Area, AreaChart, Legend } from "recharts";
@@ -34,6 +34,7 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 export default function MasterFinanceiro() {
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [isRecalculating, setIsRecalculating] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: metrics, isLoading } = useQuery({
@@ -46,6 +47,26 @@ export default function MasterFinanceiro() {
   });
 
   const mesAtual = new Date().toISOString().substring(0, 7);
+
+  const handleRecalcular = async () => {
+    setIsRecalculating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("calcular-comissoes-mes", {
+        body: { mes_referencia: mesAtual },
+      });
+
+      if (error) throw error;
+
+      toast.success("Comissões recalculadas com sucesso");
+      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", mesAtual] });
+      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", mesAtual] });
+    } catch (error: any) {
+      console.error("Erro ao recalcular comissões:", error);
+      toast.error(error.message || "Erro ao recalcular comissões");
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
 
   const { data: masterSummary, isLoading: isLoadingSummary } = useQuery({
     queryKey: ["master-finance-summary", mesAtual],
@@ -225,8 +246,22 @@ export default function MasterFinanceiro() {
       </div>
 
       <Card className="border-primary/20 bg-zinc-950/50 backdrop-blur-sm">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Repasses do mês</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-primary/30 hover:bg-primary/10"
+            onClick={handleRecalcular}
+            disabled={isRecalculating}
+          >
+            {isRecalculating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {isRecalculating ? "Calculando..." : "Recalcular mês atual"}
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
