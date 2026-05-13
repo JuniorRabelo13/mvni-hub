@@ -18,8 +18,12 @@ verify_jwt = false
 [cron.process-recurring-billing]
 schedule = "0 0 1 * *" # Meia-noite do dia 1 de cada mês
 
+[functions.disparar-notificacoes-dia]
+verify_jwt = false
+
 [cron.notificar-vencimento]
-schedule = "0 9 * * *" # Todo dia às 09:00
+schedule = "0 8 * * *" # Todo dia às 08:00
+
 
 [cron.liberar-saldo-bloqueado]
 schedule = "0 0 * * *" # Todo dia à meia-noite
