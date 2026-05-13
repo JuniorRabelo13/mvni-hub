@@ -35,7 +35,7 @@ export default function Clientes() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [selectedCobranca, setSelectedCobranca] = useState<string | null>(null);
+  const [selectedPagamento, setSelectedPagamento] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
   const [currentPage, setCurrentPage] = useState(1);
