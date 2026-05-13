@@ -97,13 +97,13 @@ serve(async (req) => {
     // 3. Pós-vencimento (ontem + status falhou)
     const { data: ontemList } = await supabase
       .from('pagamentos')
-      .select('cliente_id, valor, data_vencimento')
+      .select('id, cliente_id, valor, data_vencimento')
       .eq('data_vencimento', dateYesterday)
       .eq('status', 'falhou')
 
     if (ontemList) {
       for (const item of ontemList) {
-        const success = await callNotification(item.cliente_id, 'pos_vencimento', item.data_vencimento, item.valor)
+        const success = await callNotification(item.cliente_id, 'pos_vencimento', item.data_vencimento, item.valor, item.id)
         if (success) resumo.pos_vencimento++
         else resumo.erros++
       }
