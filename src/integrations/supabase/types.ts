@@ -1676,6 +1676,38 @@ export type Database = {
         }
         Relationships: []
       }
+      usuarios: {
+        Row: {
+          codigo_indicacao: string
+          created_at: string
+          id: string
+          indicado_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          codigo_indicacao?: string
+          created_at?: string
+          id: string
+          indicado_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          codigo_indicacao?: string
+          created_at?: string
+          id?: string
+          indicado_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_indicado_por_fkey"
+            columns: ["indicado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallets: {
         Row: {
           id: string
