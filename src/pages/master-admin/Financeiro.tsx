@@ -241,12 +241,13 @@ export default function MasterFinanceiro() {
                   <TableHead>Recor. Indireta</TableHead>
                   <TableHead>Total a receber</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {repasses?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Nenhum repasse encontrado para este mês.
                     </TableCell>
                   </TableRow>
@@ -267,6 +268,19 @@ export default function MasterFinanceiro() {
                         >
                           {rep.status === "pago" ? "pago" : "pendente"}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {rep.status === "pendente" && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 gap-1 border-primary/30 hover:bg-primary/10"
+                            onClick={() => handleMarcarComoPago(rep)}
+                          >
+                            <Check className="h-3 w-3" />
+                            Marcar como pago
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
