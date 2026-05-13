@@ -332,6 +332,8 @@ export type Database = {
       }
       comissoes_mensais: {
         Row: {
+          clientes_diretos_ativos: number | null
+          clientes_indiretos_ativos: number | null
           criado_em: string
           id: string
           mes_referencia: string
@@ -345,6 +347,8 @@ export type Database = {
           valor_total: number
         }
         Insert: {
+          clientes_diretos_ativos?: number | null
+          clientes_indiretos_ativos?: number | null
           criado_em?: string
           id?: string
           mes_referencia: string
@@ -358,6 +362,8 @@ export type Database = {
           valor_total?: number
         }
         Update: {
+          clientes_diretos_ativos?: number | null
+          clientes_indiretos_ativos?: number | null
           criado_em?: string
           id?: string
           mes_referencia?: string
