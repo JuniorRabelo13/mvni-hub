@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Cadastro = () => {
   const navigate = useNavigate();
@@ -21,6 +22,10 @@ const Cadastro = () => {
     confirmarSenha: "",
     aceitoTermos: false,
   });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const formatCPF = (value: string) => {
     return value
@@ -47,10 +52,53 @@ const Cadastro = () => {
     if (name === "telefone") formattedValue = formatTelefone(value);
 
     setFormData((prev) => ({ ...prev, [name]: formattedValue }));
+    
+    if (name === "confirmarSenha" || name === "senha") {
+      setPasswordError(null);
+    }
+    setError(null);
   };
 
   const handleCheckboxChange = (checked: boolean) => {
     setFormData((prev) => ({ ...prev, aceitoTermos: checked }));
+  };
+
+  const handleSubmit = async () => {
+    setError(null);
+    setPasswordError(null);
+
+    if (formData.senha !== formData.confirmarSenha) {
+      setPasswordError("As senhas não coincidem");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data, error: funcError } = await supabase.functions.invoke("cadastrar-representante", {
+        body: {
+          nome: formData.nome,
+          cpf: formData.cpf.replace(/\D/g, ""),
+          email: formData.email,
+          telefone: formData.telefone.replace(/\D/g, ""),
+          senha: formData.senha,
+          codigo_indicador: referralCode || null,
+        },
+      });
+
+      if (funcError) throw funcError;
+
+      if (data.sucesso) {
+        navigate("/cadastro/sucesso");
+      } else {
+        setError(data.mensagem);
+      }
+    } catch (err: any) {
+      console.error("Erro ao cadastrar:", err);
+      setError(err.message || "Erro ao processar cadastro");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isFormValid = 
@@ -59,13 +107,13 @@ const Cadastro = () => {
     formData.email && 
     formData.telefone.length === 15 && 
     formData.senha.length >= 8 && 
-    formData.senha === formData.confirmarSenha && 
-    formData.aceitoTermos;
+    formData.confirmarSenha &&
+    formData.aceitoTermos &&
+    !loading;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6">
       <div className="max-w-md w-full space-y-8">
-        {/* Header */}
         <div className="flex flex-col items-center space-y-4 text-center">
           <div className="flex items-center gap-2">
             <div className="bg-primary p-2 rounded-lg">
@@ -84,7 +132,6 @@ const Cadastro = () => {
           </div>
         </div>
 
-        {/* Form */}
         <div className="bg-card/50 backdrop-blur-sm p-8 rounded-xl border border-white/10 shadow-xl space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
@@ -169,6 +216,9 @@ const Cadastro = () => {
                 onChange={handleChange}
                 required
               />
+              {passwordError && (
+                <p className="text-red-400 text-xs mt-1">{passwordError}</p>
+              )}
             </div>
           </div>
 
@@ -192,13 +242,18 @@ const Cadastro = () => {
             </Label>
           </div>
 
-          <Button 
-            className="w-full h-12 text-base font-semibold"
-            disabled={!isFormValid}
-            onClick={() => {}}
-          >
-            Criar minha conta
-          </Button>
+          <div className="space-y-3">
+            <Button 
+              className="w-full h-12 text-base font-semibold"
+              disabled={!isFormValid}
+              onClick={handleSubmit}
+            >
+              {loading ? "Criando conta..." : "Criar minha conta"}
+            </Button>
+            {error && (
+              <p className="text-red-400 text-sm text-center font-medium">{error}</p>
+            )}
+          </div>
         </div>
 
         <div className="text-center text-sm text-muted-foreground">
