@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Cadastro from "./pages/Cadastro";
+import CadastroSucesso from "./pages/CadastroSucesso";
 import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
 import Estrutura from "./pages/Estrutura";
@@ -77,6 +78,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/clientes" element={<Clientes />} />
