@@ -58,7 +58,7 @@ export function PixPaymentDialog({ pagamentoId, onOpenChange, onSuccess }: PixPa
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("criar-cobranca-pix", {
-        body: { cobranca_id: cobrancaId },
+        body: { pagamento_id: pagamentoId },
       });
 
       if (error) throw error;
