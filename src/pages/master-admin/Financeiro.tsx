@@ -34,6 +34,7 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 export default function MasterFinanceiro() {
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const queryClient = useQueryClient();
 
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["global-finance-metrics"],
@@ -81,6 +82,7 @@ export default function MasterFinanceiro() {
       const { data, error } = await supabase
         .from("comissoes_mensais")
         .select(`
+          id,
           valor_total,
           valor_ativacoes,
           valor_recorrencia_direta,
@@ -99,6 +101,31 @@ export default function MasterFinanceiro() {
       return data as any[];
     }
   });
+
+  const handleMarcarComoPago = async (rep: any) => {
+    const confirmacao = window.confirm(`Confirmar pagamento para ${rep.usuarios?.nome} — ${fmt(Number(rep.valor_total))}?`);
+    
+    if (!confirmacao) return;
+
+    try {
+      const { error } = await supabase
+        .from("comissoes_mensais")
+        .update({ 
+          status: "pago", 
+          data_pagamento: new Date().toISOString().split('T')[0] 
+        })
+        .eq("id", rep.id);
+
+      if (error) throw error;
+
+      toast.success("Repasse marcado como pago");
+      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", mesAtual] });
+      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", mesAtual] });
+    } catch (error: any) {
+      console.error("Erro ao atualizar repasse:", error);
+      toast.error("Erro ao marcar como pago");
+    }
+  };
 
   const totaisRepasse = useMemo(() => {
     if (!repasses) return null;
