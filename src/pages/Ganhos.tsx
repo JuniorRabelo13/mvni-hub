@@ -29,9 +29,9 @@ export default function Ganhos() {
       .select("valor_total, valor_ativacoes, valor_recorrencia_direta, valor_recorrencia_indireta, status")
       .eq("representante_id", user.id)
       .eq("mes_referencia", mesAtual)
-      .single()
+      .maybeSingle()
       .then(({ data, error }) => {
-        if (error && error.code !== "PGRST116") {
+        if (error) {
           console.error("Erro ao buscar comissões:", error);
         }
         setComissao(data as ComissaoMensal | null);
@@ -65,7 +65,7 @@ export default function Ganhos() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-primary">{fmt(stats.valor_total)}</p>
+              <p className="text-2xl font-bold text-primary">{fmt(Number(stats.valor_total))}</p>
             </CardContent>
           </Card>
 
@@ -76,7 +76,7 @@ export default function Ganhos() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{fmt(stats.valor_ativacoes)}</p>
+              <p className="text-2xl font-bold">{fmt(Number(stats.valor_ativacoes))}</p>
             </CardContent>
           </Card>
 
@@ -87,7 +87,7 @@ export default function Ganhos() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{fmt(stats.valor_recorrencia_direta)}</p>
+              <p className="text-2xl font-bold">{fmt(Number(stats.valor_recorrencia_direta))}</p>
             </CardContent>
           </Card>
 
@@ -98,7 +98,7 @@ export default function Ganhos() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{fmt(stats.valor_recorrencia_indireta)}</p>
+              <p className="text-2xl font-bold">{fmt(Number(stats.valor_recorrencia_indireta))}</p>
             </CardContent>
           </Card>
 
