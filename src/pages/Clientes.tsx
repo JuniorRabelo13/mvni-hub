@@ -42,6 +42,54 @@ export default function Clientes() {
   const [pageSize, setPageSize] = useState(10);
   const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [isActivatingRecurring, setIsActivatingRecurring] = useState(false);
+  const [showRecurringModal, setShowRecurringModal] = useState(false);
+  const [recurringValue, setRecurringValue] = useState("99,90");
+  const [recurringDay, setRecurringDay] = useState("5");
+  const [recurringError, setRecurringError] = useState("");
+
+  const handleActivateRecurring = async () => {
+    if (!selectedCliente) return;
+    setIsActivatingRecurring(true);
+    setRecurringError("");
+
+    try {
+      // 1. Criar cliente no Stripe
+      const { data: stripeCustomer, error: stripeError } = await supabase.functions.invoke('stripe-criar-cliente', {
+        body: {
+          cliente_id: selectedCliente.id,
+          nome: selectedCliente.nome,
+          email: selectedCliente.email,
+          telefone: selectedCliente.telefone
+        }
+      });
+
+      if (stripeError) throw new Error(stripeError.message || "Erro ao criar cliente no Stripe");
+      if (!stripeCustomer?.stripe_customer_id) throw new Error("ID do cliente Stripe não retornado");
+
+      // 2. Criar assinatura
+      const valorCentavos = Math.round(parseFloat(recurringValue.replace(',', '.')) * 100);
+      const { error: subscriptionError } = await supabase.functions.invoke('stripe-criar-assinatura', {
+        body: {
+          cliente_id: selectedCliente.id,
+          stripe_customer_id: stripeCustomer.stripe_customer_id,
+          valor: valorCentavos,
+          dia_vencimento: parseInt(recurringDay)
+        }
+      });
+
+      if (subscriptionError) throw new Error(subscriptionError.message || "Erro ao criar assinatura");
+
+      toast.success("Cobrança recorrente ativada com sucesso");
+      setShowRecurringModal(false);
+      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+    } catch (error: any) {
+      setRecurringError(error.message);
+    } finally {
+      setIsActivatingRecurring(false);
+    }
+  };
+
 
   useEffect(() => {
     if (!user?.id) return;
