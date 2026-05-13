@@ -124,28 +124,34 @@ export default function Clientes() {
     queryKey: ["clientes-metrics", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data } = await supabase.from("clientes").select("id, ativo, cobrancas(status, valor, vencimento)").eq("user_id", user.id);
+      const { data } = await supabase.from("clientes").select("id, ativo, assinaturas(status, valor), pagamentos(status, valor, data_vencimento)").eq("user_id", user.id);
       return data || [];
     },
     enabled: !!user,
   });
 
   const metrics = useMemo(() => {
-    const active = allItemsForMetrics.filter((c: any) => c.ativo);
-    const mrr = active.length * 99.90;
-    
+    let mrr = 0;
     let totalRevenue = 0;
     let overdueRevenue = 0;
+    const activeClients = allItemsForMetrics.filter((c: any) => c.ativo);
     const today = new Date().toISOString().slice(0, 10);
     
     allItemsForMetrics.forEach((c: any) => {
-      (c.cobrancas as any[])?.forEach(cob => {
-        if (cob.status === "pago") totalRevenue += Number(cob.valor);
-        else if (cob.status === "pendente" && cob.vencimento < today) overdueRevenue += Number(cob.valor);
+      // MRR: soma dos valores das assinaturas com status "ativo"
+      (c.assinaturas as any[])?.forEach(ass => {
+        if (ass.status === "ativo") mrr += Number(ass.valor || 0);
+        // Inadimplência: soma dos valores das assinaturas com status "inadimplente"
+        else if (ass.status === "inadimplente") overdueRevenue += Number(ass.valor || 0);
+      });
+
+      // Receita total: soma dos pagamentos com status "pago"
+      (c.pagamentos as any[])?.forEach(pag => {
+        if (pag.status === "pago") totalRevenue += Number(pag.valor || 0);
       });
     });
 
-    const activeCount = active.length;
+    const activeCount = activeClients.length;
     const averageTicket = activeCount > 0 ? mrr / activeCount : 0;
     return { mrr, totalRevenue, overdueRevenue, activeCount, averageTicket };
   }, [allItemsForMetrics]);
