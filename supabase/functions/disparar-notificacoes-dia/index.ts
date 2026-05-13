@@ -67,13 +67,13 @@ serve(async (req) => {
     // 1. Pré-vencimento (hoje + 3 dias)
     const { data: preVencimentoList } = await supabase
       .from('pagamentos')
-      .select('cliente_id, valor, data_vencimento')
+      .select('id, cliente_id, valor, data_vencimento')
       .eq('data_vencimento', dateThreeDaysLater)
       .neq('status', 'pago')
 
     if (preVencimentoList) {
       for (const item of preVencimentoList) {
-        const success = await callNotification(item.cliente_id, 'pre_vencimento', item.data_vencimento, item.valor)
+        const success = await callNotification(item.cliente_id, 'pre_vencimento', item.data_vencimento, item.valor, item.id)
         if (success) resumo.pre_vencimento++
         else resumo.erros++
       }
