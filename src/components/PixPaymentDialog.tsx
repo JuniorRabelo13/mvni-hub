@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Copy, Check, Loader2, QrCode } from "lucide-react";
 
 interface PixPaymentDialogProps {
-  cobrancaId: string | null;
+  pagamentoId: string | null;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
