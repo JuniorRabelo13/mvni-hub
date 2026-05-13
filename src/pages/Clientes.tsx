@@ -167,8 +167,6 @@ export default function Clientes() {
       if (e2 || !linha) throw new Error("Falha ao criar linha");
       return cli;
     },
-      return cli;
-    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
       setOpen(false);
