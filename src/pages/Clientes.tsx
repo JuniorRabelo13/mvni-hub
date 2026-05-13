@@ -165,10 +165,6 @@ export default function Clientes() {
       if (e1 || !cli) throw new Error("Falha ao criar cliente");
       const { data: linha, error: e2 } = await supabase.from("linhas").insert({ user_id: user.id, cliente_id: cli.id, msisdn: values.msisdn ?? null }).select().single();
       if (e2 || !linha) throw new Error("Falha ao criar linha");
-      const venc = new Date();
-      venc.setDate(venc.getDate() + 7);
-      const { error: e3 } = await supabase.from("cobrancas").insert({ user_id: user.id, cliente_id: cli.id, linha_id: linha.id, vencimento: venc.toISOString().slice(0, 10), is_primeira: true });
-      if (e3) throw new Error("Falha ao criar cobrança");
       return cli;
     },
     onSuccess: () => {
