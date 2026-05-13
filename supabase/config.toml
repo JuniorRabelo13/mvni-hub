@@ -1,5 +1,9 @@
 project_id = "hmzqfcooxqucytxwljhg"
 
+[functions.stripe-criar-assinatura]
+verify_jwt = false
+
+
 [cron.process-recurring-billing]
 schedule = "0 0 1 * *" # Meia-noite do dia 1 de cada mês
 
