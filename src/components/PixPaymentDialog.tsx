@@ -6,38 +6,38 @@ import { toast } from "sonner";
 import { Copy, Check, Loader2, QrCode } from "lucide-react";
 
 interface PixPaymentDialogProps {
-  cobrancaId: string | null;
+  pagamentoId: string | null;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
 
-export function PixPaymentDialog({ cobrancaId, onOpenChange, onSuccess }: PixPaymentDialogProps) {
+export function PixPaymentDialog({ pagamentoId, onOpenChange, onSuccess }: PixPaymentDialogProps) {
   const [loading, setLoading] = useState(false);
   const [pixData, setPixData] = useState<{ qr_code: string; copy_paste: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    if (cobrancaId) {
+    if (pagamentoId) {
       generatePix();
     } else {
       setPixData(null);
     }
-  }, [cobrancaId]);
+  }, [pagamentoId]);
 
   // Realtime subscription para verificar status
   useEffect(() => {
-    if (!cobrancaId || !pixData) return;
+    if (!pagamentoId || !pixData) return;
 
     const channel = supabase
-      .channel(`cobranca-${cobrancaId}`)
+      .channel(`pagamento-${pagamentoId}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'cobrancas',
-          filter: `id=eq.${cobrancaId}`
+          table: 'pagamentos',
+          filter: `id=eq.${pagamentoId}`
         },
         (payload) => {
           if (payload.new.status === 'pago') {
@@ -52,13 +52,13 @@ export function PixPaymentDialog({ cobrancaId, onOpenChange, onSuccess }: PixPay
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [cobrancaId, pixData]);
+  }, [pagamentoId, pixData]);
 
   const generatePix = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("criar-cobranca-pix", {
-        body: { cobranca_id: cobrancaId },
+        body: { pagamento_id: pagamentoId },
       });
 
       if (error) throw error;
@@ -81,7 +81,7 @@ export function PixPaymentDialog({ cobrancaId, onOpenChange, onSuccess }: PixPay
   };
 
   return (
-    <Dialog open={!!cobrancaId} onOpenChange={onOpenChange}>
+    <Dialog open={!!pagamentoId} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md text-center">
         <DialogHeader>
           <DialogTitle className="text-center">Pagamento via PIX</DialogTitle>

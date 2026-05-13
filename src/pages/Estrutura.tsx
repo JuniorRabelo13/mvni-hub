@@ -50,8 +50,8 @@ export default function Estrutura() {
       (comRes.data ?? []).forEach((r: any) => (ensure(r.user_id).ganhoMes += Number(r.valor)));
       setStats(acc);
 
-      // pagantes = quem tem ao menos 1 cobrança paga
-      const { data: pagas } = await supabase.from("cobrancas").select("user_id").eq("status", "pago");
+      // pagantes = quem tem ao menos 1 pagamento com status "pago"
+      const { data: pagas } = await supabase.from("pagamentos").select("user_id").eq("status", "pago");
       setPagantes(new Set((pagas ?? []).map((p: any) => p.user_id)));
       setLoading(false);
     };

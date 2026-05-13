@@ -13,7 +13,7 @@ export type Cliente = {
   plano_id: string | null;
   planos: { nome: string; valor: number } | null;
   linhas: { id: string; status: string; msisdn: string | null; activated_at: string | null; deactivated_at: string | null }[];
-  cobrancas: { id: string; status: string; valor: number; vencimento: string; paid_at: string | null; created_at: string }[];
+  pagamentos: { id: string; status: string; valor: number; data_vencimento: string; data_pagamento: string | null; created_at: string }[];
   assinaturas?: { status: string }[];
 };
 
@@ -41,7 +41,7 @@ export function useClientesPaginados(
       let supabaseQuery = supabase
         .from("clientes")
         .select(
-          "id, nome, cpf, telefone, email, ativo, created_at, plano_id, planos(nome, valor), linhas(id,status,msisdn,activated_at,deactivated_at), cobrancas(id,status,valor,vencimento,paid_at,created_at), assinaturas(status)",
+          "id, nome, cpf, telefone, email, ativo, created_at, plano_id, planos(nome, valor), linhas(id,status,msisdn,activated_at,deactivated_at), pagamentos(id,status,valor,data_vencimento,data_pagamento,created_at), assinaturas(id,status,valor)",
           { count: "exact" }
         )
         .eq("user_id", userId);
@@ -85,7 +85,7 @@ export function useClientesPaginados(
           let supabaseQuery = supabase
             .from("clientes")
             .select(
-              "id, nome, cpf, telefone, email, ativo, created_at, plano_id, planos(nome, valor), linhas(id,status,msisdn,activated_at,deactivated_at), cobrancas(id,status,valor,vencimento,paid_at,created_at), assinaturas(status)"
+              "id, nome, cpf, telefone, email, ativo, created_at, plano_id, planos(nome, valor), linhas(id,status,msisdn,activated_at,deactivated_at), pagamentos(id,status,valor,data_vencimento,data_pagamento,created_at), assinaturas(id,status,valor)"
             )
             .eq("user_id", userId!);
 

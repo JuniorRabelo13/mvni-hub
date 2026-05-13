@@ -35,7 +35,7 @@ export default function Clientes() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [selectedCobranca, setSelectedCobranca] = useState<string | null>(null);
+  const [selectedPagamento, setSelectedPagamento] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
   const [currentPage, setCurrentPage] = useState(1);
@@ -99,7 +99,7 @@ export default function Clientes() {
       .on("postgres_changes", { event: "*", schema: "public", table: "clientes", filter: `user_id=eq.${user.id}` }, () => {
           queryClient.invalidateQueries({ queryKey: ["clientes", user.id] });
         })
-      .on("postgres_changes", { event: "*", schema: "public", table: "cobrancas", filter: `user_id=eq.${user.id}` }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "pagamentos", filter: `user_id=eq.${user.id}` }, () => {
           queryClient.invalidateQueries({ queryKey: ["clientes", user.id] });
         })
       .on("postgres_changes", { event: "*", schema: "public", table: "linhas", filter: `user_id=eq.${user.id}` }, () => {
@@ -124,28 +124,34 @@ export default function Clientes() {
     queryKey: ["clientes-metrics", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data } = await supabase.from("clientes").select("id, ativo, cobrancas(status, valor, vencimento)").eq("user_id", user.id);
+      const { data } = await supabase.from("clientes").select("id, ativo, assinaturas(status, valor), pagamentos(status, valor, data_vencimento)").eq("user_id", user.id);
       return data || [];
     },
     enabled: !!user,
   });
 
   const metrics = useMemo(() => {
-    const active = allItemsForMetrics.filter((c: any) => c.ativo);
-    const mrr = active.length * 99.90;
-    
+    let mrr = 0;
     let totalRevenue = 0;
     let overdueRevenue = 0;
+    const activeClients = allItemsForMetrics.filter((c: any) => c.ativo);
     const today = new Date().toISOString().slice(0, 10);
     
     allItemsForMetrics.forEach((c: any) => {
-      (c.cobrancas as any[])?.forEach(cob => {
-        if (cob.status === "pago") totalRevenue += Number(cob.valor);
-        else if (cob.status === "pendente" && cob.vencimento < today) overdueRevenue += Number(cob.valor);
+      // MRR: soma dos valores das assinaturas com status "ativo"
+      (c.assinaturas as any[])?.forEach(ass => {
+        if (ass.status === "ativo") mrr += Number(ass.valor || 0);
+        // Inadimplência: soma dos valores das assinaturas com status "inadimplente"
+        else if (ass.status === "inadimplente") overdueRevenue += Number(ass.valor || 0);
+      });
+
+      // Receita total: soma dos pagamentos com status "pago"
+      (c.pagamentos as any[])?.forEach(pag => {
+        if (pag.status === "pago") totalRevenue += Number(pag.valor || 0);
       });
     });
 
-    const activeCount = active.length;
+    const activeCount = activeClients.length;
     const averageTicket = activeCount > 0 ? mrr / activeCount : 0;
     return { mrr, totalRevenue, overdueRevenue, activeCount, averageTicket };
   }, [allItemsForMetrics]);
@@ -184,17 +190,17 @@ export default function Clientes() {
     createClienteMutation.mutate(parsed.data);
   };
 
-  const pagarComPix = (cobrancaId: string) => setSelectedCobranca(cobrancaId);
+  const pagarComPix = (pagamentoId: string) => setSelectedPagamento(pagamentoId);
 
   const getHealthScore = (cliente: Cliente) => {
     let score = 100;
     const today = new Date().toISOString().slice(0, 10);
-    const cobrancas = cliente.cobrancas || [];
-    const pendentesAtrasadas = cobrancas.filter(c => c.status === "pendente" && c.vencimento < today);
+    const pagamentos = cliente.pagamentos || [];
+    const pendentesAtrasadas = pagamentos.filter(c => c.status === "falhou" && c.data_vencimento < today);
     score -= pendentesAtrasadas.length * 30;
-    const pagas = cobrancas.filter(c => c.status === "pago");
+    const pagas = pagamentos.filter(c => c.status === "pago");
     if (pagas.length > 0) score += Math.min(pagas.length * 5, 20);
-    else if (cobrancas.length > 0) score -= 10;
+    else if (pagamentos.length > 0) score -= 10;
     if (!cliente.ativo) score -= 50;
     score = Math.max(0, Math.min(100, score));
     if (score >= 80) return { label: "Saudável", color: "text-emerald-500", bg: "bg-emerald-500/10", score };
@@ -259,14 +265,14 @@ export default function Clientes() {
         <div className="space-y-4">
           <div className="grid gap-3">
             {items.map((c) => {
-              const pendentes = c.cobrancas?.filter((x) => x.status === "pendente") ?? [];
+              const pendentes = c.pagamentos?.filter((x) => x.status === "falhou") ?? [];
               const linhasAtivas = c.linhas?.filter((l) => l.status === "ativa").length ?? 0;
               return (
                 <Card key={c.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setSelectedCliente(c)}>
                   <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
                     <div><CardTitle className="text-lg">{c.nome}</CardTitle><p className="text-xs text-muted-foreground">{c.telefone ? maskPhone(c.telefone) : c.cpf ? maskCPF(c.cpf) : "—"}</p></div>
                     <div className="flex flex-wrap gap-2">
-                      {(() => { const health = getHealthScore(c); return (<div className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${health.bg} ${health.color}`}><Activity className="h-3 w-3" />{health.label} ({health.score}%)</div>); })()}
+            {(() => { const health = getHealthScore(c); return (<div className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${health.bg} ${health.color}`}><Activity className="h-3 w-3" />{health.label} ({health.score}%)</div>); })()}
                       {c.assinaturas?.[0]?.status && (
                         <Badge 
                           variant="secondary" 
@@ -290,7 +296,7 @@ export default function Clientes() {
                   <CardContent className="space-y-4" onClick={(e) => e.stopPropagation()}>
                     {pendentes.map((p) => (
                       <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
-                        <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
+                        <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.data_vencimento).toLocaleDateString("pt-BR")}</span>
                         <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => pagarComPix(p.id)}><QrCode className="h-3.5 w-3.5" /> Pagar com PIX</Button>
                       </div>
                     ))}
@@ -301,8 +307,8 @@ export default function Clientes() {
                         <div className="space-y-4">
                           {(() => {
                             const events = [
-                              ...(c.cobrancas?.map(cob => ({ date: cob.created_at, title: `Cobrança gerada: ${fmt(Number(cob.valor))}`, type: "cobranca", status: cob.status })) ?? []),
-                              ...(c.cobrancas?.filter(cob => cob.paid_at).map(cob => ({ date: cob.paid_at!, title: `Pagamento confirmado: ${fmt(Number(cob.valor))}`, type: "pagamento", status: "pago" })) ?? []),
+                              ...(c.pagamentos?.map(pag => ({ date: pag.created_at, title: `Pagamento gerado: ${fmt(Number(pag.valor))}`, type: "cobranca", status: pag.status })) ?? []),
+                              ...(c.pagamentos?.filter(pag => pag.data_pagamento).map(pag => ({ date: pag.data_pagamento!, title: `Pagamento confirmado: ${fmt(Number(pag.valor))}`, type: "pagamento", status: "pago" })) ?? []),
                               ...(c.linhas?.filter(l => l.activated_at).map(l => ({ date: l.activated_at!, title: "Linha ativada", type: "ativacao", status: "sucesso" })) ?? []),
                               ...(c.linhas?.filter(l => l.deactivated_at).map(l => ({ date: l.deactivated_at!, title: "Linha suspensa/desativada", type: "suspensao", status: "alerta" })) ?? []),
                               { date: c.created_at, title: "Cliente cadastrado", type: "cadastro", status: "info" }
@@ -326,7 +332,7 @@ export default function Clientes() {
           <PaginacaoControles currentPage={currentPage} pageSize={pageSize} totalItems={totalCount} onPageChange={setCurrentPage} onPageSizeChange={(newSize) => { setPageSize(newSize); setCurrentPage(1); }} />
         </div>
       )}
-      <PixPaymentDialog cobrancaId={selectedCobranca} onOpenChange={(open) => !open && setSelectedCobranca(null)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ["clientes"] })} />
+      <PixPaymentDialog pagamentoId={selectedPagamento} onOpenChange={(open) => !open && setSelectedPagamento(null)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ["clientes"] })} />
       <Sheet open={!!selectedCliente} onOpenChange={(open) => !open && setSelectedCliente(null)}>
         <SheetContent className="sm:max-w-md overflow-y-auto">
           {selectedCliente && (
@@ -409,7 +415,7 @@ export default function Clientes() {
                 </section>
                 <section className="space-y-4"><h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4" /> Dados Cadastrais</h3><div className="grid gap-3"><div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30"><Hash className="h-4 w-4 text-muted-foreground" /><div><p className="text-[10px] uppercase font-bold text-muted-foreground">CPF</p><p className="font-medium">{selectedCliente.cpf ? maskCPF(selectedCliente.cpf) : "Não informado"}</p></div></div><div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30"><Phone className="h-4 w-4 text-muted-foreground" /><div><p className="text-[10px] uppercase font-bold text-muted-foreground">Telefone</p><p className="font-medium">{selectedCliente.telefone ? maskPhone(selectedCliente.telefone) : "Não informado"}</p></div></div><div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30"><Calendar className="h-4 w-4 text-muted-foreground" /><div><p className="text-[10px] uppercase font-bold text-muted-foreground">Desde</p><p className="font-medium">{new Date(selectedCliente.created_at).toLocaleDateString("pt-BR")}</p></div></div></div></section>
                 <section className="space-y-4"><h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><PhoneCall className="h-4 w-4" /> Linhas e Conectividade</h3><div className="space-y-2">{selectedCliente.linhas?.map(linha => (<div key={linha.id} className="flex items-center justify-between p-3 rounded-lg border border-border"><div className="flex items-center gap-3"><div className={`h-2 w-2 rounded-full ${linha.status === 'ativa' ? 'bg-emerald-500' : 'bg-red-500'}`} /><div><p className="text-sm font-bold">{linha.msisdn || "Sem número"}</p><p className="text-[10px] text-muted-foreground uppercase tracking-tight">{linha.status}</p></div></div>{linha.activated_at && (<span className="text-[10px] text-muted-foreground">Ativada em {new Date(linha.activated_at).toLocaleDateString("pt-BR")}</span>)}</div>))}</div></section>
-                <section className="space-y-4"><h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CreditCard className="h-4 w-4" /> Histórico Financeiro</h3><div className="space-y-3">{selectedCliente.cobrancas?.sort((a, b) => new Date(b.vencimento).getTime() - new Date(a.vencimento).getTime()).map(cob => (<div key={cob.id} className="p-3 rounded-lg bg-muted/30 flex items-center justify-between border-l-4 border-l-border" style={{ borderLeftColor: cob.status === 'pago' ? '#10b981' : '#f59e0b' }}><div><p className="text-sm font-bold">{fmt(Number(cob.valor))}</p><p className="text-[10px] text-muted-foreground">Venc. {new Date(cob.vencimento).toLocaleDateString("pt-BR")}</p></div><Badge variant={cob.status === 'pago' ? 'default' : 'outline'} className={cob.status === 'pago' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}>{cob.status.charAt(0).toUpperCase() + cob.status.slice(1)}</Badge></div>))}</div><TimelineAuditoria clienteId={selectedCliente.id} /></section>
+                <section className="space-y-4"><h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CreditCard className="h-4 w-4" /> Histórico Financeiro</h3><div className="space-y-3">{selectedCliente.pagamentos?.sort((a, b) => new Date(b.data_vencimento).getTime() - new Date(a.data_vencimento).getTime()).map(pag => (<div key={pag.id} className="p-3 rounded-lg bg-muted/30 flex items-center justify-between border-l-4 border-l-border" style={{ borderLeftColor: pag.status === 'pago' ? '#10b981' : '#f59e0b' }}><div><p className="text-sm font-bold">{fmt(Number(pag.valor))}</p><p className="text-[10px] text-muted-foreground">Venc. {new Date(pag.data_vencimento).toLocaleDateString("pt-BR")}</p></div><Badge variant={pag.status === 'pago' ? 'default' : 'outline'} className={pag.status === 'pago' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}>{pag.status.charAt(0).toUpperCase() + pag.status.slice(1)}</Badge></div>))}</div><TimelineAuditoria clienteId={selectedCliente.id} /></section>
               </div>
             </>
           )}
