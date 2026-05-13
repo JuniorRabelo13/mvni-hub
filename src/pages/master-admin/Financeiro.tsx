@@ -34,6 +34,7 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 export default function MasterFinanceiro() {
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [isRecalculating, setIsRecalculating] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: metrics, isLoading } = useQuery({
@@ -46,6 +47,26 @@ export default function MasterFinanceiro() {
   });
 
   const mesAtual = new Date().toISOString().substring(0, 7);
+
+  const handleRecalcular = async () => {
+    setIsRecalculating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("calcular-comissoes-mes", {
+        body: { mes_referencia: mesAtual },
+      });
+
+      if (error) throw error;
+
+      toast.success("Comissões recalculadas com sucesso");
+      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", mesAtual] });
+      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", mesAtual] });
+    } catch (error: any) {
+      console.error("Erro ao recalcular comissões:", error);
+      toast.error(error.message || "Erro ao recalcular comissões");
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
 
   const { data: masterSummary, isLoading: isLoadingSummary } = useQuery({
     queryKey: ["master-finance-summary", mesAtual],
