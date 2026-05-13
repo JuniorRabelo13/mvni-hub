@@ -11,7 +11,7 @@ interface PixPaymentDialogProps {
   onSuccess: () => void;
 }
 
-export function PixPaymentDialog({ cobrancaId, onOpenChange, onSuccess }: PixPaymentDialogProps) {
+export function PixPaymentDialog({ pagamentoId, onOpenChange, onSuccess }: PixPaymentDialogProps) {
   const [loading, setLoading] = useState(false);
   const [pixData, setPixData] = useState<{ qr_code: string; copy_paste: string } | null>(null);
   const [copied, setCopied] = useState(false);
