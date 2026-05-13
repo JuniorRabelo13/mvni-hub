@@ -55,15 +55,16 @@ export default function Equipe() {
         // 3. Buscar métricas para cada membro
         const membersWithMetrics = await Promise.all(
           (members || []).map(async (member) => {
-            const { data: sales } = await supabase
-              .from("pagamentos")
-              .select("valor, status")
+            const { data: clients } = await supabase
+              .from("clientes")
+              .select("id, pagamentos(valor, status)")
               .eq("user_id", member.id);
             
-            const totalVendas = sales?.length || 0;
-            const ganhos = sales
+            const allPayments = clients?.flatMap(c => c.pagamentos) || [];
+            const totalVendas = allPayments.length;
+            const ganhos = allPayments
               ?.filter(s => s.status === 'pago')
-              .reduce((acc, s) => acc + Number(s.valor), 0) || 0;
+              .reduce((acc, s) => acc + Number(s.valor || 0), 0) || 0;
 
             return { ...member, totalVendas, ganhos };
           })
