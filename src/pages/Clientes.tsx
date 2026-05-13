@@ -332,7 +332,7 @@ export default function Clientes() {
           <PaginacaoControles currentPage={currentPage} pageSize={pageSize} totalItems={totalCount} onPageChange={setCurrentPage} onPageSizeChange={(newSize) => { setPageSize(newSize); setCurrentPage(1); }} />
         </div>
       )}
-      <PixPaymentDialog cobrancaId={selectedCobranca} onOpenChange={(open) => !open && setSelectedCobranca(null)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ["clientes"] })} />
+      <PixPaymentDialog pagamentoId={selectedPagamento} onOpenChange={(open) => !open && setSelectedPagamento(null)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ["clientes"] })} />
       <Sheet open={!!selectedCliente} onOpenChange={(open) => !open && setSelectedCliente(null)}>
         <SheetContent className="sm:max-w-md overflow-y-auto">
           {selectedCliente && (
