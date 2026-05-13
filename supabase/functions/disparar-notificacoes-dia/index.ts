@@ -41,7 +41,7 @@ serve(async (req) => {
     const baseFunctionUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/enviar-notificacao-vencimento`
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    const callNotification = async (cliente_id: string, tipo: string, data_vencimento: string, valor: number) => {
+    const callNotification = async (cliente_id: string, tipo: string, data_vencimento: string, valor: number, fatura_id: string) => {
       try {
         const response = await fetch(baseFunctionUrl, {
           method: 'POST',
@@ -53,7 +53,8 @@ serve(async (req) => {
             cliente_id,
             tipo,
             data_vencimento: formatDisplayDate(new Date(data_vencimento + 'T12:00:00')),
-            valor
+            valor,
+            fatura_id
           })
         })
         return response.ok
