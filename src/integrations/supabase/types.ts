@@ -1680,22 +1680,37 @@ export type Database = {
         Row: {
           codigo_indicacao: string
           created_at: string
+          email: string | null
           id: string
           indicado_por: string | null
+          nome: string | null
+          role: string | null
+          status: string | null
+          telefone: string | null
           updated_at: string
         }
         Insert: {
           codigo_indicacao?: string
           created_at?: string
+          email?: string | null
           id: string
           indicado_por?: string | null
+          nome?: string | null
+          role?: string | null
+          status?: string | null
+          telefone?: string | null
           updated_at?: string
         }
         Update: {
           codigo_indicacao?: string
           created_at?: string
+          email?: string | null
           id?: string
           indicado_por?: string | null
+          nome?: string | null
+          role?: string | null
+          status?: string | null
+          telefone?: string | null
           updated_at?: string
         }
         Relationships: [
