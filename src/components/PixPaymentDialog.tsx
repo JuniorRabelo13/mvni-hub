@@ -81,7 +81,7 @@ export function PixPaymentDialog({ pagamentoId, onOpenChange, onSuccess }: PixPa
   };
 
   return (
-    <Dialog open={!!cobrancaId} onOpenChange={onOpenChange}>
+    <Dialog open={!!pagamentoId} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md text-center">
         <DialogHeader>
           <DialogTitle className="text-center">Pagamento via PIX</DialogTitle>
