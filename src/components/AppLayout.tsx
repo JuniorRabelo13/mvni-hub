@@ -26,7 +26,8 @@ import {
   Database,
   EyeOff,
   ClipboardList,
-  TrendingUp
+  TrendingUp,
+  Bell
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
