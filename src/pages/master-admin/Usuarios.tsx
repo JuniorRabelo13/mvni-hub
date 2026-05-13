@@ -14,6 +14,37 @@ import { format } from "date-fns";
 
 const MasterUsuarios = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [representantes, setRepresentantes] = useState<any[]>([]);
+  const [loadingRep, setLoadingRep] = useState(true);
+
+  useEffect(() => {
+    const fetchRepresentantes = async () => {
+      setLoadingRep(true);
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select(`
+          nome,
+          email,
+          telefone,
+          created_at,
+          status,
+          indicado_por (
+            nome
+          )
+        `)
+        .eq("role", "representante")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Erro ao buscar representantes:", error);
+      } else {
+        setRepresentantes(data || []);
+      }
+      setLoadingRep(false);
+    };
+
+    fetchRepresentantes();
+  }, []);
 
   const mockUsers = [
     {
