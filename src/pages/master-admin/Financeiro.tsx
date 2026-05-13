@@ -112,61 +112,49 @@ export default function MasterFinanceiro() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard 
-          title="Receita Total" 
-          value={fmt(metrics?.total_revenue)} 
-          description="Faturamento histórico acumulado" 
-          icon={DollarSign}
-          highlight
-        />
-        <MetricCard 
-          title="Receita do Mês" 
-          value={fmt(metrics?.revenue_month)} 
-          description="Faturamento do mês vigente" 
-          icon={BarChart3}
-        />
-        <MetricCard 
-          title="MRR Global" 
-          value={fmt(metrics?.mrr)} 
-          description="Receita Recorrente Mensal" 
-          icon={TrendingUp}
-          trend={metrics?.growth_rate > 0 ? "up" : "down"}
-          trendValue={`${metrics?.growth_rate}%`}
-        />
-        <MetricCard 
-          title="Inadimplência" 
-          value={fmt(metrics?.overdue_revenue)} 
-          description="Pagamentos em atraso" 
-          icon={AlertTriangle}
-          color={metrics?.overdue_revenue > 0 ? "text-red-500" : "text-emerald-500"}
-        />
-        <MetricCard 
-          title="Ticket Médio" 
-          value={fmt(metrics?.average_ticket)} 
-          description="Média por cliente ativo" 
-          icon={Target}
-        />
-        <MetricCard 
-          title="Lucro Estimado" 
-          value={fmt(metrics?.estimated_profit)} 
-          description="Margem líquida aproximada" 
-          icon={PieChart}
-          color="text-emerald-400"
-        />
-        <MetricCard 
-          title="Crescimento" 
-          value={`${metrics?.growth_rate}%`} 
-          description="Performance vs mês anterior" 
-          icon={Activity}
-          trend={metrics?.growth_rate > 0 ? "up" : "down"}
-        />
-        <MetricCard 
-          title="Status de Caixa" 
-          value="SAUDÁVEL" 
-          description="Fluxo operacional positivo" 
-          icon={Wallet}
-          color="text-emerald-500"
-        />
+        <Card className="border-primary/20 bg-zinc-950/50 backdrop-blur-sm shadow-gold-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between pb-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Receita bruta do mês</p>
+              <TrendingUp className="h-4 w-4 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold text-gradient-gold tabular-nums">{fmt(masterSummary?.receitaBruta || 0)}</h2>
+            <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Baseado em assinaturas ativas</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 hover:border-primary/40 transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between pb-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total a pagar em comissões</p>
+              <TrendingDown className="h-4 w-4 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold tabular-nums">{fmt(masterSummary?.totalComissoesPagar || 0)}</h2>
+            <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Comissões pendentes do mês atual</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 hover:border-primary/40 transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between pb-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Margem estimada</p>
+              <Wallet className="h-4 w-4 text-emerald-500" />
+            </div>
+            <h2 className="text-2xl font-bold tabular-nums text-emerald-500">{fmt(masterSummary?.margemEstimada || 0)}</h2>
+            <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Receita bruta (-) Comissões pendentes</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 hover:border-primary/40 transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between pb-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Representantes pendentes</p>
+              <Activity className="h-4 w-4 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold tabular-nums">{masterSummary?.representantesPendentes || 0}</h2>
+            <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Aguardando repasse este mês</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-zinc-950/40 backdrop-blur-sm p-3">
