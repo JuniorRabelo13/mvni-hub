@@ -11,8 +11,7 @@ import {
   RefreshCw,
   CheckCircle2,
   XCircle,
-  Clock,
-  ExternalLink
+  Clock
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
@@ -38,9 +37,8 @@ export default function NotificacoesVencimentoAudit() {
         .select(`
           *,
           pagamentos (
-            mes_referencia,
-            cliente_id,
-            clientes (nome)
+            data_vencimento,
+            cliente_id
           )
         `)
         .order('data_envio', { ascending: false })
@@ -52,14 +50,13 @@ export default function NotificacoesVencimentoAudit() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data as any[];
     }
   });
 
   const filteredNotifications = notifications?.filter(notif => 
     notif.numero_whatsapp?.includes(searchTerm) ||
-    notif.mensagem_enviada?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (notif.pagamentos?.clientes?.nome && notif.pagamentos.clientes.nome.toLowerCase().includes(searchTerm.toLowerCase()))
+    notif.mensagem_enviada?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
@@ -94,7 +91,7 @@ export default function NotificacoesVencimentoAudit() {
               <div className="relative w-64">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar número, mensagem ou cliente..."
+                  placeholder="Buscar número ou mensagem..."
                   className="pl-9 h-9 bg-zinc-900/50 border-zinc-800 text-xs"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -118,7 +115,7 @@ export default function NotificacoesVencimentoAudit() {
               <TableHeader className="bg-zinc-900/30">
                 <TableRow className="hover:bg-transparent border-zinc-800">
                   <TableHead className="text-[11px] uppercase tracking-wider w-[180px]">Data/Hora</TableHead>
-                  <TableHead className="text-[11px] uppercase tracking-wider">Cliente / WhatsApp</TableHead>
+                  <TableHead className="text-[11px] uppercase tracking-wider">WhatsApp / Cliente ID</TableHead>
                   <TableHead className="text-[11px] uppercase tracking-wider">Status</TableHead>
                   <TableHead className="text-[11px] uppercase tracking-wider">Mensagem</TableHead>
                   <TableHead className="text-[11px] uppercase tracking-wider text-right">Fatura</TableHead>
@@ -135,8 +132,8 @@ export default function NotificacoesVencimentoAudit() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-xs font-medium">{notif.pagamentos?.clientes?.nome || "Desconhecido"}</span>
-                        <span className="text-[10px] text-muted-foreground">{notif.numero_whatsapp}</span>
+                        <span className="text-xs font-medium">{notif.numero_whatsapp}</span>
+                        <span className="text-[10px] text-muted-foreground">ID: {notif.pagamentos?.cliente_id?.slice(0, 8) || "N/A"}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -162,8 +159,8 @@ export default function NotificacoesVencimentoAudit() {
                     <TableCell className="text-right">
                       <div className="flex flex-col items-end">
                         <span className="text-[10px] font-mono text-primary">{notif.fatura_id?.slice(0, 8)}</span>
-                        {notif.pagamentos?.mes_referencia && (
-                          <span className="text-[9px] text-muted-foreground">Ref: {new Date(notif.pagamentos.mes_referencia).toLocaleDateString("pt-BR", { month: 'short', year: 'numeric' })}</span>
+                        {notif.pagamentos?.data_vencimento && (
+                          <span className="text-[9px] text-muted-foreground">Venc: {new Date(notif.pagamentos.data_vencimento).toLocaleDateString("pt-BR")}</span>
                         )}
                       </div>
                     </TableCell>
