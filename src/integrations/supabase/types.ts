@@ -285,7 +285,6 @@ export type Database = {
       comissoes: {
         Row: {
           cliente_id: string
-          cobranca_id: string
           competencia: string
           created_at: string
           id: string
@@ -295,7 +294,6 @@ export type Database = {
         }
         Insert: {
           cliente_id: string
-          cobranca_id: string
           competencia?: string
           created_at?: string
           id?: string
@@ -305,7 +303,6 @@ export type Database = {
         }
         Update: {
           cliente_id?: string
-          cobranca_id?: string
           competencia?: string
           created_at?: string
           id?: string
@@ -319,13 +316,6 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "comissoes_cobranca_id_fkey"
-            columns: ["cobranca_id"]
-            isOneToOne: false
-            referencedRelation: "cobrancas"
             referencedColumns: ["id"]
           },
         ]
@@ -2501,7 +2491,6 @@ export type Database = {
         }[]
       }
       get_global_finance_metrics: { Args: never; Returns: Json }
-      get_global_metrics: { Args: never; Returns: Json }
       get_import_errors: {
         Args: { p_job_id: string }
         Returns: {
