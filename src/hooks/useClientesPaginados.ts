@@ -7,6 +7,7 @@ export type Cliente = {
   nome: string;
   cpf: string | null;
   telefone: string | null;
+  email: string | null;
   ativo: boolean;
   created_at: string;
   plano_id: string | null;
