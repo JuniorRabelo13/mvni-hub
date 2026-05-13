@@ -330,6 +330,44 @@ export type Database = {
           },
         ]
       }
+      comissoes_mensais: {
+        Row: {
+          criado_em: string
+          id: string
+          mes_referencia: string
+          representante_id: string
+          status: string | null
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          mes_referencia: string
+          representante_id: string
+          status?: string | null
+          updated_at?: string
+          valor_total?: number
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          mes_referencia?: string
+          representante_id?: string
+          status?: string | null
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comissoes_mensais_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commissions: {
         Row: {
           amount: number
@@ -684,6 +722,61 @@ export type Database = {
           indicador_user_id?: string
         }
         Relationships: []
+      }
+      itens_comissao: {
+        Row: {
+          cliente_id: string | null
+          comissao_id: string | null
+          criado_em: string
+          id: string
+          mes_referencia: string
+          representante_id: string
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          cliente_id?: string | null
+          comissao_id?: string | null
+          criado_em?: string
+          id?: string
+          mes_referencia: string
+          representante_id: string
+          tipo: string
+          valor?: number
+        }
+        Update: {
+          cliente_id?: string | null
+          comissao_id?: string | null
+          criado_em?: string
+          id?: string
+          mes_referencia?: string
+          representante_id?: string
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itens_comissao_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_comissao_comissao_id_fkey"
+            columns: ["comissao_id"]
+            isOneToOne: false
+            referencedRelation: "comissoes_mensais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_comissao_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leads: {
         Row: {
