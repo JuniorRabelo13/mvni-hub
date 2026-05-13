@@ -1063,6 +1063,47 @@ export type Database = {
           },
         ]
       }
+      notificacoes_vencimento: {
+        Row: {
+          created_at: string | null
+          data_envio: string | null
+          erro: string | null
+          fatura_id: string | null
+          id: string
+          mensagem_enviada: string | null
+          numero_whatsapp: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_envio?: string | null
+          erro?: string | null
+          fatura_id?: string | null
+          id?: string
+          mensagem_enviada?: string | null
+          numero_whatsapp: string
+          status: string
+        }
+        Update: {
+          created_at?: string | null
+          data_envio?: string | null
+          erro?: string | null
+          fatura_id?: string | null
+          id?: string
+          mensagem_enviada?: string | null
+          numero_whatsapp?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_vencimento_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "pagamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pagamentos: {
         Row: {
           assinatura_id: string
