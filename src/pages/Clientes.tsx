@@ -351,7 +351,60 @@ export default function Clientes() {
               </SheetHeader>
               <div className="py-6 space-y-8">
                 <section className="space-y-4">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Sparkles className="h-4 w-4" /> Gestão de Plano</h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Gestão de Plano</span>
+                    {(!selectedCliente.assinaturas || !selectedCliente.assinaturas.some(a => a.status === 'ativo')) && (
+                      <Dialog open={showRecurringModal} onOpenChange={setShowRecurringModal}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" className="bg-[#D4AF37] hover:bg-[#B8962E] text-white">Ativar cobrança recorrente</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Ativar cobrança recorrente</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="recurringValue">Valor mensal (R$)</Label>
+                              <Input 
+                                id="recurringValue" 
+                                value={recurringValue} 
+                                onChange={(e) => setRecurringValue(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="recurringDay">Dia de vencimento</Label>
+                              <Input 
+                                id="recurringDay" 
+                                type="number" 
+                                min={1} 
+                                max={28} 
+                                value={recurringDay} 
+                                onChange={(e) => setRecurringDay(e.target.value)}
+                              />
+                            </div>
+                            {recurringError && (
+                              <p className="text-sm text-red-500">{recurringError}</p>
+                            )}
+                            <div className="flex justify-end gap-3 pt-4">
+                              <Button variant="outline" onClick={() => setShowRecurringModal(false)}>Cancelar</Button>
+                              <Button 
+                                className="bg-[#D4AF37] hover:bg-[#B8962E] text-white" 
+                                onClick={handleActivateRecurring}
+                                disabled={isActivatingRecurring}
+                              >
+                                {isActivatingRecurring ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Processando...
+                                  </>
+                                ) : "Confirmar"}
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </h3>
                   <SeletorPlano clienteId={selectedCliente.id} planoAtualId={selectedCliente.plano_id || undefined} />
                 </section>
                 <section className="space-y-4"><h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4" /> Dados Cadastrais</h3><div className="grid gap-3"><div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30"><Hash className="h-4 w-4 text-muted-foreground" /><div><p className="text-[10px] uppercase font-bold text-muted-foreground">CPF</p><p className="font-medium">{selectedCliente.cpf ? maskCPF(selectedCliente.cpf) : "Não informado"}</p></div></div><div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30"><Phone className="h-4 w-4 text-muted-foreground" /><div><p className="text-[10px] uppercase font-bold text-muted-foreground">Telefone</p><p className="font-medium">{selectedCliente.telefone ? maskPhone(selectedCliente.telefone) : "Não informado"}</p></div></div><div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30"><Calendar className="h-4 w-4 text-muted-foreground" /><div><p className="text-[10px] uppercase font-bold text-muted-foreground">Desde</p><p className="font-medium">{new Date(selectedCliente.created_at).toLocaleDateString("pt-BR")}</p></div></div></div></section>
