@@ -1,0 +1,5 @@
+ALTER TABLE public.comissoes_mensais 
+ADD COLUMN IF NOT EXISTS valor_ativacoes NUMERIC DEFAULT 0,
+ADD COLUMN IF NOT EXISTS valor_recorrencia_direta NUMERIC DEFAULT 0,
+ADD COLUMN IF NOT EXISTS valor_recorrencia_indireta NUMERIC DEFAULT 0,
+ADD COLUMN IF NOT EXISTS valor_bonus NUMERIC DEFAULT 0;

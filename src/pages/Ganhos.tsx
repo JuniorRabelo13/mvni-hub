@@ -3,71 +3,122 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { sanitize } from "@/lib/sanitize";
 
-type Comissao = { id: string; tipo: string; valor: number; created_at: string; cliente_id: string };
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+type ComissaoMensal = {
+  valor_total: number;
+  valor_ativacoes: number;
+  valor_recorrencia_direta: number;
+  valor_recorrencia_indireta: number;
+  status: string;
+};
+
 export default function Ganhos() {
-  const { user, effectiveUser } = useAuth();
-  const [items, setItems] = useState<Comissao[]>([]);
+  const { user } = useAuth();
+  const [comissao, setComissao] = useState<ComissaoMensal | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
+
+    const mesAtual = new Date().toISOString().substring(0, 7); // YYYY-MM
+
     supabase
-      .from("comissoes")
-      .select("id, tipo, valor, created_at, cliente_id")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setItems(sanitize((data as any) ?? [], "ganhos_list", user.id));
+      .from("comissoes_mensais")
+      .select("valor_total, valor_ativacoes, valor_recorrencia_direta, valor_recorrencia_indireta, status")
+      .eq("representante_id", user.id)
+      .eq("mes_referencia", mesAtual)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Erro ao buscar comissões:", error);
+        }
+        setComissao(data as ComissaoMensal | null);
         setLoading(false);
       });
   }, [user]);
 
-  const total = items.reduce((a, b) => a + Number(b.valor), 0);
-  const venda = items.filter((i) => i.tipo === "venda").reduce((a, b) => a + Number(b.valor), 0);
-  const recor = items.filter((i) => i.tipo === "recorrencia").reduce((a, b) => a + Number(b.valor), 0);
+  const stats = {
+    valor_total: comissao?.valor_total || 0,
+    valor_ativacoes: comissao?.valor_ativacoes || 0,
+    valor_recorrencia_direta: comissao?.valor_recorrencia_direta || 0,
+    valor_recorrencia_indireta: comissao?.valor_recorrencia_indireta || 0,
+    status: comissao?.status || "pendente",
+  };
 
   return (
     <div className="space-y-6">
       <header>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Ganhos</p>
-        <h1 className="mt-1 text-3xl font-bold">Suas comissões</h1>
+        <h1 className="mt-1 text-3xl font-bold">Resumo do mês</h1>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="border-primary/40">
-          <CardHeader className="pb-2"><CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">Total acumulado</CardTitle></CardHeader>
-          <CardContent><p className="text-3xl font-bold text-gradient-gold">{fmt(total)}</p></CardContent>
-        </Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">Vendas (R$ 85)</CardTitle></CardHeader>
-          <CardContent><p className="text-3xl font-bold">{fmt(venda)}</p></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">Recorrência (R$ 20)</CardTitle></CardHeader>
-          <CardContent><p className="text-3xl font-bold">{fmt(recor)}</p></CardContent></Card>
-      </div>
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Carregando…</p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <Card className="border-primary/40">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">
+                Ganho total do mês
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-primary">{fmt(Number(stats.valor_total))}</p>
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader><CardTitle>Histórico</CardTitle></CardHeader>
-        <CardContent className="space-y-2">
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
-          ) : items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma comissão ainda. Confirme o pagamento de um cliente para gerar a primeira.</p>
-          ) : (
-            items.map((c) => (
-              <div key={c.id} className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-3 py-2 text-sm">
-                <div className="flex items-center gap-3">
-                  <Badge variant={c.tipo === "venda" ? "default" : "outline"}>{c.tipo}</Badge>
-                  <span className="text-muted-foreground">{new Date(c.created_at).toLocaleString("pt-BR")}</span>
-                </div>
-                <span className="font-semibold text-primary">+ {fmt(Number(c.valor))}</span>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">
+                Ativações
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{fmt(Number(stats.valor_ativacoes))}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">
+                Recorrência direta
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{fmt(Number(stats.valor_recorrencia_direta))}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">
+                Recorrência indireta
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{fmt(Number(stats.valor_recorrencia_indireta))}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">
+                Status do repasse
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Badge 
+                variant={stats.status === "pago" ? "default" : "outline"}
+                className={stats.status === "pago" ? "bg-green-500 hover:bg-green-600 text-white" : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"}
+              >
+                {stats.status === "pago" ? "pago" : "pendente"}
+              </Badge>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
