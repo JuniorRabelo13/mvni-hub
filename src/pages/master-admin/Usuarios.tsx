@@ -304,6 +304,7 @@ const MasterUsuarios = () => {
             </Tabs>
           </CardContent>
         </Card>
+        </div>
 
         <div className="space-y-6">
           <Card className="bg-card/50 border-white/10 backdrop-blur-sm">
