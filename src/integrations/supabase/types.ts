@@ -908,6 +908,57 @@ export type Database = {
           },
         ]
       }
+      pagamentos: {
+        Row: {
+          assinatura_id: string
+          cliente_id: string
+          criado_em: string
+          data_pagamento: string | null
+          data_vencimento: string | null
+          id: string
+          status: string | null
+          stripe_payment_id: string | null
+          valor: number | null
+        }
+        Insert: {
+          assinatura_id: string
+          cliente_id: string
+          criado_em?: string
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          id?: string
+          status?: string | null
+          stripe_payment_id?: string | null
+          valor?: number | null
+        }
+        Update: {
+          assinatura_id?: string
+          cliente_id?: string
+          criado_em?: string
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          id?: string
+          status?: string | null
+          stripe_payment_id?: string | null
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_assinatura_id_fkey"
+            columns: ["assinatura_id"]
+            isOneToOne: false
+            referencedRelation: "assinaturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       planos: {
         Row: {
           ativo: boolean | null
