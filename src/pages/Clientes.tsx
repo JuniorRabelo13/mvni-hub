@@ -195,12 +195,12 @@ export default function Clientes() {
   const getHealthScore = (cliente: Cliente) => {
     let score = 100;
     const today = new Date().toISOString().slice(0, 10);
-    const cobrancas = cliente.cobrancas || [];
-    const pendentesAtrasadas = cobrancas.filter(c => c.status === "pendente" && c.vencimento < today);
+    const pagamentos = cliente.pagamentos || [];
+    const pendentesAtrasadas = pagamentos.filter(c => c.status === "falhou" && c.data_vencimento < today);
     score -= pendentesAtrasadas.length * 30;
-    const pagas = cobrancas.filter(c => c.status === "pago");
+    const pagas = pagamentos.filter(c => c.status === "pago");
     if (pagas.length > 0) score += Math.min(pagas.length * 5, 20);
-    else if (cobrancas.length > 0) score -= 10;
+    else if (pagamentos.length > 0) score -= 10;
     if (!cliente.ativo) score -= 50;
     score = Math.max(0, Math.min(100, score));
     if (score >= 80) return { label: "Saudável", color: "text-emerald-500", bg: "bg-emerald-500/10", score };
