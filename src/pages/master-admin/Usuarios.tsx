@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const MasterUsuarios = () => {
   const [searchTerm, setSearchTerm] = useState("");
