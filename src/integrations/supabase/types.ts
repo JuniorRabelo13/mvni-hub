@@ -2310,6 +2310,7 @@ export type Database = {
         Args: { p_chunk_id: string; p_erro: string }
         Returns: undefined
       }
+      gerar_codigo_indicacao: { Args: never; Returns: string }
       get_commission_ranking: {
         Args: { limit_count?: number }
         Returns: {
