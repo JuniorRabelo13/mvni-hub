@@ -74,6 +74,43 @@ export default function MasterFinanceiro() {
     }
   });
 
+  const { data: repasses } = useQuery({
+    queryKey: ["master-repasses-mes", mesAtual],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("comissoes_mensais")
+        .select(`
+          valor_total,
+          valor_ativacoes,
+          valor_recorrencia_direta,
+          valor_recorrencia_indireta,
+          status,
+          clientes_diretos_ativos,
+          clientes_indiretos_ativos,
+          usuarios (
+            nome
+          )
+        `)
+        .eq("mes_referencia", mesAtual)
+        .order("valor_total", { ascending: false });
+
+      if (error) throw error;
+      return data as any[];
+    }
+  });
+
+  const totaisRepasse = useMemo(() => {
+    if (!repasses) return null;
+    return repasses.reduce((acc, curr) => ({
+      diretos: acc.diretos + (Number(curr.clientes_diretos_ativos) || 0),
+      indiretos: acc.indiretos + (Number(curr.clientes_indiretos_ativos) || 0),
+      ativacoes: acc.ativacoes + (Number(curr.valor_ativacoes) || 0),
+      direta: acc.direta + (Number(curr.valor_recorrencia_direta) || 0),
+      indireta: acc.indireta + (Number(curr.valor_recorrencia_indireta) || 0),
+      total: acc.total + (Number(curr.valor_total) || 0)
+    }), { diretos: 0, indiretos: 0, ativacoes: 0, direta: 0, indireta: 0, total: 0 });
+  }, [repasses]);
+
   const periodLabel = useMemo(() => {
     if (period === "custom" && customRange?.from && customRange?.to) {
       return `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`;
@@ -158,6 +195,73 @@ export default function MasterFinanceiro() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-primary/20 bg-zinc-950/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Repasses do mês</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Representante</TableHead>
+                  <TableHead className="text-center">Dir. Ativos</TableHead>
+                  <TableHead className="text-center">Ind. Ativos</TableHead>
+                  <TableHead>Ativações</TableHead>
+                  <TableHead>Recor. Direta</TableHead>
+                  <TableHead>Recor. Indireta</TableHead>
+                  <TableHead>Total a receber</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {repasses?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      Nenhum repasse encontrado para este mês.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  repasses?.map((rep, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-medium">{rep.usuarios?.nome}</TableCell>
+                      <TableCell className="text-center">{rep.clientes_diretos_ativos || 0}</TableCell>
+                      <TableCell className="text-center">{rep.clientes_indiretos_ativos || 0}</TableCell>
+                      <TableCell>{fmt(Number(rep.valor_ativacoes) || 0)}</TableCell>
+                      <TableCell>{fmt(Number(rep.valor_recorrencia_direta) || 0)}</TableCell>
+                      <TableCell>{fmt(Number(rep.valor_recorrencia_indireta) || 0)}</TableCell>
+                      <TableCell className="font-bold text-primary">{fmt(Number(rep.valor_total) || 0)}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={rep.status === "pago" ? "default" : "outline"}
+                          className={rep.status === "pago" ? "bg-green-500 hover:bg-green-600 text-white" : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"}
+                        >
+                          {rep.status === "pago" ? "pago" : "pendente"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+              {repasses && repasses.length > 0 && totaisRepasse && (
+                <TableBody className="bg-primary/5 font-bold border-t-2 border-primary/20">
+                  <TableRow>
+                    <TableCell>TOTAIS</TableCell>
+                    <TableCell className="text-center">{totaisRepasse.diretos}</TableCell>
+                    <TableCell className="text-center">{totaisRepasse.indiretos}</TableCell>
+                    <TableCell>{fmt(totaisRepasse.ativacoes)}</TableCell>
+                    <TableCell>{fmt(totaisRepasse.direta)}</TableCell>
+                    <TableCell>{fmt(totaisRepasse.indireta)}</TableCell>
+                    <TableCell className="text-primary">{fmt(totaisRepasse.total)}</TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableBody>
+              )}
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-zinc-950/40 backdrop-blur-sm p-3">
         <div className="flex items-center gap-2">
