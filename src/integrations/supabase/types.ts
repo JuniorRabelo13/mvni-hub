@@ -101,6 +101,50 @@ export type Database = {
         }
         Relationships: []
       }
+      assinaturas: {
+        Row: {
+          cliente_id: string
+          criado_em: string
+          data_proxima_cobranca: string | null
+          data_vencimento: string | null
+          id: string
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          valor: number | null
+        }
+        Insert: {
+          cliente_id: string
+          criado_em?: string
+          data_proxima_cobranca?: string | null
+          data_vencimento?: string | null
+          id?: string
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          valor?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          criado_em?: string
+          data_proxima_cobranca?: string | null
+          data_vencimento?: string | null
+          id?: string
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assinaturas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auditoria: {
         Row: {
           created_at: string | null
