@@ -265,7 +265,7 @@ export default function Clientes() {
         <div className="space-y-4">
           <div className="grid gap-3">
             {items.map((c) => {
-              const pendentes = c.cobrancas?.filter((x) => x.status === "pendente") ?? [];
+              const pendentes = c.pagamentos?.filter((x) => x.status === "falhou") ?? [];
               const linhasAtivas = c.linhas?.filter((l) => l.status === "ativa").length ?? 0;
               return (
                 <Card key={c.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setSelectedCliente(c)}>
