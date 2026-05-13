@@ -307,8 +307,8 @@ export default function Clientes() {
                         <div className="space-y-4">
                           {(() => {
                             const events = [
-                              ...(c.cobrancas?.map(cob => ({ date: cob.created_at, title: `Cobrança gerada: ${fmt(Number(cob.valor))}`, type: "cobranca", status: cob.status })) ?? []),
-                              ...(c.cobrancas?.filter(cob => cob.paid_at).map(cob => ({ date: cob.paid_at!, title: `Pagamento confirmado: ${fmt(Number(cob.valor))}`, type: "pagamento", status: "pago" })) ?? []),
+                              ...(c.pagamentos?.map(pag => ({ date: pag.created_at, title: `Pagamento gerado: ${fmt(Number(pag.valor))}`, type: "cobranca", status: pag.status })) ?? []),
+                              ...(c.pagamentos?.filter(pag => pag.data_pagamento).map(pag => ({ date: pag.data_pagamento!, title: `Pagamento confirmado: ${fmt(Number(pag.valor))}`, type: "pagamento", status: "pago" })) ?? []),
                               ...(c.linhas?.filter(l => l.activated_at).map(l => ({ date: l.activated_at!, title: "Linha ativada", type: "ativacao", status: "sucesso" })) ?? []),
                               ...(c.linhas?.filter(l => l.deactivated_at).map(l => ({ date: l.deactivated_at!, title: "Linha suspensa/desativada", type: "suspensao", status: "alerta" })) ?? []),
                               { date: c.created_at, title: "Cliente cadastrado", type: "cadastro", status: "info" }
