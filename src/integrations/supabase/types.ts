@@ -870,6 +870,47 @@ export type Database = {
         }
         Relationships: []
       }
+      notificacoes: {
+        Row: {
+          canal: string
+          cliente_id: string
+          enviado_em: string
+          id: string
+          mensagem: string
+          status: string
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          canal?: string
+          cliente_id: string
+          enviado_em?: string
+          id?: string
+          mensagem: string
+          status: string
+          tipo: string
+          user_id?: string
+        }
+        Update: {
+          canal?: string
+          cliente_id?: string
+          enviado_em?: string
+          id?: string
+          mensagem?: string
+          status?: string
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notificacoes_enviadas: {
         Row: {
           cliente_id: string
