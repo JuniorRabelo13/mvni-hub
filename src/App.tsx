@@ -128,6 +128,7 @@ const App = () => (
               <Route path="/master/telecom" element={<Dashboard />} />
               <Route path="/master/workers" element={<MasterWorkers />} />
               <Route path="/master/auditoria" element={<MasterAuditoria />} />
+              <Route path="/master/notificacoes" element={<NotificacoesVencimentoAudit />} />
               <Route path="/master/alertas" element={<MasterAlertas />} />
               <Route path="/master/gateways" element={<MasterGateways />} />
               <Route path="/master/planos" element={<MasterPlanos />} />
