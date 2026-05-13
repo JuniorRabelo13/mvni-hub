@@ -296,7 +296,7 @@ export default function Clientes() {
                   <CardContent className="space-y-4" onClick={(e) => e.stopPropagation()}>
                     {pendentes.map((p) => (
                       <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
-                        <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.vencimento).toLocaleDateString("pt-BR")}</span>
+                        <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.data_vencimento).toLocaleDateString("pt-BR")}</span>
                         <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => pagarComPix(p.id)}><QrCode className="h-3.5 w-3.5" /> Pagar com PIX</Button>
                       </div>
                     ))}
