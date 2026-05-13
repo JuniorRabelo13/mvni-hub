@@ -78,7 +78,22 @@ serve(async (req) => {
       }
     }
 
-    // 4. Inserir registro na tabela notificacoes
+    // 4. Inserir registro na nova tabela notificacoes_vencimento
+    const { error: errorVencimento } = await supabase
+      .from('notificacoes_vencimento')
+      .insert({
+        numero_whatsapp: cliente.telefone,
+        status: statusEnvio === "enviado" ? "Enviada" : "Falha",
+        fatura_id: fatura_id,
+        mensagem_enviada: mensagem,
+        erro: statusEnvio === "falhou" ? "Erro ao enviar via Z-API" : null
+      })
+
+    if (errorVencimento) {
+      console.error(`Erro ao salvar histórico de vencimento: ${errorVencimento.message}`)
+    }
+
+    // 5. Inserir registro na tabela notificacoes (mantendo compatibilidade legada se necessário)
     const { error: errorNotificacao } = await supabase
       .from('notificacoes')
       .insert({
@@ -87,7 +102,7 @@ serve(async (req) => {
         canal: 'whatsapp',
         mensagem: mensagem,
         status: statusEnvio,
-        user_id: cliente.user_id // Garante que a notificação pertença ao mesmo dono do cliente
+        user_id: cliente.user_id
       })
 
     if (errorNotificacao) {
