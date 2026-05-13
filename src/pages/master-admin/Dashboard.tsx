@@ -20,9 +20,19 @@ export default function MasterDashboard() {
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["global-metrics"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_global_metrics');
+      const { data, error } = await supabase.rpc('get_global_finance_metrics');
       if (error) throw error;
-      return data as any;
+      const fin = data as any;
+      const { count: activeClients } = await supabase
+        .from('clientes')
+        .select('*', { count: 'exact', head: true })
+        .eq('ativo', true);
+      return {
+        mrr: fin?.mrr ?? 0,
+        total_revenue: fin?.total_revenue ?? 0,
+        overdue_revenue: fin?.overdue_revenue ?? 0,
+        active_clients: activeClients ?? 0,
+      };
     }
   });
 
