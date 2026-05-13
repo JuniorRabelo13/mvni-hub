@@ -335,6 +335,7 @@ export type Database = {
           clientes_diretos_ativos: number | null
           clientes_indiretos_ativos: number | null
           criado_em: string
+          data_pagamento: string | null
           id: string
           mes_referencia: string
           representante_id: string
@@ -350,6 +351,7 @@ export type Database = {
           clientes_diretos_ativos?: number | null
           clientes_indiretos_ativos?: number | null
           criado_em?: string
+          data_pagamento?: string | null
           id?: string
           mes_referencia: string
           representante_id: string
@@ -365,6 +367,7 @@ export type Database = {
           clientes_diretos_ativos?: number | null
           clientes_indiretos_ativos?: number | null
           criado_em?: string
+          data_pagamento?: string | null
           id?: string
           mes_referencia?: string
           representante_id?: string

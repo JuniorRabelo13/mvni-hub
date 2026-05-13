@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,13 @@ import type { DateRange } from "react-day-picker";
 import {
   TrendingUp, TrendingDown, Wallet, AlertTriangle, Activity,
   ArrowUpRight, ArrowDownRight, DollarSign, BarChart3, PieChart, Target,
-  CalendarIcon
+  CalendarIcon, Check
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, LineChart, Line, Area, AreaChart, Legend } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 type PeriodKey = "7d" | "30d" | "12m" | "custom";
 const PERIODS: { key: PeriodKey; label: string }[] = [
@@ -33,6 +34,7 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 export default function MasterFinanceiro() {
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const queryClient = useQueryClient();
 
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["global-finance-metrics"],
@@ -80,6 +82,7 @@ export default function MasterFinanceiro() {
       const { data, error } = await supabase
         .from("comissoes_mensais")
         .select(`
+          id,
           valor_total,
           valor_ativacoes,
           valor_recorrencia_direta,
@@ -98,6 +101,31 @@ export default function MasterFinanceiro() {
       return data as any[];
     }
   });
+
+  const handleMarcarComoPago = async (rep: any) => {
+    const confirmacao = window.confirm(`Confirmar pagamento para ${rep.usuarios?.nome} — ${fmt(Number(rep.valor_total))}?`);
+    
+    if (!confirmacao) return;
+
+    try {
+      const { error } = await supabase
+        .from("comissoes_mensais")
+        .update({ 
+          status: "pago", 
+          data_pagamento: new Date().toISOString().split('T')[0] 
+        })
+        .eq("id", rep.id);
+
+      if (error) throw error;
+
+      toast.success("Repasse marcado como pago");
+      queryClient.invalidateQueries({ queryKey: ["master-finance-summary", mesAtual] });
+      queryClient.invalidateQueries({ queryKey: ["master-repasses-mes", mesAtual] });
+    } catch (error: any) {
+      console.error("Erro ao atualizar repasse:", error);
+      toast.error("Erro ao marcar como pago");
+    }
+  };
 
   const totaisRepasse = useMemo(() => {
     if (!repasses) return null;
@@ -213,12 +241,13 @@ export default function MasterFinanceiro() {
                   <TableHead>Recor. Indireta</TableHead>
                   <TableHead>Total a receber</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {repasses?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Nenhum repasse encontrado para este mês.
                     </TableCell>
                   </TableRow>
@@ -240,6 +269,19 @@ export default function MasterFinanceiro() {
                           {rep.status === "pago" ? "pago" : "pendente"}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-right">
+                        {rep.status === "pendente" && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 gap-1 border-primary/30 hover:bg-primary/10"
+                            onClick={() => handleMarcarComoPago(rep)}
+                          >
+                            <Check className="h-3 w-3" />
+                            Marcar como pago
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -254,6 +296,7 @@ export default function MasterFinanceiro() {
                     <TableCell>{fmt(totaisRepasse.direta)}</TableCell>
                     <TableCell>{fmt(totaisRepasse.indireta)}</TableCell>
                     <TableCell className="text-primary">{fmt(totaisRepasse.total)}</TableCell>
+                    <TableCell></TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableBody>
