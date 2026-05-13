@@ -297,6 +297,7 @@ export default function MasterFinanceiro() {
                     <TableCell>{fmt(totaisRepasse.indireta)}</TableCell>
                     <TableCell className="text-primary">{fmt(totaisRepasse.total)}</TableCell>
                     <TableCell></TableCell>
+                    <TableCell></TableCell>
                   </TableRow>
                 </TableBody>
               )}
