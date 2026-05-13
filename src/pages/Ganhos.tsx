@@ -4,6 +4,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -14,7 +23,27 @@ const formatMonth = (monthStr: string) => {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1).replace(".", "");
 };
 
+const getTipoLabel = (tipo: string) => {
+  const labels: Record<string, string> = {
+    ativacao: "Ativação",
+    recorrencia_direta: "Recorrência direta",
+    recorrencia_indireta: "Recorrência indireta",
+    bonus: "Bônus",
+  };
+  return labels[tipo] || tipo;
+};
+
+type ItemComissao = {
+  id: string;
+  tipo: string;
+  valor: number;
+  clientes: {
+    nome: string;
+  } | null;
+};
+
 type ComissaoMensal = {
+  id: string;
   mes_referencia: string;
   valor_total: number;
   valor_ativacoes: number;
@@ -28,6 +57,9 @@ export default function Ganhos() {
   const [comissao, setComissao] = useState<ComissaoMensal | null>(null);
   const [historico, setHistorico] = useState<ComissaoMensal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState<ComissaoMensal | null>(null);
+  const [items, setItems] = useState<ItemComissao[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -38,7 +70,7 @@ export default function Ganhos() {
       // Fetch current month summary
       const { data: currentData, error: currentError } = await supabase
         .from("comissoes_mensais")
-        .select("mes_referencia, valor_total, valor_ativacoes, valor_recorrencia_direta, valor_recorrencia_indireta, status")
+        .select("id, mes_referencia, valor_total, valor_ativacoes, valor_recorrencia_direta, valor_recorrencia_indireta, status")
         .eq("representante_id", user.id)
         .eq("mes_referencia", mesAtual)
         .maybeSingle();
@@ -51,7 +83,7 @@ export default function Ganhos() {
       // Fetch last 6 months history
       const { data: historyData, error: historyError } = await supabase
         .from("comissoes_mensais")
-        .select("mes_referencia, valor_total, valor_ativacoes, valor_recorrencia_direta, valor_recorrencia_indireta, status")
+        .select("id, mes_referencia, valor_total, valor_ativacoes, valor_recorrencia_direta, valor_recorrencia_indireta, status")
         .eq("representante_id", user.id)
         .order("mes_referencia", { ascending: false })
         .limit(6);
@@ -66,6 +98,30 @@ export default function Ganhos() {
     fetchData();
   }, [user]);
 
+  const fetchDetails = async (comissaoId: string) => {
+    setLoadingItems(true);
+    const { data, error } = await supabase
+      .from("itens_comissao")
+      .select(`
+        id,
+        tipo,
+        valor,
+        clientes (
+          nome
+        )
+      `)
+      .eq("comissao_id", comissaoId)
+      .order("tipo", { ascending: true })
+      .order("valor", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar itens da comissão:", error);
+    } else {
+      setItems(data as any[]);
+    }
+    setLoadingItems(false);
+  };
+
   const stats = {
     valor_total: comissao?.valor_total || 0,
     valor_ativacoes: comissao?.valor_ativacoes || 0,
@@ -73,6 +129,8 @@ export default function Ganhos() {
     valor_recorrencia_indireta: comissao?.valor_recorrencia_indireta || 0,
     status: comissao?.status || "pendente",
   };
+
+  const totalModal = items.reduce((acc, item) => acc + Number(item.valor), 0);
 
   return (
     <div className="space-y-6">
@@ -164,6 +222,7 @@ export default function Ganhos() {
                       <TableHead>Recorrência indireta</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -182,6 +241,69 @@ export default function Ganhos() {
                             {item.status === "pago" ? "pago" : "pendente"}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-right">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedMonth(item);
+                                  fetchDetails(item.id);
+                                }}
+                              >
+                                Ver detalhes
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>
+                                  Extrato detalhado — {item && formatMonth(item.mes_referencia)}
+                                </DialogTitle>
+                              </DialogHeader>
+                              <div className="py-4">
+                                {loadingItems ? (
+                                  <div className="flex justify-center py-8">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                  </div>
+                                ) : items.length === 0 ? (
+                                  <p className="text-center text-muted-foreground py-8">
+                                    Nenhum item detalhado encontrado.
+                                  </p>
+                                ) : (
+                                  <div className="max-h-[60vh] overflow-auto">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>Cliente</TableHead>
+                                          <TableHead>Tipo</TableHead>
+                                          <TableHead className="text-right">Valor</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {items.map((it) => (
+                                          <TableRow key={it.id}>
+                                            <TableCell>{it.clientes?.nome || "Cliente removido"}</TableCell>
+                                            <TableCell>{getTipoLabel(it.tipo)}</TableCell>
+                                            <TableCell className="text-right">{fmt(Number(it.valor))}</TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center justify-between border-t pt-4">
+                                <div className="text-sm font-bold">
+                                  Total: <span className="text-primary">{fmt(totalModal)}</span>
+                                </div>
+                                <DialogTrigger asChild>
+                                  <Button variant="secondary">Fechar</Button>
+                                </DialogTrigger>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -194,3 +316,4 @@ export default function Ganhos() {
     </div>
   );
 }
+
