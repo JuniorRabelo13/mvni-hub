@@ -56,7 +56,7 @@ export default function Equipe() {
         const membersWithMetrics = await Promise.all(
           (members || []).map(async (member) => {
             const { data: sales } = await supabase
-              .from("cobrancas")
+              .from("pagamentos")
               .select("valor, status")
               .eq("user_id", member.id);
             
