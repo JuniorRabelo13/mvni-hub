@@ -108,13 +108,10 @@ export default function Clientes() {
       setShowCancelModal(false);
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
       // Para recarregar a seção do cliente atualizado
-      const { data: updatedCliente } = await supabase
-        .from("clientes")
-        .select("*, assinaturas(*), pagamentos(*), linhas(*), planos(*)")
-        .eq("id", selectedCliente.id)
-        .single();
-      
-      if (updatedCliente) setSelectedCliente(updatedCliente);
+      queryClient.invalidateQueries({ queryKey: ["clientes", selectedCliente.id] });
+      // Fechamos o detalhe para forçar recarregamento na próxima abertura, 
+      // ou apenas confiamos no invalidate que atualizará a lista.
+      setSelectedCliente(null);
 
     } catch (error: any) {
       toast.error(error.message || "Erro ao cancelar assinatura");
