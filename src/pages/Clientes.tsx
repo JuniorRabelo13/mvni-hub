@@ -47,6 +47,8 @@ export default function Clientes() {
   const [recurringValue, setRecurringValue] = useState("99,90");
   const [recurringDay, setRecurringDay] = useState("5");
   const [recurringError, setRecurringError] = useState("");
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const handleActivateRecurring = async () => {
     if (!selectedCliente) return;
@@ -87,6 +89,34 @@ export default function Clientes() {
       setRecurringError(error.message);
     } finally {
       setIsActivatingRecurring(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!selectedCliente) return;
+    setIsCancelling(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-cancelar-assinatura', {
+        body: { cliente_id: selectedCliente.id }
+      });
+
+      if (error) throw error;
+      if (!data.sucesso) throw new Error(data.mensagem);
+
+      toast.success("Assinatura cancelada com sucesso");
+      setShowCancelModal(false);
+      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      // Para recarregar a seção do cliente atualizado
+      queryClient.invalidateQueries({ queryKey: ["clientes", selectedCliente.id] });
+      // Fechamos o detalhe para forçar recarregamento na próxima abertura, 
+      // ou apenas confiamos no invalidate que atualizará a lista.
+      setSelectedCliente(null);
+
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao cancelar assinatura");
+    } finally {
+      setIsCancelling(false);
     }
   };
 
