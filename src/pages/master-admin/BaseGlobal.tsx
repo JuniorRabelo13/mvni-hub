@@ -43,6 +43,8 @@ export default function BaseGlobal() {
         <p className="text-muted-foreground">Visão consolidada de todos os clientes da rede MVNI</p>
       </div>
 
+      {queryError && <QueryError error={queryError} onRetry={() => refetch()} />}
+
       <div className="rounded-md border border-border bg-card">
         <Table>
           <TableHeader>
