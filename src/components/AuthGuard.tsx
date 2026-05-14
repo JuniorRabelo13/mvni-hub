@@ -35,6 +35,23 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { authenticated, role, isAuthReady } = useAuth()
 
   useEffect(() => {
+    // 0. Prefetch de módulos críticos após auth estável
+    if (isAuthReady && role) {
+      // Pré-carrega o dashboard e o layout base em background
+      const prefetch = async () => {
+        try {
+          await Promise.all([
+            import("../pages/Dashboard"),
+            import("./AppLayout")
+          ]);
+          console.log('[AuthGuard] Critical chunks prefetched');
+        } catch (e) {
+          console.warn('[AuthGuard] Prefetch failed', e);
+        }
+      };
+      prefetch();
+    }
+
     // Não faz nada se a autenticação não estiver totalmente pronta (sessão + role)
     if (!isAuthReady) return;
 
