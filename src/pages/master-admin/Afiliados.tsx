@@ -34,7 +34,7 @@ export default function MasterAfiliados() {
   const [sortField, setSortField] = useState<string>("total_revenue");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  const { data: affiliates, isLoading } = useQuery({
+  const { data: affiliates, isLoading, error, refetch } = useQuery({
     queryKey: ["master-affiliates-report"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_master_affiliates_report');
@@ -42,6 +42,14 @@ export default function MasterAfiliados() {
       return data as any[];
     }
   });
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <QueryError error={error} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   const filteredAffiliates = affiliates?.filter(a => 
     a.affiliate_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
