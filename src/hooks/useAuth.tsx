@@ -82,6 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       effectiveUser: effectiveUser as any,
       session, 
       loading, 
+      role,
       signOut,
       viewAs,
       isViewingAs: !!viewAsUserId
