@@ -685,22 +685,20 @@ function RevenueProjectionChart({ metrics, period, customRange }: { metrics: any
             strokeWidth={2.5}
             fill="url(#realizadoGrad)"
             dot={{ r: 3, fill: "hsl(var(--primary))" }}
+            connectNulls
           />
-          connectNulls
-        />
-        <Area
-          type="monotone"
-          dataKey="projetado"
-          stroke="hsl(var(--primary) / 0.7)"
-          strokeWidth={2.5}
-          strokeDasharray="6 4"
-          fill="url(#projetadoGrad)"
-          dot={{ r: 3, fill: "hsl(var(--primary) / 0.7)" }}
-          connectNulls
-        />
-      </AreaChart>
-    </ResponsiveContainer>
-  </Suspense>
-);
+          <Area
+            type="monotone"
+            dataKey="projetado"
+            stroke="hsl(var(--primary) / 0.7)"
+            strokeWidth={2.5}
+            strokeDasharray="6 4"
+            fill="url(#projetadoGrad)"
+            dot={{ r: 3, fill: "hsl(var(--primary) / 0.7)" }}
+            connectNulls
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </Suspense>
   );
 }
