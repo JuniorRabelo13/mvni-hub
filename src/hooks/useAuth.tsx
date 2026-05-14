@@ -76,28 +76,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        // Use getUser for more security as requested
-        const { data: { user: initialUser } } = await supabase.auth.getUser();
-        if (!mounted) return;
-
-        console.log('[AUTH] Initial user:', initialUser?.id);
-        
+        console.log('[AUTH] Getting session...');
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
         if (!mounted) return;
         setSession(initialSession);
 
-        if (initialUser) {
-          await fetchRole(initialUser.id);
+        if (initialSession) {
+          console.log('[AUTH] Session found, setting isAuthReady');
+          setIsAuthReady(true); // Permitir que o app carregue o layout básico
+          await fetchRole(initialSession.user.id);
         } else {
+          console.log('[AUTH] No session, setting isAuthReady');
           setRole(null);
+          setIsAuthReady(true);
         }
       } catch (error) {
         console.error('[AUTH] Initialization error:', error);
+        if (mounted) setIsAuthReady(true);
       } finally {
         if (mounted) {
           console.log('[AUTH] Loading complete');
           setLoading(false);
-          setIsAuthReady(true);
         }
       }
     };
@@ -112,11 +112,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(newSession);
       
       if (newSession) {
-        // No await here to prevent blocking isAuthReady if onAuthStateChange fires repeatedly
+        setIsAuthReady(true);
+        setLoading(true); // Voltamos ao loading enquanto buscamos o novo role
         fetchRole(newSession.user.id).finally(() => {
            if (mounted) {
              setLoading(false);
-             setIsAuthReady(true);
            }
         });
       } else {
