@@ -25,6 +25,7 @@ import Termos from "./pages/Termos";
 import Privacy from "./pages/Privacy";
 import SaquePix from "./pages/financeiro/SaquePix";
 import ExtratoFinanceiro from "./pages/financeiro/Extrato";
+import RecuperarSenha from "./pages/RecuperarSenha";
 
 // SMS Module Pages
 import SMSDashboard from "./pages/sms/SMSDashboard";
@@ -78,6 +79,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/recuperar-senha" element={<RecuperarSenha />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
