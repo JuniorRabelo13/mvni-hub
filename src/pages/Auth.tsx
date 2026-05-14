@@ -166,7 +166,19 @@ export default function AuthPage() {
                     <Input id="li-email" name="email" type="email" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="li-pass">Senha</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="li-pass">Senha</Label>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate("/recuperar-senha");
+                        }}
+                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        Esqueci minha senha
+                      </button>
+                    </div>
                     <Input id="li-pass" name="password" type="password" required />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
