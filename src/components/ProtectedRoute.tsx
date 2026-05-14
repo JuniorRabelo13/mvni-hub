@@ -26,7 +26,7 @@ export const ProtectedRoute = ({ children, requiredRole = "both" }: ProtectedRou
   // 2. Proteção baseada em Role
   if (requiredRole === "master" && role !== "master") {
     // Se um representante tentar acessar rota master, redireciona para / (que é o painel/dashboard)
-    return <Navigate to="/" replace />;
+    return <Navigate to="/painel" replace />;
   }
 
   // Role "both" permite master e representante (conforme solicitado no item 3)
