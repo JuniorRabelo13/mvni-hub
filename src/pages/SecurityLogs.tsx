@@ -16,7 +16,7 @@ type SecurityLogRow = {
 };
 
 export default function SecurityLogs() {
-  const { user } = useAuth();
+  const { user, role, isAuthReady } = useAuth();
   const [logs, setLogs] = useState<SecurityLogRow[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [isAdmin, setIsAdmin] = useState(false);
@@ -24,15 +24,9 @@ export default function SecurityLogs() {
 
   useEffect(() => {
     async function load() {
-      if (!user) return;
+      if (!user || !isAuthReady) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profile?.role !== "admin") {
+      if (role !== "admin") {
         setIsAdmin(false);
         setLoading(false);
         return;

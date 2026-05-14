@@ -12,6 +12,7 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

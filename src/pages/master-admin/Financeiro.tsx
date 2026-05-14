@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/hooks/useAuth";
 
 type PeriodKey = "7d" | "30d" | "12m" | "custom";
 const PERIODS: { key: PeriodKey; label: string }[] = [

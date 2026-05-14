@@ -15,6 +15,7 @@ import {
   Timer,
   HardDrive
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Table, 
