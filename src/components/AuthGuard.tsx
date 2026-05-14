@@ -39,10 +39,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
+      <div className="flex h-screen w-screen items-center justify-center bg-[#0B0F1A]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#9b87f5] border-t-transparent"></div>
+        <style>
+        {`@keyframes spin { to { transform: rotate(360deg) } }`}
+      </style>
       </div>
     );
   }

@@ -88,8 +88,9 @@ const App = () => (
       <Toaster />
       <Sonner theme="dark" />
       <BrowserRouter>
+        <AuthGuard>
         <AuthProvider>
-          <AuthGuard>
+          
             <Suspense fallback={<LoadingScreen />}>
             <Routes>
               <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><Auth /></Suspense>} />
@@ -164,8 +165,9 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-        </AuthGuard>
+        
       </AuthProvider>
+        </AuthGuard>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
