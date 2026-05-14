@@ -92,12 +92,12 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><AuthGuard loadingFallback={<LoadingScreen />}><Auth /></AuthGuard></Suspense>} />
+            <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><Auth /></Suspense>} />
             <Route path="/recuperar-senha" element={<Suspense fallback={<LoadingScreen />}><RecuperarSenha /></Suspense>} />
             <Route path="/nova-senha" element={<Suspense fallback={<LoadingScreen />}><NovaSenha /></Suspense>} />
             <Route path="/cadastro" element={<Suspense fallback={<LoadingScreen />}><Cadastro /></Suspense>} />
             <Route path="/cadastro/sucesso" element={<Suspense fallback={<LoadingScreen />}><CadastroSucesso /></Suspense>} />
-            <Route element={<Suspense fallback={<LoadingScreen />}><AuthGuard loadingFallback={<LoadingScreen />}><AppLayout /></AuthGuard></Suspense>}>
+            <Route element={<AuthGuard><AppLayout /></AuthGuard>}>
               <Route path="/" element={<Suspense fallback={<LoadingScreen />}><Dashboard /></Suspense>} />
               <Route path="/painel" element={<Suspense fallback={<LoadingScreen />}><Dashboard /></Suspense>} />
               <Route path="/clientes" element={<Suspense fallback={<LoadingScreen />}><Clientes /></Suspense>} />
