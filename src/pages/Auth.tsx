@@ -108,7 +108,7 @@ export default function AuthPage() {
 
         if (profileError) {
           console.error("Erro ao buscar perfil:", profileError);
-        } else if (profile?.role === "representante" && profile?.status === "suspenso") {
+        } else if (profile?.role === "representante" && (profile?.status as string) === "suspenso") {
           await supabase.auth.signOut();
           setLoading(false);
           setLoginError("Sua conta está suspensa. Entre em contato com o administrador.");
