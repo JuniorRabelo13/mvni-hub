@@ -34,49 +34,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchRole = async (userId: string) => {
     try {
-      const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
-      setRole(data?.role ?? null);
+      console.log('[AUTH] Fetching role for:', userId);
+      const { data, error } = await supabase.from("profiles").select("role").eq("id", userId).single();
+      if (error) throw error;
+      console.log('[AUTH] Role loaded:', data?.role);
+      setRole(data?.role ?? 'user');
     } catch (error) {
-      console.error("Erro ao buscar role:", error);
-      setRole(null);
+      console.error("[AUTH] Erro ao buscar role:", error);
+      setRole('user'); // Fallback seguro
     }
   };
 
   useEffect(() => {
-    // 1) listener primeiro
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_e, s) => {
-      setSession(s);
+    let mounted = true;
+    console.log('[AUTH] Initializing AuthProvider');
+
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        console.log('[AUTH] Initial session:', initialSession?.user?.id);
+        setSession(initialSession);
+
+        if (initialSession) {
+          await fetchRole(initialSession.user.id);
+        } else {
+          setRole(null);
+        }
+      } catch (error) {
+        console.error('[AUTH] Initialization error:', error);
+      } finally {
+        if (mounted) {
+          console.log('[AUTH] Loading complete');
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log('[AUTH] Auth state changed:', event, newSession?.user?.id);
       
-      if (!s) {
+      if (!mounted) return;
+
+      setSession(newSession);
+      
+      if (newSession) {
+        await fetchRole(newSession.user.id);
+      } else {
         setRole(null);
         setViewAsUserId(null);
         localStorage.removeItem("view_as_user_id");
-        setLoading(false);
-      } else {
-        await fetchRole(s.user.id);
-        
-        // Validar se o usuário é admin se estiver no modo "ver como"
-        const storedViewAs = localStorage.getItem("view_as_user_id");
-        if (storedViewAs) {
-          const { data } = await supabase.from("profiles").select("role").eq("id", s.user.id).single();
-          if (data?.role !== "admin" && data?.role !== "master") {
-            setViewAsUserId(null);
-            localStorage.removeItem("view_as_user_id");
-          }
-        }
-        setLoading(false);
       }
-    });
-
-    // 2) sessão inicial
-    supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session);
-      if (data.session) {
-        await fetchRole(data.session.user.id);
-      }
+      
       setLoading(false);
     });
-    return () => sub.subscription.unsubscribe();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
