@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
 import React, { Suspense, lazy } from "react";
-import { Loader2 } from "lucide-react";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 // Layouts
 const AppLayout = lazy(() => import("@/components/AppLayout"));
@@ -81,14 +81,6 @@ const MasterProjecoes = lazy(() => import("./pages/master-admin/Projecoes"));
 const MasterCentral = lazy(() => import("./pages/master-admin/Central"));
 const NotificacoesVencimentoAudit = lazy(() => import("./pages/master-admin/NotificacoesVencimento"));
 
-const LoadingScreen = () => (
-  <div className="flex h-screen w-full items-center justify-center bg-zinc-950">
-    <div className="flex flex-col items-center gap-4">
-      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      <p className="text-sm text-muted-foreground animate-pulse">Carregando módulo...</p>
-    </div>
-  </div>
-);
 
 const queryClient = new QueryClient();
 
