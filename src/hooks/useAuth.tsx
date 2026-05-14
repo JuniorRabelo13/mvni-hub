@@ -120,6 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (newSession) {
         setSession(newSession);
+        setIsAuthReady(false); // Bloqueia o Guard enquanto carrega o novo role
         setLoading(true);
         // Garante que o role seja buscado ANTES de liberar o AuthGuard
         await fetchRole(newSession.user.id);
