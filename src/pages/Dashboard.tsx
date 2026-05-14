@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Users, Wallet, Activity, TrendingUp, ArrowRight, Network, Calculator, Info } from "lucide-react";
 import { sanitize } from "@/lib/sanitize";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy loading for future chart components if added
+const ChartFallback = () => <Skeleton className="h-[300px] w-full" />;
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
