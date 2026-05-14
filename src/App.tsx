@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
+
 import React, { Suspense, lazy } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import AppLayout from "@/components/AppLayout";
@@ -88,7 +89,8 @@ const App = () => (
       <Sonner theme="dark" />
       <BrowserRouter>
         <AuthProvider>
-          <Suspense fallback={<LoadingScreen />}>
+          <AuthGuard>
+            <Suspense fallback={<LoadingScreen />}>
             <Routes>
               <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><Auth /></Suspense>} />
               <Route path="/recuperar-senha" element={<RecuperarSenha />} />
@@ -98,7 +100,7 @@ const App = () => (
               <Route path="/termos" element={<Termos />} />
               <Route path="/privacidade" element={<Privacy />} />
 
-              <Route element={<AuthGuard loadingFallback={<LoadingScreen />}><AppLayout /></AuthGuard>}>
+              <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/painel" element={<Dashboard />} />
                 <Route path="/clientes" element={<Clientes />} />
@@ -162,7 +164,8 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-        </AuthProvider>
+        </AuthGuard>
+      </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

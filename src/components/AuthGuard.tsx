@@ -1,113 +1,48 @@
-import { useEffect } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
-import { useAuth } from "@/hooks/useAuth"
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
-const PUBLIC_ROUTES = [
-  "/auth",
-  "/cadastro",
-  "/cadastro/sucesso",
-  "/termos",
-  "/recuperar-senha",
-  "/nova-senha"
-]
+const PUBLIC_ROUTES = ["/auth", "/cadastro", "/cadastro/sucesso", "/termos", "/recuperar-senha", "/nova-senha"];
+const MASTER_ONLY_ROUTES = ["/", "/bi-executivo", "/projecoes-futuras", "/financeiro-global", "/gestao-comissoes", "/rede-afiliados", "/base-global", "/whatsapp-engine", "/infra-telecom", "/ia-workers", "/centro-critico", "/antifraude-risco", "/auditoria-global", "/usuarios-permissoes", "/master-config"];
 
-const MASTER_ONLY_ROUTES = [
-  "/",
-  "/bi-executivo",
-  "/projecoes-futuras",
-  "/financeiro-global",
-  "/gestao-comissoes",
-  "/rede-afiliados",
-  "/base-global",
-  "/whatsapp-engine",
-  "/infra-telecom",
-  "/ia-workers",
-  "/centro-critico",
-  "/antifraude-risco",
-  "/auditoria-global",
-  "/usuarios-permissoes",
-  "/master-config"
-]
-
-export function AuthGuard({ children, loadingFallback }: { children: React.ReactNode; loadingFallback?: React.ReactNode }) {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { authenticated, role, isAuthReady } = useAuth()
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // 0. Prefetch de módulos críticos por Role após auth estável
-    if (isAuthReady && role) {
-      const prefetch = async () => {
-        try {
-          const preloads: Promise<any>[] = [import("./AppLayout")];
-          
-          if (role === 'master') {
-            preloads.push(import("../pages/master-admin/Dashboard"));
-            preloads.push(import("../pages/master-admin/Financeiro"));
-          } else if (role === 'admin') {
-            preloads.push(import("../pages/Admin"));
-          } else {
-            preloads.push(import("../pages/Dashboard"));
-          }
+    let cancelled = false;
+    const fallback = setTimeout(() => {
+      if (!cancelled) { navigate("/auth", { replace: true }); setReady(true); }
+    }, 5000);
 
-          await Promise.all(preloads);
-          console.log(`[AuthGuard] Chunks for role ${role} prefetched`);
-        } catch (e) {
-          console.warn('[AuthGuard] Prefetch failed', e);
-        }
-      };
-      prefetch();
-    }
-
-    // Não faz nada se a autenticação não estiver totalmente pronta (sessão + role)
-    if (!isAuthReady) return;
-
-    const isPublicRoute = PUBLIC_ROUTES.includes(location.pathname);
-    
-    console.log('[AuthGuard] Running validation:', { 
-      authenticated, 
-      role, 
-      path: location.pathname, 
-      isPublicRoute 
-    });
-
-    // 1. Não autenticado
-    if (!authenticated) {
-      if (!isPublicRoute) {
-        console.log('[AuthGuard] Unauthorized access to private route, redirecting to /auth');
-        navigate("/auth", { replace: true });
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (cancelled) return;
+      clearTimeout(fallback);
+      if (!session) {
+        if (!PUBLIC_ROUTES.includes(location.pathname)) navigate("/auth", { replace: true });
+        setReady(true);
+        return;
       }
-      return;
-    }
-
-    // 2. Autenticado tentando acessar rota pública (como /auth)
-    if (isPublicRoute && location.pathname === "/auth") {
-      console.log('[AuthGuard] Authenticated user on /auth, redirecting to /painel');
-      navigate("/painel", { replace: true });
-      return;
-    }
-
-    // 3. Validação de RBAC (Master Only)
-    const isMasterRoute = MASTER_ONLY_ROUTES.includes(location.pathname);
-    if (isMasterRoute && role !== "master") {
-      console.log('[AuthGuard] RBAC Denial: user role', role, 'tried accessing', location.pathname);
-      // Evita redirect recursivo se já estivermos no painel
-      if (location.pathname !== "/painel") {
+      const { data: userData } = await supabase
+        .from("usuarios").select("role").eq("id", session.user.id).single();
+      if (cancelled) return;
+      const role = userData?.role ?? "representante";
+      if (MASTER_ONLY_ROUTES.includes(location.pathname) && role !== "master") {
         navigate("/painel", { replace: true });
       }
-    }
-  }, [authenticated, role, location.pathname, navigate, isAuthReady]);
+      setReady(true);
+    });
 
-  if (!isAuthReady) {
-    return loadingFallback || (
+    return () => { cancelled = true; clearTimeout(fallback); };
+  }, [location.pathname]);
+
+  if (!ready) {
+    return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground animate-pulse">Carregando acesso...</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
-        <style>
-          {`@keyframes spin { to { transform: rotate(360deg) } }`}
-        </style>
       </div>
     );
   }
