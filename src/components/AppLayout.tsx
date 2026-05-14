@@ -122,7 +122,7 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {isMasterAdmin && (
+        {!roleLoading && isMasterAdmin && (
           <div className="px-3 mb-3">
             <NavLink
               to="/master/central"
@@ -142,7 +142,7 @@ export default function AppLayout() {
         )}
 
         <nav className="flex-1 space-y-4 px-3 overflow-y-auto pt-4">
-          {isMasterAdmin && (
+          {!roleLoading && isMasterAdmin && (
             <div className="space-y-1">
               <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
                 <Crown className="h-3 w-3" /> Master Owner
@@ -215,7 +215,7 @@ export default function AppLayout() {
 
         <div className="border-t border-sidebar-border p-4">
           <div className="mb-3 truncate text-xs text-muted-foreground flex items-center gap-2">
-            {isMasterAdmin && <Crown className="h-3 w-3 text-primary shrink-0" />}
+            {!roleLoading && isMasterAdmin && <Crown className="h-3 w-3 text-primary shrink-0" />}
             <span className="truncate">{user?.email}</span>
           </div>
           <Button variant="outline" size="sm" className="w-full" onClick={handleSignOut}>
