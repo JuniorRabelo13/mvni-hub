@@ -1,39 +1,92 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Download, Filter, TrendingUp, Wallet, Clock, Users, ArrowUpRight, ArrowDownRight, Award } from "lucide-react";
+import { Search, Download, Filter, TrendingUp, Wallet, Clock, Users, ArrowUpRight, ArrowDownRight, Award, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const MasterComissoes = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const mesAtual = format(new Date(), "yyyy-MM");
 
-  const kpis = [
-    { title: "Comissões Geradas", value: "R$ 45.820,00", icon: TrendingUp, color: "text-emerald-400", trend: "+12.5%", trendUp: true },
-    { title: "Pagamentos Pendentes", value: "R$ 8.450,00", icon: Clock, color: "text-amber-400", trend: "-2.1%", trendUp: false },
-    { title: "Bônus Indiretos", value: "R$ 3.210,00", icon: Award, color: "text-purple-400", trend: "+5.4%", trendUp: true },
-    { title: "Recorrência Mensal", value: "R$ 15.600,00", icon: Wallet, color: "text-blue-400", trend: "+8.2%", trendUp: true },
-  ];
+  const { data: commissionsData, isLoading } = useQuery({
+    queryKey: ["master-commissions-data", mesAtual],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("comissoes_mensais")
+        .select(`
+          *,
+          usuarios (
+            nome
+          )
+        `);
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
-  const rankingData = [
-    { name: "João Silva", total: 12500, paid: 10000, color: "#10b981" },
-    { name: "Maria Oliveira", total: 9800, paid: 8500, color: "#3b82f6" },
-    { name: "Ricardo Santos", total: 7200, paid: 6000, color: "#8b5cf6" },
-    { name: "Ana Costa", total: 5400, paid: 5400, color: "#f59e0b" },
-    { name: "Pedro Rocha", total: 4100, paid: 3200, color: "#ef4444" },
-  ];
+  const kpis = useMemo(() => {
+    if (!commissionsData) return [
+      { title: "Comissões Geradas", value: "R$ 0,00", icon: TrendingUp, color: "text-emerald-400", trend: "0%", trendUp: true },
+      { title: "Pagamentos Pendentes", value: "R$ 0,00", icon: Clock, color: "text-amber-400", trend: "0%", trendUp: false },
+      { title: "Bônus Indiretos", value: "R$ 0,00", icon: Award, color: "text-purple-400", trend: "0%", trendUp: true },
+      { title: "Recorrência Mensal", value: "R$ 0,00", icon: Wallet, color: "text-blue-400", trend: "0%", trendUp: true },
+    ];
 
-  const recentCommissions = [
-    { id: 1, user: "João Silva", type: "Direta", amount: 450.0, status: "Pago", date: "Hoje, 14:20", client: "Empresa ABC" },
-    { id: 2, user: "Maria Oliveira", type: "Indireta", amount: 125.0, status: "Pendente", date: "Hoje, 11:05", client: "Loja XYZ" },
-    { id: 3, user: "Ricardo Santos", type: "Bônus", amount: 1000.0, status: "Pago", date: "Ontem, 18:45", client: "Meta Batida" },
-    { id: 4, user: "João Silva", type: "Recorrente", amount: 89.9, status: "Pendente", date: "Ontem, 09:15", client: "SaaS Premium" },
-    { id: 5, user: "Ana Costa", type: "Direta", amount: 210.0, status: "Cancelado", date: "10 Mai, 16:30", client: "Devolução" },
-  ];
+    const currentMonthData = commissionsData.filter(c => c.mes_referencia === mesAtual);
+    const totalPendente = currentMonthData.filter(c => c.status === "pendente").reduce((acc, curr) => acc + Number(curr.valor_total), 0);
+    const totalPago = currentMonthData.filter(c => c.status === "pago").reduce((acc, curr) => acc + Number(curr.valor_total), 0);
+    const totalBonus = currentMonthData.reduce((acc, curr) => acc + Number(curr.valor_recorrencia_indireta || 0), 0);
+    const totalRecorrencia = currentMonthData.reduce((acc, curr) => acc + Number(curr.valor_recorrencia_direta || 0), 0);
+
+    const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+    return [
+      { title: "Total Gerado (Mês)", value: fmt(totalPago + totalPendente), icon: TrendingUp, color: "text-emerald-400", trend: "+0%", trendUp: true },
+      { title: "Pagamentos Pendentes", value: fmt(totalPendente), icon: Clock, color: "text-amber-400", trend: "0%", trendUp: false },
+      { title: "Bônus Indiretos", value: fmt(totalBonus), icon: Award, color: "text-purple-400", trend: "+0%", trendUp: true },
+      { title: "Recorrência Direta", value: fmt(totalRecorrencia), icon: Wallet, color: "text-blue-400", trend: "+0%", trendUp: true },
+    ];
+  }, [commissionsData, mesAtual]);
+
+  const rankingData = useMemo(() => {
+    if (!commissionsData) return [];
+    return commissionsData
+      .filter(c => c.mes_referencia === mesAtual)
+      .sort((a, b) => Number(b.valor_total) - Number(a.valor_total))
+      .slice(0, 10)
+      .map((c, i) => ({
+        name: c.usuarios?.nome || "Representante",
+        total: Number(c.valor_total),
+        paid: c.status === "pago" ? Number(c.valor_total) : 0,
+        color: i === 0 ? "#10b981" : i === 1 ? "#3b82f6" : i === 2 ? "#8b5cf6" : "#f59e0b"
+      }));
+  }, [commissionsData, mesAtual]);
+
+  const recentCommissions = useMemo(() => {
+    if (!commissionsData) return [];
+    return commissionsData
+      .filter(c => !searchTerm || c.usuarios?.nome?.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort((a, b) => b.mes_referencia.localeCompare(a.mes_referencia))
+      .slice(0, 20)
+      .map(c => ({
+        id: c.id,
+        user: c.usuarios?.nome || "Representante",
+        type: Number(c.valor_recorrencia_indireta) > 0 ? "Indireta" : "Direta",
+        amount: Number(c.valor_total),
+        status: c.status === "pago" ? "Pago" : "Pendente",
+        date: format(new Date(c.mes_referencia + "-01"), "MMM/yy", { locale: ptBR }),
+        client: `${c.clientes_diretos_ativos || 0} cl. ativos`
+      }));
+  }, [commissionsData, searchTerm]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -43,6 +96,14 @@ const MasterComissoes = () => {
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 animate-in fade-in duration-500">
@@ -104,7 +165,6 @@ const MasterComissoes = () => {
                 <TabsTrigger value="todas">Todas</TabsTrigger>
                 <TabsTrigger value="pagas">Pagas</TabsTrigger>
                 <TabsTrigger value="pendentes">Pendentes</TabsTrigger>
-                <TabsTrigger value="recorrentes">Recorrentes</TabsTrigger>
               </TabsList>
               
               <TabsContent value="todas" className="mt-0">
@@ -114,10 +174,10 @@ const MasterComissoes = () => {
                       <TableRow className="border-white/10 hover:bg-transparent">
                         <TableHead className="text-white">Parceiro</TableHead>
                         <TableHead className="text-white">Tipo</TableHead>
-                        <TableHead className="text-white">Cliente/Ref</TableHead>
+                        <TableHead className="text-white">Resumo</TableHead>
                         <TableHead className="text-white">Valor</TableHead>
                         <TableHead className="text-white">Status</TableHead>
-                        <TableHead className="text-white">Data</TableHead>
+                        <TableHead className="text-white">Mês</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -132,7 +192,7 @@ const MasterComissoes = () => {
                           <TableCell className="text-muted-foreground text-sm">{item.client}</TableCell>
                           <TableCell className="font-bold text-white">R$ {item.amount.toFixed(2)}</TableCell>
                           <TableCell>{getStatusBadge(item.status)}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">{item.date}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm uppercase">{item.date}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -147,7 +207,7 @@ const MasterComissoes = () => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Award className="w-5 h-5 text-amber-400" />
-              <CardTitle>Ranking Financeiro</CardTitle>
+              <CardTitle>Ranking do Mês</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -176,7 +236,7 @@ const MasterComissoes = () => {
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Top 3 Performance</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Top Performance</h4>
               {rankingData.slice(0, 3).map((item, i) => (
                 <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
                   <div className="flex items-center gap-3">
@@ -189,12 +249,12 @@ const MasterComissoes = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-white">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">Pago: R$ {item.paid.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground font-mono">Pago: R$ {item.paid.toLocaleString()}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold text-emerald-400">R$ {item.total.toLocaleString()}</p>
-                    <p className="text-[10px] text-muted-foreground">Total Gerado</p>
+                    <p className="text-[10px] text-muted-foreground">Total</p>
                   </div>
                 </div>
               ))}
