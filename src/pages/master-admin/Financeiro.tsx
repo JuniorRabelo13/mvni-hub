@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +15,6 @@ import {
   CalendarIcon, Check, RefreshCw, Loader2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, LineChart, Line, Area, AreaChart, Legend } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -26,6 +25,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+// Lazy loading Recharts components
+const ResponsiveContainer = lazy(() => import("recharts").then(m => ({ default: m.ResponsiveContainer })));
+const BarChart = lazy(() => import("recharts").then(m => ({ default: m.BarChart })));
+const Bar = lazy(() => import("recharts").then(m => ({ default: m.Bar })));
+const XAxis = lazy(() => import("recharts").then(m => ({ default: m.XAxis })));
+const YAxis = lazy(() => import("recharts").then(m => ({ default: m.YAxis })));
+const CartesianGrid = lazy(() => import("recharts").then(m => ({ default: m.CartesianGrid })));
+const Tooltip = lazy(() => import("recharts").then(m => ({ default: m.Tooltip })));
+const Cell = lazy(() => import("recharts").then(m => ({ default: m.Cell })));
+const LineChart = lazy(() => import("recharts").then(m => ({ default: m.LineChart })));
+const Line = lazy(() => import("recharts").then(m => ({ default: m.Line })));
+const AreaChart = lazy(() => import("recharts").then(m => ({ default: m.AreaChart })));
+const Area = lazy(() => import("recharts").then(m => ({ default: m.Area })));
+const Legend = lazy(() => import("recharts").then(m => ({ default: m.Legend })));
+
+const ChartFallback = () => <Skeleton className="w-full h-full min-h-[300px]" />;
 import { useAuth } from "@/hooks/useAuth";
 
 type PeriodKey = "7d" | "30d" | "12m" | "custom";
