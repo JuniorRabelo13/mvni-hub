@@ -255,7 +255,9 @@ export default function AppLayout() {
               </Button>
             </div>
           )}
-          <Outlet />
+          <Suspense fallback={<LoadingScreen />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>
