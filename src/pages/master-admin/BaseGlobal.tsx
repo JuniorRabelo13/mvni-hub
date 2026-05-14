@@ -24,7 +24,8 @@ export default function BaseGlobal() {
           ativo,
           created_at,
           linhas (
-            operadora
+            msisdn,
+            plano
           )
         `)
         .order("created_at", { ascending: false });
@@ -48,7 +49,7 @@ export default function BaseGlobal() {
               <TableHead>Nome</TableHead>
               <TableHead>Telefone</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Operadora</TableHead>
+              <TableHead>Linha / Plano</TableHead>
               <TableHead>Data de cadastro</TableHead>
             </TableRow>
           </TableHeader>
@@ -76,7 +77,12 @@ export default function BaseGlobal() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {cliente.linhas?.[0]?.operadora || "—"}
+                    {cliente.linhas?.[0] ? (
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold">{cliente.linhas[0].msisdn || "Sem número"}</span>
+                        <span className="text-[10px] text-muted-foreground uppercase">{cliente.linhas[0].plano || "Sem plano"}</span>
+                      </div>
+                    ) : "—"}
                   </TableCell>
                   <TableCell>
                     {new Date(cliente.created_at).toLocaleDateString("pt-BR")}
