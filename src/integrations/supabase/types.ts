@@ -1121,6 +1121,33 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_events: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          metadata: Json | null
+          source: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          metadata?: Json | null
+          source: string
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          metadata?: Json | null
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
       profile_permissions: {
         Row: {
           permission_id: string
@@ -1591,6 +1618,7 @@ export type Database = {
           motivo_rejeicao: string | null
           pago_em: string | null
           processado_em: string | null
+          processamento_iniciado_em: string | null
           solicitado_em: string | null
           status: string
           user_id: string
@@ -1604,6 +1632,7 @@ export type Database = {
           motivo_rejeicao?: string | null
           pago_em?: string | null
           processado_em?: string | null
+          processamento_iniciado_em?: string | null
           solicitado_em?: string | null
           status?: string
           user_id: string
@@ -1617,6 +1646,7 @@ export type Database = {
           motivo_rejeicao?: string | null
           pago_em?: string | null
           processado_em?: string | null
+          processamento_iniciado_em?: string | null
           solicitado_em?: string | null
           status?: string
           user_id?: string
