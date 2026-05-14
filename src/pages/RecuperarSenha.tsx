@@ -1,11 +1,58 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function RecuperarSenha() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+
+    if (!email) {
+      setMessage({ text: "Digite seu e-mail", type: "error" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/nova-senha`,
+      });
+
+      setLoading(false);
+      
+      if (error) {
+        if (error.message.includes("network") || error.status === 0) {
+          setMessage({ text: "Erro ao enviar. Tente novamente.", type: "error" });
+        } else {
+          // Por segurança, mostramos sucesso mesmo se houver erro (exceto rede), 
+          // ou tratamos conforme solicitado (não revelar existência).
+          setMessage({ 
+            text: "Se este e-mail estiver cadastrado, você receberá o link em instantes. Verifique também sua caixa de spam.", 
+            type: "success" 
+          });
+        }
+        return;
+      }
+
+      setMessage({ 
+        text: "Se este e-mail estiver cadastrado, você receberá o link em instantes. Verifique também sua caixa de spam.", 
+        type: "success" 
+      });
+    } catch (err) {
+      setLoading(false);
+      setMessage({ text: "Erro ao enviar. Tente novamente.", type: "error" });
+    }
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-noir p-4">
       <div className="w-full max-w-md space-y-6">
@@ -24,7 +71,7 @@ export default function RecuperarSenha() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <Input
@@ -32,13 +79,30 @@ export default function RecuperarSenha() {
                   name="email"
                   type="email"
                   placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
-              <Button type="button" className="w-full">
-                Enviar link de recuperação
+              
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  "Enviar link de recuperação"
+                )}
               </Button>
-              <div className="text-center">
+
+              {message && (
+                <p className={`text-sm font-medium ${message.type === "error" ? "text-destructive" : "text-emerald-500"} animate-in fade-in slide-in-from-top-1`}>
+                  {message.text}
+                </p>
+              )}
+
+              <div className="text-center pt-2">
                 <Link
                   to="/auth"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
