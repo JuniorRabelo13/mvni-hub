@@ -49,7 +49,41 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log(`Evento recebido: ${event.type}`)
+    console.log(`Evento recebido: ${event.id} [${event.type}]`)
+
+    // 0. Idempotency check: check if event was already processed
+    const { data: existingEvent, error: checkError } = await supabase
+      .from('processed_events')
+      .select('id')
+      .eq('event_id', event.id)
+      .maybeSingle()
+
+    if (checkError) {
+      console.error(`Erro ao verificar idempotência: ${checkError.message}`)
+      throw checkError
+    }
+
+    if (existingEvent) {
+      console.log(`Evento ${event.id} já processado anteriormente.`)
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
+    // Register event as being processed
+    const { error: registerError } = await supabase
+      .from('processed_events')
+      .insert({
+        event_id: event.id,
+        source: 'stripe',
+        metadata: { type: event.type }
+      })
+
+    if (registerError) {
+      console.error(`Erro ao registrar evento no processed_events: ${registerError.message}`)
+      throw registerError
+    }
 
     switch (event.type) {
       case 'invoice.paid': {

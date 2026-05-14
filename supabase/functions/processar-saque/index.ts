@@ -42,15 +42,26 @@ serve(async (req) => {
 
     console.log(`Processando saque via Pix: ${saque_id}...`)
 
-    // 1. Buscar detalhes da solicitação
+    // 1. Buscar detalhes da solicitação e aplicar lock transacional/atômico via status + timestamp
+    const now = new Date().toISOString()
     const { data: saque, error: fetchError } = await supabaseAdmin
       .from('solicitacoes_saque')
+      .update({ processamento_iniciado_em: now }) // Lock atômico
+      .match({ id: saque_id, status: 'aprovado' }) // Apenas se ainda estiver aprovado
       .select('*, dados_bancarios(*)')
-      .eq('id', saque_id)
       .single()
 
-    if (fetchError || !saque) throw new Error("Saque não encontrado.")
-    if (saque.status !== 'aprovado') throw new Error("Apenas saques aprovados podem ser processados.")
+    if (fetchError || !saque) {
+      throw new Error("Saque não encontrado, já processado ou não autorizado.")
+    }
+
+    // Check if it was already paid (redundant but safe)
+    if (saque.status === 'pago') {
+      return new Response(JSON.stringify({ message: "Este saque já foi pago anteriormente." }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 200 
+      })
+    }
 
     // 2. Chamar API de Pix (Exemplo fictício)
     const PIX_API_URL = Deno.env.get('PIX_API_URL')
@@ -82,14 +93,21 @@ serve(async (req) => {
       throw new Error(`Erro no processamento do Pix: ${result.message}`)
     }
 
-    // 3. Atualizar para Pago
-    await supabaseAdmin.from('solicitacoes_saque')
+    // 3. Atualizar para Pago (Atomicamente confirmando o ID do saque)
+    const { error: updateError } = await supabaseAdmin.from('solicitacoes_saque')
       .update({ 
         status: 'pago', 
         pago_em: new Date().toISOString(),
         comprovante_url: result.receipt_url || 'https://link-comprovante.com/v/123'
       })
-      .eq('id', saque_id)
+      .match({ id: saque_id, status: 'aprovado' }) // Garante que ainda somos nós processando
+
+    if (updateError) {
+      console.error("Erro ao marcar saque como pago no DB:", updateError)
+      // Aqui teríamos um problema de inconsistência (Pix pago, DB não atualizado)
+      // Em produção, isso deveria disparar um alerta crítico ou log de conciliação
+      throw new Error("Pix enviado, mas erro ao atualizar banco de dados. Conciliação manual necessária.")
+    }
 
     return new Response(
       JSON.stringify({ message: "Saque processado com sucesso!", receipt: result.receipt_url }),
