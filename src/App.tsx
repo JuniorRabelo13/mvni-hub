@@ -7,8 +7,6 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
 import React, { Suspense, lazy } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
-
-// ✅ AppLayout NÃO é lazy — é o shell de todas as rotas protegidas
 import AppLayout from "@/components/AppLayout";
 
 // Auth Pages
@@ -83,7 +81,6 @@ const NotificacoesVencimentoAudit = lazy(() => import("./pages/master-admin/Noti
 
 const queryClient = new QueryClient();
 
-// ✅ Um único Suspense global envolve tudo — sem cascata
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -93,8 +90,7 @@ const App = () => (
         <AuthProvider>
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
-              {/* ✅ Rotas públicas — sem AuthGuard */}
-              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><Auth /></Suspense>} />
               <Route path="/recuperar-senha" element={<RecuperarSenha />} />
               <Route path="/nova-senha" element={<NovaSenha />} />
               <Route path="/cadastro" element={<Cadastro />} />
@@ -102,12 +98,7 @@ const App = () => (
               <Route path="/termos" element={<Termos />} />
               <Route path="/privacidade" element={<Privacy />} />
 
-              {/* ✅ Rotas protegidas — AuthGuard único no topo, AppLayout eager */}
-              <Route element={
-                <AuthGuard loadingFallback={<LoadingScreen />}>
-                  <AppLayout />
-                </AuthGuard>
-              }>
+              <Route element={<AuthGuard loadingFallback={<LoadingScreen />}><AppLayout /></AuthGuard>}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/painel" element={<Dashboard />} />
                 <Route path="/clientes" element={<Clientes />} />
