@@ -8,6 +8,7 @@ type Ctx = {
   session: Session | null;
   loading: boolean;
   role: string | null;
+  authenticated: boolean;
   signOut: () => Promise<void>;
   viewAs: (userId: string | null) => void;
   isViewingAs: boolean;
