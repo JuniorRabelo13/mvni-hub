@@ -18,9 +18,10 @@ import {
   Globe
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { QueryError } from "@/components/QueryError";
 
 export default function MasterGateways() {
-  const { data: gateways, isLoading, refetch } = useQuery({
+  const { data: gateways, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["master-gateways-report"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_master_gateways_report');
@@ -29,6 +30,14 @@ export default function MasterGateways() {
     },
     refetchInterval: 60000
   });
+
+  if (queryError) {
+    return (
+      <div className="space-y-6">
+        <QueryError error={queryError} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);

@@ -27,7 +27,7 @@ export default function MasterPlanos() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState<string | null>(null);
 
-  const { data: plans, isLoading } = useQuery({
+  const { data: plans, isLoading, error: queryError, refetch } = useQuery({
     queryKey: ["master-saas-plans"],
     queryFn: async () => {
       const { data, error } = await supabase.from('saas_plans').select('*').order('monthly_price', { ascending: true });
@@ -35,6 +35,14 @@ export default function MasterPlanos() {
       return data;
     }
   });
+
+  if (queryError) {
+    return (
+      <div className="space-y-6">
+        <QueryError error={queryError} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string, status: boolean }) => {

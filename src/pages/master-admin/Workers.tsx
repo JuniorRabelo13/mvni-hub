@@ -27,10 +27,11 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { QueryError } from "@/components/QueryError";
 
 export default function MasterWorkers() {
   const { user, role, isAuthReady } = useAuth();
-  const { data: report, isLoading, refetch } = useQuery({
+  const { data: report, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["master-workers-report"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_master_workers_report');
@@ -40,6 +41,14 @@ export default function MasterWorkers() {
     refetchInterval: 15000,
     enabled: !!user && role === 'master' && isAuthReady
   });
+
+  if (queryError) {
+    return (
+      <div className="space-y-6">
+        <QueryError error={queryError} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

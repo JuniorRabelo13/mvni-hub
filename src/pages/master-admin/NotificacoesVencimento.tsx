@@ -24,12 +24,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { QueryError } from "@/components/QueryError";
 
 export default function NotificacoesVencimentoAudit() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const { data: notifications, isLoading, refetch } = useQuery({
+  const { data: notifications, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["notifications-vencimento", statusFilter],
     queryFn: async () => {
       let query = supabase
@@ -53,6 +54,14 @@ export default function NotificacoesVencimentoAudit() {
       return data as any[];
     }
   });
+
+  if (queryError) {
+    return (
+      <div className="space-y-6">
+        <QueryError error={queryError} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   const filteredNotifications = notifications?.filter(notif => 
     notif.numero_whatsapp?.includes(searchTerm) ||

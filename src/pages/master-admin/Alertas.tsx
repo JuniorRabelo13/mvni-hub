@@ -19,11 +19,12 @@ import {
   Filter
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { QueryError } from "@/components/QueryError";
 
 export default function MasterAlertas() {
   const [severityFilter, setSeverityFilter] = useState<string>("all");
 
-  const { data: alerts, isLoading, refetch } = useQuery({
+  const { data: alerts, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["master-critical-alerts"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_master_critical_alerts');
@@ -32,6 +33,14 @@ export default function MasterAlertas() {
     },
     refetchInterval: 30000 // Atualiza a cada 30 segundos
   });
+
+  if (queryError) {
+    return (
+      <div className="space-y-6">
+        <QueryError error={queryError} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   const filteredAlerts = alerts?.filter(alert => 
     severityFilter === "all" || alert.severity === severityFilter

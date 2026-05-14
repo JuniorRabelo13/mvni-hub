@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2, Settings, Smartphone } from "lucide-react";
+import { QueryError } from "@/components/QueryError";
 
 export default function MasterConfig() {
   const queryClient = useQueryClient();
 
-  const { data: configs, isLoading } = useQuery({
+  const { data: configs, isLoading, error: queryError, refetch } = useQuery({
     queryKey: ["master-config-operadoras"],
     queryFn: async () => {
       // Como a tabela custos_operadora não existe no inventário, 

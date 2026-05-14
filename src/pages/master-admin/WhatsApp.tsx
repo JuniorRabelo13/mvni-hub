@@ -27,11 +27,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { QueryError } from "@/components/QueryError";
 
 export default function MasterWhatsApp() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  const { data: report, isLoading, refetch } = useQuery({
+  const { data: report, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["master-whatsapp-report"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_master_whatsapp_report');
@@ -41,6 +42,14 @@ export default function MasterWhatsApp() {
     },
     refetchInterval: 10000 // Refresh a cada 10 segundos para efeito realtime
   });
+
+  if (queryError) {
+    return (
+      <div className="space-y-6">
+        <QueryError error={queryError} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

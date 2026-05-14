@@ -17,6 +17,7 @@ import {
   Activity
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { QueryError } from "@/components/QueryError";
 import { 
   Table, 
   TableBody, 

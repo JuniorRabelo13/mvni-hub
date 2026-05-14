@@ -26,11 +26,12 @@ import { Progress } from "@/components/ui/progress";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { QueryError } from "@/components/QueryError";
 
 const MasterAntifraude = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: profiles, isLoading: loadingProfiles } = useQuery({
+  const { data: profiles, isLoading: loadingProfiles, error: errorProfiles, refetch: refetchProfiles } = useQuery({
     queryKey: ["master-antifraude-profiles"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -43,7 +44,7 @@ const MasterAntifraude = () => {
     }
   });
 
-  const { data: processedEvents, isLoading: loadingEvents } = useQuery({
+  const { data: processedEvents, isLoading: loadingEvents, error: errorEvents, refetch: refetchEvents } = useQuery({
     queryKey: ["master-antifraude-events"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -56,7 +57,7 @@ const MasterAntifraude = () => {
     }
   });
 
-  const { data: whatsappAlerts, isLoading: loadingAlerts } = useQuery({
+  const { data: whatsappAlerts, isLoading: loadingAlerts, error: errorAlerts, refetch: refetchAlerts } = useQuery({
     queryKey: ["master-antifraude-wa-alerts"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -68,6 +69,8 @@ const MasterAntifraude = () => {
       return data;
     }
   });
+
+  const queryError = errorProfiles || errorEvents || errorAlerts;
 
   const stats = useMemo(() => {
     const suspended = profiles?.filter(p => (p.status as string) === "suspenso")?.length || 0;
@@ -115,6 +118,21 @@ const MasterAntifraude = () => {
     const avg = profiles.reduce((acc, curr) => acc + (curr.risk_score || 0), 0) / profiles.length;
     return Math.round(avg);
   }, [profiles]);
+
+  if (queryError) {
+    return (
+      <div className="p-6">
+        <QueryError
+          error={queryError}
+          onRetry={() => {
+            refetchProfiles();
+            refetchEvents();
+            refetchAlerts();
+          }}
+        />
+      </div>
+    );
+  }
 
   if (loadingProfiles || loadingEvents || loadingAlerts) {
     return (
