@@ -527,37 +527,39 @@ function RevenueCompositionChart({ metrics, period, customRange }: { metrics: an
   ];
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" vertical={false} />
-        <XAxis
-          dataKey="categoria"
-          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-          axisLine={{ stroke: "hsl(var(--border) / 0.4)" }}
-          tickLine={false}
-        />
-        <YAxis
-          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-          tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
-        />
-        <Tooltip
-          cursor={{ fill: "hsl(var(--primary) / 0.08)" }}
-          contentStyle={{
-            background: "hsl(var(--background))",
-            border: "1px solid hsl(var(--primary) / 0.3)",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
-          formatter={(value: number) => [fmt(value), "Receita"]}
-          labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
-        />
-        <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
-          {data.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <Suspense fallback={<ChartFallback />}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" vertical={false} />
+          <XAxis
+            dataKey="categoria"
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            axisLine={{ stroke: "hsl(var(--border) / 0.4)" }}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
+          />
+          <Tooltip
+            cursor={{ fill: "hsl(var(--primary) / 0.08)" }}
+            contentStyle={{
+              background: "hsl(var(--background))",
+              border: "1px solid hsl(var(--primary) / 0.3)",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            formatter={(value: number) => [fmt(value), "Receita"]}
+            labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+          />
+          <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
+            {data.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </Suspense>
   );
 }
 
@@ -635,53 +637,55 @@ function RevenueProjectionChart({ metrics, period, customRange }: { metrics: any
   });
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-        <defs>
-          <linearGradient id="realizadoGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-          </linearGradient>
-          <linearGradient id="projetadoGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(var(--primary) / 0.6)" stopOpacity={0.3} />
-            <stop offset="100%" stopColor="hsl(var(--primary) / 0.6)" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" vertical={false} />
-        <XAxis
-          dataKey="mes"
-          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-          axisLine={{ stroke: "hsl(var(--border) / 0.4)" }}
-          tickLine={false}
-        />
-        <YAxis
-          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-          tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
-        />
-        <Tooltip
-          cursor={{ stroke: "hsl(var(--primary) / 0.3)", strokeWidth: 1 }}
-          contentStyle={{
-            background: "hsl(var(--background))",
-            border: "1px solid hsl(var(--primary) / 0.3)",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
-          formatter={(value: any, name: string) => [value ? fmt(Number(value)) : "—", name === "realizado" ? "Realizado" : "Projetado"]}
-          labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
-        />
-        <Legend
-          wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-          formatter={(v) => v === "realizado" ? "Realizado" : "Projetado"}
-        />
-        <Area
-          type="monotone"
-          dataKey="realizado"
-          stroke="hsl(var(--primary))"
-          strokeWidth={2.5}
-          fill="url(#realizadoGrad)"
-          dot={{ r: 3, fill: "hsl(var(--primary))" }}
+    <Suspense fallback={<ChartFallback />}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+          <defs>
+            <linearGradient id="realizadoGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="projetadoGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--primary) / 0.6)" stopOpacity={0.3} />
+              <stop offset="100%" stopColor="hsl(var(--primary) / 0.6)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" vertical={false} />
+          <XAxis
+            dataKey="mes"
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            axisLine={{ stroke: "hsl(var(--border) / 0.4)" }}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
+          />
+          <Tooltip
+            cursor={{ stroke: "hsl(var(--primary) / 0.3)", strokeWidth: 1 }}
+            contentStyle={{
+              background: "hsl(var(--background))",
+              border: "1px solid hsl(var(--primary) / 0.3)",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            formatter={(value: any, name: string) => [value ? fmt(Number(value)) : "—", name === "realizado" ? "Realizado" : "Projetado"]}
+            labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+          />
+          <Legend
+            wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+            formatter={(v) => v === "realizado" ? "Realizado" : "Projetado"}
+          />
+          <Area
+            type="monotone"
+            dataKey="realizado"
+            stroke="hsl(var(--primary))"
+            strokeWidth={2.5}
+            fill="url(#realizadoGrad)"
+            dot={{ r: 3, fill: "hsl(var(--primary))" }}
+          />
           connectNulls
         />
         <Area
@@ -696,5 +700,7 @@ function RevenueProjectionChart({ metrics, period, customRange }: { metrics: any
         />
       </AreaChart>
     </ResponsiveContainer>
+  </Suspense>
+);
   );
 }
