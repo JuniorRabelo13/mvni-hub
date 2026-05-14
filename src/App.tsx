@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
-
+import { AuthGuard } from "@/components/AuthGuard";
 
 import React, { Suspense, lazy } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -88,6 +88,7 @@ const App = () => (
       <Toaster />
       <Sonner theme="dark" />
       <BrowserRouter>
+        <AuthGuard>
         <AuthProvider>
           
             <Suspense fallback={<LoadingScreen />}>
@@ -166,6 +167,7 @@ const App = () => (
           </Suspense>
         
       </AuthProvider>
+        </AuthGuard>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
