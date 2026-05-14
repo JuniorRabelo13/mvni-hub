@@ -38,18 +38,26 @@ import { useIsMasterAdmin } from "@/hooks/useIsMasterAdmin";
 export default function AppLayout() {
   const { user, effectiveUser, signOut, viewAs, isViewingAs } = useAuth();
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const { data: isMasterAdmin } = useIsMasterAdmin();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
     async function checkRole() {
       if (user) {
-        const { data } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-        setIsAdmin(data?.role === "admin");
+        setRoleLoading(true);
+        const { data } = await supabase
+          .from("usuarios")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        setUserRole(data?.role || "representante");
+        setRoleLoading(false);
       }
     }
     checkRole();
   }, [user]);
+
+  const isMasterAdmin = userRole === "master";
 
   const navItems = [
     { to: "/", label: "Painel", icon: LayoutDashboard, end: true },
@@ -89,7 +97,7 @@ export default function AppLayout() {
     { to: "/master/config", label: "Master Config", icon: Settings },
   ];
 
-  if (isAdmin) {
+  if (userRole === "admin" || userRole === "master") {
     navItems.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
     navItems.push({ to: "/admin/logs", label: "Logs Admin", icon: ScrollText });
     navItems.push({ to: "/admin/security", label: "Logs Segurança", icon: ShieldAlert });
