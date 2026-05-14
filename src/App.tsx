@@ -5,70 +5,90 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
+import React, { Suspense, lazy } from "react";
+import { Loader2 } from "lucide-react";
 
-import AppLayout from "@/components/AppLayout";
-import Auth from "./pages/Auth";
-import Cadastro from "./pages/Cadastro";
-import CadastroSucesso from "./pages/CadastroSucesso";
-import Dashboard from "./pages/Dashboard";
-import Clientes from "./pages/Clientes";
-import Estrutura from "./pages/Estrutura";
-import Ganhos from "./pages/Ganhos";
-import Pagamentos from "./pages/Pagamentos";
-import Configuracoes from "./pages/Configuracoes";
-import Equipe from "./pages/Equipe";
-import Admin from "./pages/Admin";
-import AdminLogs from "./pages/AdminLogs";
-import SecurityLogs from "./pages/SecurityLogs";
-import Importacoes from "./pages/Importacoes";
-import NotFound from "./pages/NotFound";
-import Termos from "./pages/Termos";
-import Privacy from "./pages/Privacy";
-import SaquePix from "./pages/financeiro/SaquePix";
-import ExtratoFinanceiro from "./pages/financeiro/Extrato";
-import RecuperarSenha from "./pages/RecuperarSenha";
-import NovaSenha from "./pages/NovaSenha";
+// Layouts
+const AppLayout = lazy(() => import("@/components/AppLayout"));
+
+// Auth Pages
+const Auth = lazy(() => import("./pages/Auth"));
+const Cadastro = lazy(() => import("./pages/Cadastro"));
+const CadastroSucesso = lazy(() => import("./pages/CadastroSucesso"));
+const RecuperarSenha = lazy(() => import("./pages/RecuperarSenha"));
+const NovaSenha = lazy(() => import("./pages/NovaSenha"));
+
+// Main Pages
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Clientes = lazy(() => import("./pages/Clientes"));
+const Estrutura = lazy(() => import("./pages/Estrutura"));
+const Ganhos = lazy(() => import("./pages/Ganhos"));
+const Pagamentos = lazy(() => import("./pages/Pagamentos"));
+const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const Equipe = lazy(() => import("./pages/Equipe"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Termos = lazy(() => import("./pages/Termos"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+
+// Finance Pages
+const SaquePix = lazy(() => import("./pages/financeiro/SaquePix"));
+const ExtratoFinanceiro = lazy(() => import("./pages/financeiro/Extrato"));
+
+// Admin Pages
+const Admin = lazy(() => import("./pages/Admin"));
+const AdminLogs = lazy(() => import("./pages/AdminLogs"));
+const SecurityLogs = lazy(() => import("./pages/SecurityLogs"));
+const Importacoes = lazy(() => import("./pages/Importacoes"));
 
 // SMS Module Pages
-import SMSDashboard from "./pages/sms/SMSDashboard";
-import SMSDisparo from "./pages/sms/SMSDisparo";
-import SMSCampanhas from "./pages/sms/SMSCampanhas";
-import SMSListas from "./pages/sms/SMSListas";
-import SMSNovaLista from "./pages/sms/SMSNovaLista";
-import SMSBlacklist from "./pages/sms/SMSBlacklist";
-import SMSSaida from "./pages/sms/SMSSaida";
-import SMSLogs from "./pages/sms/SMSLogs";
-import SMSRelatorios from "./pages/sms/SMSRelatorios";
-import SMSInbox from "./pages/sms/SMSInbox";
-import SMSApi from "./pages/sms/SMSApi";
-import SMSWebhooks from "./pages/sms/SMSWebhooks";
-import SMSConfiguracoes from "./pages/sms/SMSConfiguracoes";
+const SMSDashboard = lazy(() => import("./pages/sms/SMSDashboard"));
+const SMSDisparo = lazy(() => import("./pages/sms/SMSDisparo"));
+const SMSCampanhas = lazy(() => import("./pages/sms/SMSCampanhas"));
+const SMSListas = lazy(() => import("./pages/sms/SMSListas"));
+const SMSNovaLista = lazy(() => import("./pages/sms/SMSNovaLista"));
+const SMSBlacklist = lazy(() => import("./pages/sms/SMSBlacklist"));
+const SMSSaida = lazy(() => import("./pages/sms/SMSSaida"));
+const SMSLogs = lazy(() => import("./pages/sms/SMSLogs"));
+const SMSRelatorios = lazy(() => import("./pages/sms/SMSRelatorios"));
+const SMSInbox = lazy(() => import("./pages/sms/SMSInbox"));
+const SMSApi = lazy(() => import("./pages/sms/SMSApi"));
+const SMSWebhooks = lazy(() => import("./pages/sms/SMSWebhooks"));
+const SMSConfiguracoes = lazy(() => import("./pages/sms/SMSConfiguracoes"));
 
 // WhatsApp Agent Module Pages
-import AgenteDashboard from "./pages/whatsapp/AgenteDashboard";
-import AgenteLeads from "./pages/whatsapp/AgenteLeads";
-import AgenteConfig from "./pages/whatsapp/AgenteConfig";
-import AgenteMensagens from "./pages/whatsapp/AgenteMensagens";
-import AgenteAgentes from "./pages/whatsapp/AgenteAgentes";
+const AgenteDashboard = lazy(() => import("./pages/whatsapp/AgenteDashboard"));
+const AgenteLeads = lazy(() => import("./pages/whatsapp/AgenteLeads"));
+const AgenteConfig = lazy(() => import("./pages/whatsapp/AgenteConfig"));
+const AgenteMensagens = lazy(() => import("./pages/whatsapp/AgenteMensagens"));
+const AgenteAgentes = lazy(() => import("./pages/whatsapp/AgenteAgentes"));
 
 // Master Admin Pages
-import MasterDashboard from "./pages/master-admin/Dashboard";
-import MasterFinanceiro from "./pages/master-admin/Financeiro";
-import MasterAfiliados from "./pages/master-admin/Afiliados";
-import MasterLinhas from "./pages/master-admin/Linhas";
-import MasterWhatsApp from "./pages/master-admin/WhatsApp";
-import MasterWorkers from "./pages/master-admin/Workers";
-import MasterAuditoria from "./pages/master-admin/Auditoria";
-import MasterAlertas from "./pages/master-admin/Alertas";
-import MasterGateways from "./pages/master-admin/Gateways";
-import MasterPlanos from "./pages/master-admin/Planos";
-import MasterInfraestrutura from "./pages/master-admin/Infraestrutura";
-import MasterUsuarios from "./pages/master-admin/Usuarios";
-import MasterComissoes from "./pages/master-admin/Comissoes";
-import MasterAntifraude from "./pages/master-admin/Antifraude";
-import MasterProjecoes from "./pages/master-admin/Projecoes";
-import MasterCentral from "./pages/master-admin/Central";
-import NotificacoesVencimentoAudit from "./pages/master-admin/NotificacoesVencimento";
+const MasterDashboard = lazy(() => import("./pages/master-admin/Dashboard"));
+const MasterFinanceiro = lazy(() => import("./pages/master-admin/Financeiro"));
+const MasterAfiliados = lazy(() => import("./pages/master-admin/Afiliados"));
+const MasterLinhas = lazy(() => import("./pages/master-admin/Linhas"));
+const MasterWhatsApp = lazy(() => import("./pages/master-admin/WhatsApp"));
+const MasterWorkers = lazy(() => import("./pages/master-admin/Workers"));
+const MasterAuditoria = lazy(() => import("./pages/master-admin/Auditoria"));
+const MasterAlertas = lazy(() => import("./pages/master-admin/Alertas"));
+const MasterGateways = lazy(() => import("./pages/master-admin/Gateways"));
+const MasterPlanos = lazy(() => import("./pages/master-admin/Planos"));
+const MasterInfraestrutura = lazy(() => import("./pages/master-admin/Infraestrutura"));
+const MasterUsuarios = lazy(() => import("./pages/master-admin/Usuarios"));
+const MasterComissoes = lazy(() => import("./pages/master-admin/Comissoes"));
+const MasterAntifraude = lazy(() => import("./pages/master-admin/Antifraude"));
+const MasterProjecoes = lazy(() => import("./pages/master-admin/Projecoes"));
+const MasterCentral = lazy(() => import("./pages/master-admin/Central"));
+const NotificacoesVencimentoAudit = lazy(() => import("./pages/master-admin/NotificacoesVencimento"));
+
+const LoadingFallback = () => (
+  <div className="flex h-screen w-full items-center justify-center bg-zinc-950">
+    <div className="flex flex-col items-center gap-4">
+      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground animate-pulse">Carregando módulo...</p>
+    </div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -80,74 +100,74 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/auth" element={<AuthGuard><Auth /></AuthGuard>} />
-            <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-            <Route path="/nova-senha" element={<NovaSenha />} />
-            <Route path="/cadastro" element={<Cadastro />} />
-            <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
-            <Route element={<AuthGuard><AppLayout /></AuthGuard>}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/painel" element={<Dashboard />} />
-              <Route path="/clientes" element={<Clientes />} />
-              <Route path="/estrutura" element={<Estrutura />} />
-              <Route path="/ganhos" element={<Ganhos />} />
-              <Route path="/pagamentos" element={<Pagamentos />} />
-              <Route path="/financeiro/saque" element={<SaquePix />} />
-              <Route path="/financeiro/extrato" element={<ExtratoFinanceiro />} />
-              <Route path="/configuracoes" element={<Configuracoes />} />
-              <Route path="/equipe" element={<Equipe />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/logs" element={<AdminLogs />} />
-              <Route path="/admin/security" element={<SecurityLogs />} />
-              <Route path="/admin/importacoes" element={<Importacoes />} />
+            <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><AuthGuard><Auth /></AuthGuard></Suspense>} />
+            <Route path="/recuperar-senha" element={<Suspense fallback={<LoadingFallback />}><RecuperarSenha /></Suspense>} />
+            <Route path="/nova-senha" element={<Suspense fallback={<LoadingFallback />}><NovaSenha /></Suspense>} />
+            <Route path="/cadastro" element={<Suspense fallback={<LoadingFallback />}><Cadastro /></Suspense>} />
+            <Route path="/cadastro/sucesso" element={<Suspense fallback={<LoadingFallback />}><CadastroSucesso /></Suspense>} />
+            <Route element={<Suspense fallback={<LoadingFallback />}><AuthGuard><AppLayout /></AuthGuard></Suspense>}>
+              <Route path="/" element={<Suspense fallback={<LoadingFallback />}><Dashboard /></Suspense>} />
+              <Route path="/painel" element={<Suspense fallback={<LoadingFallback />}><Dashboard /></Suspense>} />
+              <Route path="/clientes" element={<Suspense fallback={<LoadingFallback />}><Clientes /></Suspense>} />
+              <Route path="/estrutura" element={<Suspense fallback={<LoadingFallback />}><Estrutura /></Suspense>} />
+              <Route path="/ganhos" element={<Suspense fallback={<LoadingFallback />}><Ganhos /></Suspense>} />
+              <Route path="/pagamentos" element={<Suspense fallback={<LoadingFallback />}><Pagamentos /></Suspense>} />
+              <Route path="/financeiro/saque" element={<Suspense fallback={<LoadingFallback />}><SaquePix /></Suspense>} />
+              <Route path="/financeiro/extrato" element={<Suspense fallback={<LoadingFallback />}><ExtratoFinanceiro /></Suspense>} />
+              <Route path="/configuracoes" element={<Suspense fallback={<LoadingFallback />}><Configuracoes /></Suspense>} />
+              <Route path="/equipe" element={<Suspense fallback={<LoadingFallback />}><Equipe /></Suspense>} />
+              <Route path="/admin" element={<Suspense fallback={<LoadingFallback />}><Admin /></Suspense>} />
+              <Route path="/admin/logs" element={<Suspense fallback={<LoadingFallback />}><AdminLogs /></Suspense>} />
+              <Route path="/admin/security" element={<Suspense fallback={<LoadingFallback />}><SecurityLogs /></Suspense>} />
+              <Route path="/admin/importacoes" element={<Suspense fallback={<LoadingFallback />}><Importacoes /></Suspense>} />
 
               {/* SMS Module Routes */}
-              <Route path="/sms/dashboard" element={<SMSDashboard />} />
-              <Route path="/sms/disparo" element={<SMSDisparo />} />
-              <Route path="/sms/campanhas" element={<SMSCampanhas />} />
-              <Route path="/sms/listas" element={<SMSListas />} />
-              <Route path="/sms/listas/nova" element={<SMSNovaLista />} />
-              <Route path="/sms/blacklist" element={<SMSBlacklist />} />
-              <Route path="/sms/saida" element={<SMSSaida />} />
-              <Route path="/sms/logs" element={<SMSLogs />} />
-              <Route path="/sms/relatorios" element={<SMSRelatorios />} />
-              <Route path="/sms/inbox" element={<SMSInbox />} />
-              <Route path="/sms/api" element={<SMSApi />} />
-              <Route path="/sms/webhooks" element={<SMSWebhooks />} />
-              <Route path="/sms/configuracoes" element={<SMSConfiguracoes />} />
+              <Route path="/sms/dashboard" element={<Suspense fallback={<LoadingFallback />}><SMSDashboard /></Suspense>} />
+              <Route path="/sms/disparo" element={<Suspense fallback={<LoadingFallback />}><SMSDisparo /></Suspense>} />
+              <Route path="/sms/campanhas" element={<Suspense fallback={<LoadingFallback />}><SMSCampanhas /></Suspense>} />
+              <Route path="/sms/listas" element={<Suspense fallback={<LoadingFallback />}><SMSListas /></Suspense>} />
+              <Route path="/sms/listas/nova" element={<Suspense fallback={<LoadingFallback />}><SMSNovaLista /></Suspense>} />
+              <Route path="/sms/blacklist" element={<Suspense fallback={<LoadingFallback />}><SMSBlacklist /></Suspense>} />
+              <Route path="/sms/saida" element={<Suspense fallback={<LoadingFallback />}><SMSSaida /></Suspense>} />
+              <Route path="/sms/logs" element={<Suspense fallback={<LoadingFallback />}><SMSLogs /></Suspense>} />
+              <Route path="/sms/relatorios" element={<Suspense fallback={<LoadingFallback />}><SMSRelatorios /></Suspense>} />
+              <Route path="/sms/inbox" element={<Suspense fallback={<LoadingFallback />}><SMSInbox /></Suspense>} />
+              <Route path="/sms/api" element={<Suspense fallback={<LoadingFallback />}><SMSApi /></Suspense>} />
+              <Route path="/sms/webhooks" element={<Suspense fallback={<LoadingFallback />}><SMSWebhooks /></Suspense>} />
+              <Route path="/sms/configuracoes" element={<Suspense fallback={<LoadingFallback />}><SMSConfiguracoes /></Suspense>} />
 
               {/* WhatsApp Agent Module Routes */}
-              <Route path="/agente" element={<AgenteDashboard />} />
-              <Route path="/agente/leads" element={<AgenteLeads />} />
-              <Route path="/agente/agentes" element={<AgenteAgentes />} />
-              <Route path="/agente/mensagens" element={<AgenteMensagens />} />
-              <Route path="/agente/configuracoes" element={<AgenteConfig />} />
+              <Route path="/agente" element={<Suspense fallback={<LoadingFallback />}><AgenteDashboard /></Suspense>} />
+              <Route path="/agente/leads" element={<Suspense fallback={<LoadingFallback />}><AgenteLeads /></Suspense>} />
+              <Route path="/agente/agentes" element={<Suspense fallback={<LoadingFallback />}><AgenteAgentes /></Suspense>} />
+              <Route path="/agente/mensagens" element={<Suspense fallback={<LoadingFallback />}><AgenteMensagens /></Suspense>} />
+              <Route path="/agente/configuracoes" element={<Suspense fallback={<LoadingFallback />}><AgenteConfig /></Suspense>} />
 
               {/* Master Admin Routes */}
-              <Route path="/master/central" element={<MasterCentral />} />
-              <Route path="/master/dashboard" element={<MasterDashboard />} />
-              <Route path="/master/financeiro" element={<MasterFinanceiro />} />
-              <Route path="/master/afiliados" element={<MasterAfiliados />} />
-              <Route path="/master/linhas" element={<MasterLinhas />} />
-              <Route path="/master/whatsapp" element={<MasterWhatsApp />} />
-              <Route path="/master/clientes" element={<Dashboard />} />
-              <Route path="/master/telecom" element={<Dashboard />} />
-              <Route path="/master/workers" element={<MasterWorkers />} />
-              <Route path="/master/auditoria" element={<MasterAuditoria />} />
-              <Route path="/master/notificacoes" element={<NotificacoesVencimentoAudit />} />
-              <Route path="/master/alertas" element={<MasterAlertas />} />
-              <Route path="/master/gateways" element={<MasterGateways />} />
-              <Route path="/master/planos" element={<MasterPlanos />} />
-              <Route path="/master/infraestrutura" element={<MasterInfraestrutura />} />
-              <Route path="/master/usuarios" element={<MasterUsuarios />} />
-              <Route path="/master/comissoes" element={<MasterComissoes />} />
-              <Route path="/master/antifraude" element={<MasterAntifraude />} />
-              <Route path="/master/projecoes" element={<MasterProjecoes />} />
-              <Route path="/master/config" element={<Dashboard />} />
+              <Route path="/master/central" element={<Suspense fallback={<LoadingFallback />}><MasterCentral /></Suspense>} />
+              <Route path="/master/dashboard" element={<Suspense fallback={<LoadingFallback />}><MasterDashboard /></Suspense>} />
+              <Route path="/master/financeiro" element={<Suspense fallback={<LoadingFallback />}><MasterFinanceiro /></Suspense>} />
+              <Route path="/master/afiliados" element={<Suspense fallback={<LoadingFallback />}><MasterAfiliados /></Suspense>} />
+              <Route path="/master/linhas" element={<Suspense fallback={<LoadingFallback />}><MasterLinhas /></Suspense>} />
+              <Route path="/master/whatsapp" element={<Suspense fallback={<LoadingFallback />}><MasterWhatsApp /></Suspense>} />
+              <Route path="/master/clientes" element={<Suspense fallback={<LoadingFallback />}><Dashboard /></Suspense>} />
+              <Route path="/master/telecom" element={<Suspense fallback={<LoadingFallback />}><Dashboard /></Suspense>} />
+              <Route path="/master/workers" element={<Suspense fallback={<LoadingFallback />}><MasterWorkers /></Suspense>} />
+              <Route path="/master/auditoria" element={<Suspense fallback={<LoadingFallback />}><MasterAuditoria /></Suspense>} />
+              <Route path="/master/notificacoes" element={<Suspense fallback={<LoadingFallback />}><NotificacoesVencimentoAudit /></Suspense>} />
+              <Route path="/master/alertas" element={<Suspense fallback={<LoadingFallback />}><MasterAlertas /></Suspense>} />
+              <Route path="/master/gateways" element={<Suspense fallback={<LoadingFallback />}><MasterGateways /></Suspense>} />
+              <Route path="/master/planos" element={<Suspense fallback={<LoadingFallback />}><MasterPlanos /></Suspense>} />
+              <Route path="/master/infraestrutura" element={<Suspense fallback={<LoadingFallback />}><MasterInfraestrutura /></Suspense>} />
+              <Route path="/master/usuarios" element={<Suspense fallback={<LoadingFallback />}><MasterUsuarios /></Suspense>} />
+              <Route path="/master/comissoes" element={<Suspense fallback={<LoadingFallback />}><MasterComissoes /></Suspense>} />
+              <Route path="/master/antifraude" element={<Suspense fallback={<LoadingFallback />}><MasterAntifraude /></Suspense>} />
+              <Route path="/master/projecoes" element={<Suspense fallback={<LoadingFallback />}><MasterProjecoes /></Suspense>} />
+              <Route path="/master/config" element={<Suspense fallback={<LoadingFallback />}><Dashboard /></Suspense>} />
             </Route>
-            <Route path="/termos" element={<Termos />} />
-            <Route path="/privacidade" element={<Privacy />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="/termos" element={<Suspense fallback={<LoadingFallback />}><Termos /></Suspense>} />
+            <Route path="/privacidade" element={<Suspense fallback={<LoadingFallback />}><Privacy /></Suspense>} />
+            <Route path="*" element={<Suspense fallback={<LoadingFallback />}><NotFound /></Suspense>} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
