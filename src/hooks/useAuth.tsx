@@ -84,6 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (initialSession) {
           setSession(initialSession);
+          // O role DEVE ser carregado antes de marcar isAuthReady
           await fetchRole(initialSession.user.id);
         } else {
           setSession(null);
@@ -93,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error('[AUTH] Initialization error:', error);
       } finally {
         if (mounted) {
-          console.log('[AUTH] Initialization complete, setting isAuthReady');
+          console.log('[AUTH] Initialization complete, data ready');
           setIsAuthReady(true);
           setLoading(false);
         }
@@ -119,8 +120,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (newSession) {
         setSession(newSession);
-        // Só marca como pronto APÓS carregar o role se houver sessão nova
         setLoading(true);
+        // Garante que o role seja buscado ANTES de liberar o AuthGuard
         await fetchRole(newSession.user.id);
         if (mounted) {
           setIsAuthReady(true);
