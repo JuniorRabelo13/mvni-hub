@@ -253,7 +253,7 @@ export default function Dashboard() {
                   <p className="text-[10px] text-muted-foreground uppercase tracking-widest">GANHO IMEDIATO DE ATIVAÇÃO</p>
                   <Badge className="bg-gradient-gold text-[7px] h-3.5 w-fit px-1 border-none font-bold text-primary-foreground uppercase leading-none">Recebimento único</Badge>
                 </div>
-                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`ativacao-${simulacao.comissaoAtivacao}`}>
+                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95">
                   {fmt(simulacao.comissaoAtivacao)}
                 </p>
               </div>
