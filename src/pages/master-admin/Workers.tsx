@@ -15,6 +15,7 @@ import {
   Timer,
   HardDrive
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Table, 
@@ -28,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export default function MasterWorkers() {
+  const { user, role, isAuthReady } = useAuth();
   const { data: report, isLoading, refetch } = useQuery({
     queryKey: ["master-workers-report"],
     queryFn: async () => {
@@ -35,7 +37,8 @@ export default function MasterWorkers() {
       if (error) throw error;
       return data as any;
     },
-    refetchInterval: 15000 
+    refetchInterval: 15000,
+    enabled: !!user && role === 'master' && isAuthReady
   });
 
   if (isLoading) {

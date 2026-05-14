@@ -24,7 +24,7 @@ const actionLabels: Record<string, string> = {
 };
 
 export default function AdminLogs() {
-  const { user } = useAuth();
+  const { user, role, isAuthReady } = useAuth();
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [isAdmin, setIsAdmin] = useState(false);
@@ -32,16 +32,9 @@ export default function AdminLogs() {
 
   useEffect(() => {
     async function load() {
-      if (!user) return;
+      if (!user || !isAuthReady) return;
 
-      const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (!roleData) {
+      if (role !== "admin") {
         setIsAdmin(false);
         setLoading(false);
         return;
@@ -73,7 +66,7 @@ export default function AdminLogs() {
       setLoading(false);
     }
     load();
-  }, [user]);
+  }, [user, role, isAuthReady]);
 
   if (loading) return <div className="p-8 text-center">Carregando...</div>;
 

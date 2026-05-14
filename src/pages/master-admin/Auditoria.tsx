@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export default function MasterAuditoria() {
+  const { user, role, isAuthReady } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("");
@@ -44,7 +46,8 @@ export default function MasterAuditoria() {
       });
       if (error) throw error;
       return data as any[];
-    }
+    },
+    enabled: !!user && role === 'master' && isAuthReady
   });
 
   const filteredLogs = logs?.filter(log => 
