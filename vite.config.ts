@@ -19,4 +19,22 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-charts': ['recharts'],
+          'vendor-ui': [
+            '@radix-ui/react-dialog', 
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-tooltip'
+          ],
+          'vendor-utils': ['date-fns', 'lucide-react', 'clsx', 'tailwind-merge'],
+        }
+      }
+    }
+  }
 }));
