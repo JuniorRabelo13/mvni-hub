@@ -36,28 +36,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsMasterAdmin } from "@/hooks/useIsMasterAdmin";
 
 export default function AppLayout() {
-  const { user, effectiveUser, signOut, viewAs, isViewingAs } = useAuth();
+  const { user, effectiveUser, signOut, viewAs, isViewingAs, role, loading } = useAuth();
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [roleLoading, setRoleLoading] = useState(true);
 
-  useEffect(() => {
-    async function checkRole() {
-      if (user) {
-        setRoleLoading(true);
-        const { data } = await supabase
-          .from("usuarios")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-        setUserRole(data?.role || "representante");
-        setRoleLoading(false);
-      }
-    }
-    checkRole();
-  }, [user]);
-
-  const isMasterAdmin = userRole === "master";
+  const isMasterAdmin = role === "master";
 
   const navItems = [
     { to: "/", label: "Painel", icon: LayoutDashboard, end: true },
