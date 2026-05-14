@@ -163,7 +163,13 @@ const MasterUsuarios = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {loadingRep ? (
+                    {errorRep ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="py-4">
+                          <QueryError error={errorRep} onRetry={() => fetchRepresentantes()} />
+                        </TableCell>
+                      </TableRow>
+                    ) : loadingRep ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                           Carregando representantes...
