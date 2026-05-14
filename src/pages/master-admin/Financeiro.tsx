@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { QueryError } from "@/components/QueryError";
 import {
   Select,
   SelectContent,
@@ -64,7 +65,7 @@ export default function MasterFinanceiro() {
   const [selectedMes, setSelectedMes] = useState(mesAtualReal);
   const queryClient = useQueryClient();
 
-  const { data: metrics, isLoading } = useQuery({
+  const { data: metrics, isLoading, error: metricsError, refetch: refetchMetrics } = useQuery({
     queryKey: ["global-finance-metrics"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_global_finance_metrics');
@@ -205,6 +206,14 @@ export default function MasterFinanceiro() {
     return PERIODS.find(p => p.key === period)?.label ?? "";
   }, [period, customRange]);
 
+
+  if (metricsError) {
+    return (
+      <div className="space-y-6">
+        <QueryError error={metricsError} onRetry={() => refetchMetrics()} />
+      </div>
+    );
+  }
 
   if (isLoading || isLoadingSummary) {
     return (

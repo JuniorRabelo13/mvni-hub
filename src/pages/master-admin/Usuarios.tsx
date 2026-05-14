@@ -12,38 +12,42 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { QueryError } from "@/components/QueryError";
 
 const MasterUsuarios = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [representantes, setRepresentantes] = useState<any[]>([]);
   const [loadingRep, setLoadingRep] = useState(true);
+  const [errorRep, setErrorRep] = useState<unknown>(null);
+
+  const fetchRepresentantes = async () => {
+    setLoadingRep(true);
+    setErrorRep(null);
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select(`
+        nome,
+        email,
+        telefone,
+        created_at,
+        status,
+        indicado_por (
+          nome
+        )
+      `)
+      .eq("role", "representante")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar representantes:", error);
+      setErrorRep(error);
+    } else {
+      setRepresentantes(data || []);
+    }
+    setLoadingRep(false);
+  };
 
   useEffect(() => {
-    const fetchRepresentantes = async () => {
-      setLoadingRep(true);
-      const { data, error } = await supabase
-        .from("usuarios")
-        .select(`
-          nome,
-          email,
-          telefone,
-          created_at,
-          status,
-          indicado_por (
-            nome
-          )
-        `)
-        .eq("role", "representante")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Erro ao buscar representantes:", error);
-      } else {
-        setRepresentantes(data || []);
-      }
-      setLoadingRep(false);
-    };
-
     fetchRepresentantes();
   }, []);
 
