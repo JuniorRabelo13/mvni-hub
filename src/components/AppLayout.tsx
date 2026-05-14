@@ -37,8 +37,32 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsMasterAdmin } from "@/hooks/useIsMasterAdmin";
 
 export default function AppLayout() {
-  const { user, effectiveUser, signOut, viewAs, isViewingAs, role, loading } = useAuth();
+  const { user, effectiveUser, signOut, viewAs, isViewingAs, loading } = useAuth();
   const navigate = useNavigate();
+  const [role, setRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
+
+  useEffect(() => {
+    async function getRole() {
+      if (!user) {
+        setRoleLoading(false);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+        
+      if (!error && data) {
+        setRole(data.role);
+      }
+      setRoleLoading(false);
+    }
+    
+    getRole();
+  }, [user]);
 
   const isMasterAdmin = role === "master";
 
@@ -75,7 +99,6 @@ export default function AppLayout() {
     { to: "/master/alertas", label: "Centro Crítico", icon: AlertTriangle },
     { to: "/master/antifraude", label: "Antifraude & Risco", icon: ShieldAlert },
     { to: "/master/auditoria", label: "Auditoria Global", icon: ClipboardList },
-    { to: "/master/notificacoes", label: "Histórico Notificações", icon: Bell },
     { to: "/master/usuarios", label: "Usuários & Permissões", icon: ShieldCheck },
     { to: "/master/config", label: "Master Config", icon: Settings },
   ];
@@ -105,28 +128,16 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {!loading && isMasterAdmin && (
-          <div className="px-3 mb-3">
-            <NavLink
-              to="/master/central"
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm font-bold transition-all shadow-sm",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 ring-1 ring-primary/50"
-                    : "bg-gradient-to-r from-amber-500/20 to-primary/10 text-amber-300 hover:from-amber-500/30 hover:to-primary/20 hover:text-amber-200 border border-amber-500/30",
-                )
-              }
-            >
-              <Crown className="h-5 w-5 shrink-0" />
-              <span>Master Owner</span>
-            </NavLink>
-          </div>
-        )}
-
         <nav className="flex-1 space-y-4 px-3 overflow-y-auto pt-4">
-          {!loading && isMasterAdmin && (
-            <div className="space-y-1">
+          {!roleLoading && isMasterAdmin && (
+            <div className="space-y-1 mb-6">
+              <div className="px-3 mb-4">
+                <div className="flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm font-bold transition-all shadow-sm bg-gradient-to-r from-amber-500/20 to-primary/10 text-amber-300 border border-amber-500/30">
+                  <Crown className="h-5 w-5 shrink-0 text-amber-400" />
+                  <span>Master Owner</span>
+                </div>
+              </div>
+              
               <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
                 MASTER OWNER
               </p>
@@ -198,7 +209,7 @@ export default function AppLayout() {
 
         <div className="border-t border-sidebar-border p-4">
           <div className="mb-3 truncate text-xs text-muted-foreground flex items-center gap-2">
-            {!loading && isMasterAdmin && <Crown className="h-3 w-3 text-primary shrink-0" />}
+            {!roleLoading && isMasterAdmin && <Crown className="h-3 w-3 text-primary shrink-0" />}
             <span className="truncate">{user?.email}</span>
           </div>
           <Button variant="outline" size="sm" className="w-full" onClick={handleSignOut}>
