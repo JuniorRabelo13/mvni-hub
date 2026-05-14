@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { QueryError } from "@/components/QueryError";
 
 export default function MasterAuditoria() {
   const { user, role, isAuthReady } = useAuth();
@@ -37,7 +38,7 @@ export default function MasterAuditoria() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("");
 
-  const { data: logs, isLoading, refetch } = useQuery({
+  const { data: logs, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["master-audit-logs", typeFilter, dateFilter],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_master_audit_logs', {
@@ -49,6 +50,14 @@ export default function MasterAuditoria() {
     },
     enabled: !!user && role === 'master' && isAuthReady
   });
+
+  if (queryError) {
+    return (
+      <div className="space-y-6">
+        <QueryError error={queryError} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   const filteredLogs = logs?.filter(log => 
     log.event_message?.toLowerCase().includes(searchTerm.toLowerCase()) ||

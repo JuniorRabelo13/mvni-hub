@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { QueryError } from "@/components/QueryError";
 
 export default function BaseGlobal() {
-  const { data: clientes, isLoading } = useQuery({
+  const { data: clientes, isLoading, error: queryError, refetch } = useQuery({
     queryKey: ["master-base-global"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -41,6 +42,8 @@ export default function BaseGlobal() {
         <h1 className="text-3xl font-bold">Base Global</h1>
         <p className="text-muted-foreground">Visão consolidada de todos os clientes da rede MVNI</p>
       </div>
+
+      {queryError && <QueryError error={queryError} onRetry={() => refetch()} />}
 
       <div className="rounded-md border border-border bg-card">
         <Table>

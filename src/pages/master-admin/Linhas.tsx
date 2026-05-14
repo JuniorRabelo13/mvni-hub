@@ -27,12 +27,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { QueryError } from "@/components/QueryError";
 
 export default function MasterLinhas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const { data: report, isLoading, refetch } = useQuery({
+  const { data: report, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["master-lines-report"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_master_lines_report');
@@ -40,6 +41,14 @@ export default function MasterLinhas() {
       return data as any;
     }
   });
+
+  if (queryError) {
+    return (
+      <div className="space-y-6">
+        <QueryError error={queryError} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   const filteredLines = report?.linhas?.filter((l: any) => {
     const matchesSearch = l.numero.includes(searchTerm) || 

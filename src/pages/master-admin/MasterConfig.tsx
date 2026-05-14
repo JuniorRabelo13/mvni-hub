@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2, Settings, Smartphone } from "lucide-react";
+import { QueryError } from "@/components/QueryError";
 
 export default function MasterConfig() {
   const queryClient = useQueryClient();
 
-  const { data: configs, isLoading } = useQuery({
+  const { data: configs, isLoading, error: queryError, refetch } = useQuery({
     queryKey: ["master-config-operadoras"],
     queryFn: async () => {
       // Como a tabela custos_operadora não existe no inventário, 
@@ -63,7 +64,9 @@ export default function MasterConfig() {
             <CardDescription>Defina os custos operacionais base para cada operadora.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {isLoading ? (
+            {queryError ? (
+              <QueryError error={queryError} onRetry={() => refetch()} />
+            ) : isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>

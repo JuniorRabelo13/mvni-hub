@@ -14,12 +14,13 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { QueryError } from "@/components/QueryError";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function MasterDashboard() {
   const { user, role, isAuthReady } = useAuth();
-  const { data: metrics, isLoading } = useQuery({
+  const { data: metrics, isLoading, error: queryError, refetch } = useQuery({
     queryKey: ["global-metrics"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_global_finance_metrics');
@@ -39,6 +40,7 @@ export default function MasterDashboard() {
     enabled: !!user && role === 'master' && isAuthReady
   });
 
+  if (queryError) return <div className="space-y-6"><QueryError error={queryError} onRetry={() => refetch()} /></div>;
   if (isLoading) return <div className="space-y-6"><Skeleton className="h-40 w-full" /><div className="grid grid-cols-4 gap-4"><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /></div></div>;
 
   return (

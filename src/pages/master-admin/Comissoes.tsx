@@ -11,12 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { QueryError } from "@/components/QueryError";
 
 const MasterComissoes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const mesAtual = format(new Date(), "yyyy-MM");
 
-  const { data: commissionsData, isLoading } = useQuery({
+  const { data: commissionsData, isLoading, error: queryError, refetch } = useQuery({
     queryKey: ["master-commissions-data", mesAtual],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -96,6 +97,14 @@ const MasterComissoes = () => {
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  if (queryError) {
+    return (
+      <div className="p-6">
+        <QueryError error={queryError} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
