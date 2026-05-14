@@ -14,9 +14,9 @@ import { Button } from "@/components/ui/button";
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, role, isAuthReady } = useAuth();
   const queryClient = useQueryClient();
-  const isAdmin = (user as any)?.role === 'admin';
+  const isAdmin = role === 'admin';
 
   // Proteção de rota no frontend
   if (!user) return <Navigate to="/auth" />;
@@ -34,6 +34,7 @@ export default function AdminDashboard() {
       
       return { totalMrr, totalClientes, totalAfiliados, afiliados: data };
     },
+    enabled: !!user && isAdmin && isAuthReady
   });
 
   const { data: chartData, isLoading: loadingChart } = useQuery({
@@ -46,6 +47,7 @@ export default function AdminDashboard() {
         mrr: Number(d.mrr_total)
       }));
     },
+    enabled: !!user && isAdmin && isAuthReady
   });
 
   const { data: alerts = [], isLoading: loadingAlerts } = useQuery({
@@ -55,7 +57,7 @@ export default function AdminDashboard() {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
+    enabled: !!user && isAdmin && isAuthReady,
   });
 
   const resolveAlertMutation = useMutation({

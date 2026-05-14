@@ -73,7 +73,7 @@ export default function AdminLogs() {
       setLoading(false);
     }
     load();
-  }, [user]);
+  }, [user, role, isAuthReady]);
 
   if (loading) return <div className="p-8 text-center">Carregando...</div>;
 

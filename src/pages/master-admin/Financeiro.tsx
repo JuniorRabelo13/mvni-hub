@@ -39,6 +39,7 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 
 
 export default function MasterFinanceiro() {
+  const { user, role, isAuthReady } = useAuth();
   const [period, setPeriod] = useState<PeriodKey>("30d");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [isRecalculating, setIsRecalculating] = useState(false);
@@ -52,7 +53,8 @@ export default function MasterFinanceiro() {
       const { data, error } = await supabase.rpc('get_global_finance_metrics');
       if (error) throw error;
       return data as any;
-    }
+    },
+    enabled: !!user && role === 'master' && isAuthReady
   });
 
   const mesOptions = useMemo(() => {
@@ -111,7 +113,8 @@ export default function MasterFinanceiro() {
         margemEstimada,
         representantesPendentes
       };
-    }
+    },
+    enabled: !!user && role === 'master' && isAuthReady
   });
 
   const { data: repasses } = useQuery({
@@ -119,25 +122,14 @@ export default function MasterFinanceiro() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comissoes_mensais")
-        .select(`
-          id,
-          valor_total,
-          valor_ativacoes,
-          valor_recorrencia_direta,
-          valor_recorrencia_indireta,
-          status,
-          clientes_diretos_ativos,
-          clientes_indiretos_ativos,
-          usuarios (
-            nome
-          )
-        `)
+// ...
         .eq("mes_referencia", selectedMes)
         .order("valor_total", { ascending: false });
 
       if (error) throw error;
       return data as any[];
-    }
+    },
+    enabled: !!user && role === 'master' && isAuthReady
   });
 
   const handleMarcarComoPago = async (rep: any) => {

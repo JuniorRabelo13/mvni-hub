@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export default function MasterAuditoria() {
+  const { user, role, isAuthReady } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("");
@@ -44,7 +45,8 @@ export default function MasterAuditoria() {
       });
       if (error) throw error;
       return data as any[];
-    }
+    },
+    enabled: !!user && role === 'master' && isAuthReady
   });
 
   const filteredLogs = logs?.filter(log => 
