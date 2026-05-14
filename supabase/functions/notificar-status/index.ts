@@ -12,13 +12,24 @@ serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     const { type, cliente_id, msisdn, status } = await req.json();
 
     // 1. Buscar dados do cliente e template
-    const { data: cliente, error: clientErr } = await supabaseClient
+    const { data: cliente, error: clientErr } = await supabaseAdmin
       .from("clientes")
       .select("nome, telefone, notify_whatsapp")
       .eq("id", cliente_id)
@@ -31,7 +42,7 @@ serve(async (req) => {
     }
 
     const slug = type === "welcome" ? "welcome" : status === "suspensa" ? "suspended" : "reactivated";
-    const { data: template } = await supabaseClient
+    const { data: template } = await supabaseAdmin
       .from("whatsapp_templates")
       .select("body")
       .eq("slug", slug)

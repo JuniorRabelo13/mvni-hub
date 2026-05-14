@@ -12,7 +12,18 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
@@ -20,10 +31,10 @@ serve(async (req) => {
     const { action, leadId, message, userId } = await req.json()
 
     // 1. Get Config
-    const { data: config } = await supabase
+    const { data: config } = await supabaseAdmin
       .from('whatsapp_config')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', user.id) // Security: enforce user_id from token
       .single()
 
     if (!config) throw new Error('Configuração não encontrada')
@@ -45,7 +56,7 @@ serve(async (req) => {
         // Auto-reply for off-hours
         const offHoursMsg = "Oi! Aqui é um assistente virtual 🤖\nPosso te ajudar com todas as informações agora mesmo.\nSe preferir falar com um especialista humano, seguimos no horário comercial 😊"
         
-        await supabase.from('whatsapp_messages').insert({
+        await supabaseAdmin.from('whatsapp_messages').insert({
           lead_id: leadId,
           mensagem: offHoursMsg,
           direcao: 'saida',
@@ -62,7 +73,7 @@ serve(async (req) => {
       
       const response = await generateAIResponse(message, config.prompt_ia)
 
-      await supabase.from('whatsapp_messages').insert({
+      await supabaseAdmin.from('whatsapp_messages').insert({
         lead_id: leadId,
         mensagem: response,
         direcao: 'saida',
@@ -71,7 +82,7 @@ serve(async (req) => {
       })
       
       // Update lead status if needed
-      await supabase.from('leads').update({ status: 'abordado', ultimo_contato: new Date().toISOString() }).eq('id', leadId)
+      await supabaseAdmin.from('leads').update({ status: 'abordado', ultimo_contato: new Date().toISOString() }).eq('id', leadId)
 
       return new Response(JSON.stringify({ status: 'responded', response }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
