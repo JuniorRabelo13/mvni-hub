@@ -79,7 +79,7 @@ export default function AppLayout() {
     { to: "/master/config", label: "Master Config", icon: Settings },
   ];
 
-  if (userRole === "admin" || userRole === "master") {
+  if (role === "admin" || role === "master") {
     navItems.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
     navItems.push({ to: "/admin/logs", label: "Logs Admin", icon: ScrollText });
     navItems.push({ to: "/admin/security", label: "Logs Segurança", icon: ShieldAlert });
@@ -104,7 +104,7 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {!roleLoading && isMasterAdmin && (
+        {!loading && isMasterAdmin && (
           <div className="px-3 mb-3">
             <NavLink
               to="/master/central"
@@ -124,7 +124,7 @@ export default function AppLayout() {
         )}
 
         <nav className="flex-1 space-y-4 px-3 overflow-y-auto pt-4">
-          {!roleLoading && isMasterAdmin && (
+        {!loading && isMasterAdmin && (
             <div className="space-y-1">
               <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
                 <Crown className="h-3 w-3" /> Master Owner
@@ -197,7 +197,7 @@ export default function AppLayout() {
 
         <div className="border-t border-sidebar-border p-4">
           <div className="mb-3 truncate text-xs text-muted-foreground flex items-center gap-2">
-            {!roleLoading && isMasterAdmin && <Crown className="h-3 w-3 text-primary shrink-0" />}
+            {!loading && isMasterAdmin && <Crown className="h-3 w-3 text-primary shrink-0" />}
             <span className="truncate">{user?.email}</span>
           </div>
           <Button variant="outline" size="sm" className="w-full" onClick={handleSignOut}>
