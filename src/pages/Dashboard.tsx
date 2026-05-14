@@ -283,7 +283,7 @@ export default function Dashboard() {
             <div className="mt-6 p-6 rounded-2xl bg-zinc-900/60 border border-primary/20 flex items-center justify-between">
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-1">Ganho Anual Estimado</p>
-                <p className="text-4xl font-black text-white transition-all duration-300 animate-in fade-in zoom-in-95" key={`anual-${simulacao.total * 12}`}>
+                <p className="text-4xl font-black text-white transition-all duration-300 animate-in fade-in zoom-in-95">
                   {fmt(simulacao.total * 12)}
                 </p>
                 <div className="mt-2 space-y-1">
