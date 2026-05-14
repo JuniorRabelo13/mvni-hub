@@ -35,40 +35,42 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { authenticated, role, isAuthReady } = useAuth()
 
   useEffect(() => {
-    if (!isAuthReady) {
-      console.log('[AuthGuard] Not ready yet');
-      return;
-    }
+    // Não faz nada se a autenticação não estiver totalmente pronta (sessão + role)
+    if (!isAuthReady) return;
 
     const isPublicRoute = PUBLIC_ROUTES.includes(location.pathname);
     
-    console.log('[AuthGuard] Check:', { 
+    console.log('[AuthGuard] Running validation:', { 
       authenticated, 
       role, 
       path: location.pathname, 
       isPublicRoute 
     });
 
+    // 1. Não autenticado
     if (!authenticated) {
       if (!isPublicRoute) {
-        console.log('[AuthGuard] Redirecting to /auth');
+        console.log('[AuthGuard] Unauthorized access to private route, redirecting to /auth');
         navigate("/auth", { replace: true });
       }
       return;
     }
 
-    // Se autenticado e na tela de login, manda para o painel
-    if (location.pathname === "/auth") {
+    // 2. Autenticado tentando acessar rota pública (como /auth)
+    if (isPublicRoute && location.pathname === "/auth") {
+      console.log('[AuthGuard] Authenticated user on /auth, redirecting to /painel');
       navigate("/painel", { replace: true });
       return;
     }
 
-    if (
-      MASTER_ONLY_ROUTES.includes(location.pathname) &&
-      role && role !== "master"
-    ) {
-      console.log('[AuthGuard] Access denied for role:', role);
-      navigate("/painel", { replace: true });
+    // 3. Validação de RBAC (Master Only)
+    const isMasterRoute = MASTER_ONLY_ROUTES.includes(location.pathname);
+    if (isMasterRoute && role !== "master") {
+      console.log('[AuthGuard] RBAC Denial: user role', role, 'tried accessing', location.pathname);
+      // Evita redirect recursivo se já estivermos no painel
+      if (location.pathname !== "/painel") {
+        navigate("/painel", { replace: true });
+      }
     }
   }, [authenticated, role, location.pathname, navigate, isAuthReady]);
 
