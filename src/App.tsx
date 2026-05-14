@@ -9,7 +9,7 @@ import React, { Suspense, lazy } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 // Layouts
-const AppLayout = lazy(() => import("@/components/AppLayout"));
+import AppLayout from "@/components/AppLayout";
 
 // Auth Pages
 const Auth = lazy(() => import("./pages/Auth"));
