@@ -32,10 +32,13 @@ const MASTER_ONLY_ROUTES = [
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { loading, authenticated, role, isAuthReady } = useAuth()
+  const { authenticated, role, isAuthReady } = useAuth()
 
   useEffect(() => {
-    if (!isAuthReady) return;
+    if (!isAuthReady) {
+      console.log('[AuthGuard] Not ready yet');
+      return;
+    }
 
     const isPublicRoute = PUBLIC_ROUTES.includes(location.pathname);
     
@@ -67,7 +70,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       console.log('[AuthGuard] Access denied for role:', role);
       navigate("/painel", { replace: true });
     }
-  }, [loading, authenticated, role, location.pathname, navigate]);
+  }, [authenticated, role, location.pathname, navigate, isAuthReady]);
 
   if (!isAuthReady) {
     return (
