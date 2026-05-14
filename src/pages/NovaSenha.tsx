@@ -14,13 +14,19 @@ export default function NovaSenha() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
-    if (!password || !confirmPassword) {
-      setError("Preencha todos os campos");
+    const newFieldErrors: { [key: string]: string } = {};
+    if (!password) newFieldErrors.password = "Campo obrigatório";
+    if (!confirmPassword) newFieldErrors.confirmPassword = "Campo obrigatório";
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
       return;
     }
 
@@ -30,7 +36,7 @@ export default function NovaSenha() {
     }
 
     if (password !== confirmPassword) {
-      setError("As senhas não coincidem");
+      setFieldErrors({ confirmPassword: "As senhas não coincidem" });
       return;
     }
 
@@ -40,22 +46,22 @@ export default function NovaSenha() {
         password: password,
       });
 
-      setLoading(false);
-
       if (updateError) {
-        if (updateError.message.includes("expired") || updateError.message.includes("invalid")) {
+        setLoading(false);
+        const msg = updateError.message.toLowerCase();
+        if (msg.includes("token") || msg.includes("expired")) {
           setError("link_expired");
         } else {
-          setError(updateError.message);
+          setError("Erro ao salvar. Tente novamente.");
         }
         return;
       }
 
       toast.success("Senha atualizada com sucesso. Faça login com sua nova senha.");
-      navigate("/auth", { replace: true });
+      navigate("/auth");
     } catch (err) {
       setLoading(false);
-      setError("Erro ao atualizar senha. Tente novamente.");
+      setError("Erro ao salvar. Tente novamente.");
     }
   };
 
@@ -86,10 +92,12 @@ export default function NovaSenha() {
                   type="password"
                   placeholder="********"
                   required
-                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                {fieldErrors.password && (
+                  <p className="text-xs text-destructive">{fieldErrors.password}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
@@ -102,8 +110,26 @@ export default function NovaSenha() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
+                {fieldErrors.confirmPassword && (
+                  <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>
+                )}
               </div>
-              
+
+              {error === "link_expired" ? (
+                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-center space-y-2">
+                  <p className="text-sm font-medium text-destructive">Link expirado ou inválido.</p>
+                  <Link to="/recuperar-senha" className="text-sm text-primary hover:underline block font-semibold">
+                    Solicitar novo link de recuperação
+                  </Link>
+                </div>
+              ) : (
+                error && (
+                  <p className="text-sm font-medium text-destructive animate-in fade-in slide-in-from-top-1 text-center">
+                    {error}
+                  </p>
+                )
+              )}
+
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
@@ -114,26 +140,6 @@ export default function NovaSenha() {
                   "Salvar nova senha"
                 )}
               </Button>
-
-              {error === "link_expired" ? (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-destructive">
-                    Link expirado ou inválido. Solicite um novo link de recuperação.
-                  </p>
-                  <Link
-                    to="/recuperar-senha"
-                    className="block text-sm text-center text-primary hover:underline"
-                  >
-                    Solicitar novo link
-                  </Link>
-                </div>
-              ) : (
-                error && (
-                  <p className="text-sm font-medium text-destructive animate-in fade-in slide-in-from-top-1">
-                    {error}
-                  </p>
-                )
-              )}
             </form>
           </CardContent>
         </Card>
