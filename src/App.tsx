@@ -5,70 +5,90 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
+import React, { Suspense, lazy } from "react";
+import { Loader2 } from "lucide-react";
 
-import AppLayout from "@/components/AppLayout";
-import Auth from "./pages/Auth";
-import Cadastro from "./pages/Cadastro";
-import CadastroSucesso from "./pages/CadastroSucesso";
-import Dashboard from "./pages/Dashboard";
-import Clientes from "./pages/Clientes";
-import Estrutura from "./pages/Estrutura";
-import Ganhos from "./pages/Ganhos";
-import Pagamentos from "./pages/Pagamentos";
-import Configuracoes from "./pages/Configuracoes";
-import Equipe from "./pages/Equipe";
-import Admin from "./pages/Admin";
-import AdminLogs from "./pages/AdminLogs";
-import SecurityLogs from "./pages/SecurityLogs";
-import Importacoes from "./pages/Importacoes";
-import NotFound from "./pages/NotFound";
-import Termos from "./pages/Termos";
-import Privacy from "./pages/Privacy";
-import SaquePix from "./pages/financeiro/SaquePix";
-import ExtratoFinanceiro from "./pages/financeiro/Extrato";
-import RecuperarSenha from "./pages/RecuperarSenha";
-import NovaSenha from "./pages/NovaSenha";
+// Layouts
+const AppLayout = lazy(() => import("@/components/AppLayout"));
+
+// Auth Pages
+const Auth = lazy(() => import("./pages/Auth"));
+const Cadastro = lazy(() => import("./pages/Cadastro"));
+const CadastroSucesso = lazy(() => import("./pages/CadastroSucesso"));
+const RecuperarSenha = lazy(() => import("./pages/RecuperarSenha"));
+const NovaSenha = lazy(() => import("./pages/NovaSenha"));
+
+// Main Pages
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Clientes = lazy(() => import("./pages/Clientes"));
+const Estrutura = lazy(() => import("./pages/Estrutura"));
+const Ganhos = lazy(() => import("./pages/Ganhos"));
+const Pagamentos = lazy(() => import("./pages/Pagamentos"));
+const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const Equipe = lazy(() => import("./pages/Equipe"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Termos = lazy(() => import("./pages/Termos"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+
+// Finance Pages
+const SaquePix = lazy(() => import("./pages/financeiro/SaquePix"));
+const ExtratoFinanceiro = lazy(() => import("./pages/financeiro/Extrato"));
+
+// Admin Pages
+const Admin = lazy(() => import("./pages/Admin"));
+const AdminLogs = lazy(() => import("./pages/AdminLogs"));
+const SecurityLogs = lazy(() => import("./pages/SecurityLogs"));
+const Importacoes = lazy(() => import("./pages/Importacoes"));
 
 // SMS Module Pages
-import SMSDashboard from "./pages/sms/SMSDashboard";
-import SMSDisparo from "./pages/sms/SMSDisparo";
-import SMSCampanhas from "./pages/sms/SMSCampanhas";
-import SMSListas from "./pages/sms/SMSListas";
-import SMSNovaLista from "./pages/sms/SMSNovaLista";
-import SMSBlacklist from "./pages/sms/SMSBlacklist";
-import SMSSaida from "./pages/sms/SMSSaida";
-import SMSLogs from "./pages/sms/SMSLogs";
-import SMSRelatorios from "./pages/sms/SMSRelatorios";
-import SMSInbox from "./pages/sms/SMSInbox";
-import SMSApi from "./pages/sms/SMSApi";
-import SMSWebhooks from "./pages/sms/SMSWebhooks";
-import SMSConfiguracoes from "./pages/sms/SMSConfiguracoes";
+const SMSDashboard = lazy(() => import("./pages/sms/SMSDashboard"));
+const SMSDisparo = lazy(() => import("./pages/sms/SMSDisparo"));
+const SMSCampanhas = lazy(() => import("./pages/sms/SMSCampanhas"));
+const SMSListas = lazy(() => import("./pages/sms/SMSListas"));
+const SMSNovaLista = lazy(() => import("./pages/sms/SMSNovaLista"));
+const SMSBlacklist = lazy(() => import("./pages/sms/SMSBlacklist"));
+const SMSSaida = lazy(() => import("./pages/sms/SMSSaida"));
+const SMSLogs = lazy(() => import("./pages/sms/SMSLogs"));
+const SMSRelatorios = lazy(() => import("./pages/sms/SMSRelatorios"));
+const SMSInbox = lazy(() => import("./pages/sms/SMSInbox"));
+const SMSApi = lazy(() => import("./pages/sms/SMSApi"));
+const SMSWebhooks = lazy(() => import("./pages/sms/SMSWebhooks"));
+const SMSConfiguracoes = lazy(() => import("./pages/sms/SMSConfiguracoes"));
 
 // WhatsApp Agent Module Pages
-import AgenteDashboard from "./pages/whatsapp/AgenteDashboard";
-import AgenteLeads from "./pages/whatsapp/AgenteLeads";
-import AgenteConfig from "./pages/whatsapp/AgenteConfig";
-import AgenteMensagens from "./pages/whatsapp/AgenteMensagens";
-import AgenteAgentes from "./pages/whatsapp/AgenteAgentes";
+const AgenteDashboard = lazy(() => import("./pages/whatsapp/AgenteDashboard"));
+const AgenteLeads = lazy(() => import("./pages/whatsapp/AgenteLeads"));
+const AgenteConfig = lazy(() => import("./pages/whatsapp/AgenteConfig"));
+const AgenteMensagens = lazy(() => import("./pages/whatsapp/AgenteMensagens"));
+const AgenteAgentes = lazy(() => import("./pages/whatsapp/AgenteAgentes"));
 
 // Master Admin Pages
-import MasterDashboard from "./pages/master-admin/Dashboard";
-import MasterFinanceiro from "./pages/master-admin/Financeiro";
-import MasterAfiliados from "./pages/master-admin/Afiliados";
-import MasterLinhas from "./pages/master-admin/Linhas";
-import MasterWhatsApp from "./pages/master-admin/WhatsApp";
-import MasterWorkers from "./pages/master-admin/Workers";
-import MasterAuditoria from "./pages/master-admin/Auditoria";
-import MasterAlertas from "./pages/master-admin/Alertas";
-import MasterGateways from "./pages/master-admin/Gateways";
-import MasterPlanos from "./pages/master-admin/Planos";
-import MasterInfraestrutura from "./pages/master-admin/Infraestrutura";
-import MasterUsuarios from "./pages/master-admin/Usuarios";
-import MasterComissoes from "./pages/master-admin/Comissoes";
-import MasterAntifraude from "./pages/master-admin/Antifraude";
-import MasterProjecoes from "./pages/master-admin/Projecoes";
-import MasterCentral from "./pages/master-admin/Central";
-import NotificacoesVencimentoAudit from "./pages/master-admin/NotificacoesVencimento";
+const MasterDashboard = lazy(() => import("./pages/master-admin/Dashboard"));
+const MasterFinanceiro = lazy(() => import("./pages/master-admin/Financeiro"));
+const MasterAfiliados = lazy(() => import("./pages/master-admin/Afiliados"));
+const MasterLinhas = lazy(() => import("./pages/master-admin/Linhas"));
+const MasterWhatsApp = lazy(() => import("./pages/master-admin/WhatsApp"));
+const MasterWorkers = lazy(() => import("./pages/master-admin/Workers"));
+const MasterAuditoria = lazy(() => import("./pages/master-admin/Auditoria"));
+const MasterAlertas = lazy(() => import("./pages/master-admin/Alertas"));
+const MasterGateways = lazy(() => import("./pages/master-admin/Gateways"));
+const MasterPlanos = lazy(() => import("./pages/master-admin/Planos"));
+const MasterInfraestrutura = lazy(() => import("./pages/master-admin/Infraestrutura"));
+const MasterUsuarios = lazy(() => import("./pages/master-admin/Usuarios"));
+const MasterComissoes = lazy(() => import("./pages/master-admin/Comissoes"));
+const MasterAntifraude = lazy(() => import("./pages/master-admin/Antifraude"));
+const MasterProjecoes = lazy(() => import("./pages/master-admin/Projecoes"));
+const MasterCentral = lazy(() => import("./pages/master-admin/Central"));
+const NotificacoesVencimentoAudit = lazy(() => import("./pages/master-admin/NotificacoesVencimento"));
+
+const LoadingFallback = () => (
+  <div className="flex h-screen w-full items-center justify-center bg-zinc-950">
+    <div className="flex flex-col items-center gap-4">
+      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground animate-pulse">Carregando módulo...</p>
+    </div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
