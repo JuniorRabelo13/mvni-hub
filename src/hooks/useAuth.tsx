@@ -38,7 +38,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchRole = async (userId: string) => {
     try {
       console.log('[AUTH] Fetching role for:', userId);
-      // Query 'usuarios' table as requested in prompt
       const { data, error } = await supabase
         .from("usuarios")
         .select("role")
@@ -47,7 +46,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("[AUTH] Error fetching role from 'usuarios':", error);
-        // Fallback to 'profiles' table if 'usuarios' query fails
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("role")
@@ -58,15 +56,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (profileData) {
           console.log('[AUTH] Role loaded from profiles:', profileData.role);
           setRole(profileData.role);
-          return;
+          return profileData.role;
         }
       }
 
-      console.log('[AUTH] Role loaded from usuarios:', data?.role);
-      setRole(data?.role ?? 'user');
+      const roleResult = data?.role ?? 'user';
+      console.log('[AUTH] Role loaded from usuarios:', roleResult);
+      setRole(roleResult);
+      return roleResult;
     } catch (error) {
       console.error("[AUTH] Erro crítico ao buscar role:", error);
-      setRole('user'); // Fallback seguro
+      setRole('user');
+      return 'user';
     }
   };
 
@@ -80,23 +81,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         
         if (!mounted) return;
-        setSession(initialSession);
-
+        
         if (initialSession) {
-          console.log('[AUTH] Session found, setting isAuthReady');
-          setIsAuthReady(true); // Permitir que o app carregue o layout básico
+          setSession(initialSession);
           await fetchRole(initialSession.user.id);
         } else {
-          console.log('[AUTH] No session, setting isAuthReady');
+          setSession(null);
           setRole(null);
-          setIsAuthReady(true);
         }
       } catch (error) {
         console.error('[AUTH] Initialization error:', error);
-        if (mounted) setIsAuthReady(true);
       } finally {
         if (mounted) {
-          console.log('[AUTH] Loading complete');
+          console.log('[AUTH] Initialization complete, setting isAuthReady');
+          setIsAuthReady(true);
           setLoading(false);
         }
       }
@@ -109,22 +107,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (!mounted) return;
 
-      setSession(newSession);
-      
-      if (newSession) {
-        setIsAuthReady(true);
-        setLoading(true); // Voltamos ao loading enquanto buscamos o novo role
-        fetchRole(newSession.user.id).finally(() => {
-           if (mounted) {
-             setLoading(false);
-           }
-        });
-      } else {
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
         setRole(null);
         setViewAsUserId(null);
         localStorage.removeItem("view_as_user_id");
-        setLoading(false);
         setIsAuthReady(true);
+        setLoading(false);
+        return;
+      }
+
+      if (newSession) {
+        setSession(newSession);
+        // Só marca como pronto APÓS carregar o role se houver sessão nova
+        setLoading(true);
+        await fetchRole(newSession.user.id);
+        if (mounted) {
+          setIsAuthReady(true);
+          setLoading(false);
+        }
+      } else {
+        setSession(null);
+        setRole(null);
+        setIsAuthReady(true);
+        setLoading(false);
       }
     });
 
