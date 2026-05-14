@@ -80,6 +80,8 @@ const MasterProjecoes = lazy(() => import("./pages/master-admin/Projecoes"));
 const MasterCentral = lazy(() => import("./pages/master-admin/Central"));
 const NotificacoesVencimentoAudit = lazy(() => import("./pages/master-admin/NotificacoesVencimento"));
 const BaseGlobal = lazy(() => import("./pages/master-admin/BaseGlobal"));
+const MasterConfig = lazy(() => import("./pages/master-admin/MasterConfig"));
+
 
 
 const queryClient = new QueryClient();
@@ -161,7 +163,7 @@ const App = () => (
                 <Route path="/master/comissoes" element={<MasterComissoes />} />
                 <Route path="/master/antifraude" element={<MasterAntifraude />} />
                 <Route path="/master/projecoes" element={<MasterProjecoes />} />
-                <Route path="/master/config" element={<Dashboard />} />
+                <Route path="/master/config" element={<MasterConfig />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
