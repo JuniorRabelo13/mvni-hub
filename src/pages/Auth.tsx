@@ -28,6 +28,7 @@ export default function AuthPage() {
   const [params] = useSearchParams();
   const indicador = params.get("ref");
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) navigate("/", { replace: true });
@@ -69,23 +70,58 @@ export default function AuthPage() {
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoginError(null);
     const fd = new FormData(e.currentTarget);
     const parsed = loginSchema.safeParse({ email: fd.get("email"), password: fd.get("password") });
+    
     if (!parsed.success) {
-      toast.error("Credenciais inválidas");
+      setLoginError("Credenciais inválidas");
       return;
     }
+
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: parsed.data.email,
-      password: parsed.data.password,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("E-mail ou senha incorretos");
-      return;
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: parsed.data.email,
+        password: parsed.data.password,
+      });
+
+      if (error) {
+        setLoading(false);
+        if (error.message.includes("Invalid login credentials") || error.status === 400) {
+          setLoginError("E-mail ou senha incorretos. Verifique seus dados e tente novamente.");
+        } else if (error.message.includes("User not found")) {
+          setLoginError("Nenhuma conta encontrada com este e-mail.");
+        } else {
+          setLoginError("Erro ao conectar. Tente novamente em instantes.");
+        }
+        return;
+      }
+
+      if (data?.user) {
+        // Verificar status da conta na tabela usuarios
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("role, status")
+          .eq("id", data.user.id)
+          .single();
+
+        if (profileError) {
+          console.error("Erro ao buscar perfil:", profileError);
+        } else if (profile?.role === "representante" && profile?.status === "suspenso") {
+          await supabase.auth.signOut();
+          setLoading(false);
+          setLoginError("Sua conta está suspensa. Entre em contato com o administrador.");
+          return;
+        }
+      }
+
+      setLoading(false);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setLoading(false);
+      setLoginError("Erro ao conectar. Tente novamente em instantes.");
     }
-    navigate("/", { replace: true });
   };
 
   return (
@@ -126,6 +162,11 @@ export default function AuthPage() {
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="h-4 w-4 animate-spin" />} Entrar
                   </Button>
+                  {loginError && (
+                    <p className="text-sm font-medium text-destructive animate-in fade-in slide-in-from-top-1">
+                      {loginError}
+                    </p>
+                  )}
                 </form>
               </TabsContent>
 
