@@ -85,7 +85,8 @@ const App = () => (
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<ProtectedRoute requiredRole="master"><Dashboard /></ProtectedRoute>} />
+              <Route path="/painel" element={<Dashboard />} />
               <Route path="/clientes" element={<Clientes />} />
               <Route path="/estrutura" element={<Estrutura />} />
               <Route path="/ganhos" element={<Ganhos />} />
