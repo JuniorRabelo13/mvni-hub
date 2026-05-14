@@ -9,7 +9,7 @@ import React, { Suspense, lazy } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 // Layouts
-const AppLayout = lazy(() => import("@/components/AppLayout"));
+import AppLayout from "@/components/AppLayout";
 
 // Auth Pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -92,71 +92,75 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><AuthGuard loadingFallback={<LoadingScreen />}><Auth /></AuthGuard></Suspense>} />
+            <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><Auth /></Suspense>} />
             <Route path="/recuperar-senha" element={<Suspense fallback={<LoadingScreen />}><RecuperarSenha /></Suspense>} />
             <Route path="/nova-senha" element={<Suspense fallback={<LoadingScreen />}><NovaSenha /></Suspense>} />
             <Route path="/cadastro" element={<Suspense fallback={<LoadingScreen />}><Cadastro /></Suspense>} />
             <Route path="/cadastro/sucesso" element={<Suspense fallback={<LoadingScreen />}><CadastroSucesso /></Suspense>} />
-            <Route element={<Suspense fallback={<LoadingScreen />}><AuthGuard loadingFallback={<LoadingScreen />}><AppLayout /></AuthGuard></Suspense>}>
-              <Route path="/" element={<Suspense fallback={<LoadingScreen />}><Dashboard /></Suspense>} />
-              <Route path="/painel" element={<Suspense fallback={<LoadingScreen />}><Dashboard /></Suspense>} />
-              <Route path="/clientes" element={<Suspense fallback={<LoadingScreen />}><Clientes /></Suspense>} />
-              <Route path="/estrutura" element={<Suspense fallback={<LoadingScreen />}><Estrutura /></Suspense>} />
-              <Route path="/ganhos" element={<Suspense fallback={<LoadingScreen />}><Ganhos /></Suspense>} />
-              <Route path="/pagamentos" element={<Suspense fallback={<LoadingScreen />}><Pagamentos /></Suspense>} />
-              <Route path="/financeiro/saque" element={<Suspense fallback={<LoadingScreen />}><SaquePix /></Suspense>} />
-              <Route path="/financeiro/extrato" element={<Suspense fallback={<LoadingScreen />}><ExtratoFinanceiro /></Suspense>} />
-              <Route path="/configuracoes" element={<Suspense fallback={<LoadingScreen />}><Configuracoes /></Suspense>} />
-              <Route path="/equipe" element={<Suspense fallback={<LoadingScreen />}><Equipe /></Suspense>} />
-              <Route path="/admin" element={<Suspense fallback={<LoadingScreen />}><Admin /></Suspense>} />
-              <Route path="/admin/logs" element={<Suspense fallback={<LoadingScreen />}><AdminLogs /></Suspense>} />
-              <Route path="/admin/security" element={<Suspense fallback={<LoadingScreen />}><SecurityLogs /></Suspense>} />
-              <Route path="/admin/importacoes" element={<Suspense fallback={<LoadingScreen />}><Importacoes /></Suspense>} />
+            
+            {/* Private Routes Group - Suspense is handled inside AppLayout */}
+            <Route element={<AuthGuard><AppLayout /></AuthGuard>}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/painel" element={<Dashboard />} />
+              <Route path="/clientes" element={<Clientes />} />
+              <Route path="/estrutura" element={<Estrutura />} />
+              <Route path="/ganhos" element={<Ganhos />} />
+              <Route path="/pagamentos" element={<Pagamentos />} />
+              <Route path="/financeiro/saque" element={<SaquePix />} />
+              <Route path="/financeiro/extrato" element={<ExtratoFinanceiro />} />
+              <Route path="/configuracoes" element={<Configuracoes />} />
+              <Route path="/equipe" element={<Equipe />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/logs" element={<AdminLogs />} />
+              <Route path="/admin/security" element={<SecurityLogs />} />
+              <Route path="/admin/importacoes" element={<Importacoes />} />
 
               {/* SMS Module Routes */}
-              <Route path="/sms/dashboard" element={<Suspense fallback={<LoadingScreen />}><SMSDashboard /></Suspense>} />
-              <Route path="/sms/disparo" element={<Suspense fallback={<LoadingScreen />}><SMSDisparo /></Suspense>} />
-              <Route path="/sms/campanhas" element={<Suspense fallback={<LoadingScreen />}><SMSCampanhas /></Suspense>} />
-              <Route path="/sms/listas" element={<Suspense fallback={<LoadingScreen />}><SMSListas /></Suspense>} />
-              <Route path="/sms/listas/nova" element={<Suspense fallback={<LoadingScreen />}><SMSNovaLista /></Suspense>} />
-              <Route path="/sms/blacklist" element={<Suspense fallback={<LoadingScreen />}><SMSBlacklist /></Suspense>} />
-              <Route path="/sms/saida" element={<Suspense fallback={<LoadingScreen />}><SMSSaida /></Suspense>} />
-              <Route path="/sms/logs" element={<Suspense fallback={<LoadingScreen />}><SMSLogs /></Suspense>} />
-              <Route path="/sms/relatorios" element={<Suspense fallback={<LoadingScreen />}><SMSRelatorios /></Suspense>} />
-              <Route path="/sms/inbox" element={<Suspense fallback={<LoadingScreen />}><SMSInbox /></Suspense>} />
-              <Route path="/sms/api" element={<Suspense fallback={<LoadingScreen />}><SMSApi /></Suspense>} />
-              <Route path="/sms/webhooks" element={<Suspense fallback={<LoadingScreen />}><SMSWebhooks /></Suspense>} />
-              <Route path="/sms/configuracoes" element={<Suspense fallback={<LoadingScreen />}><SMSConfiguracoes /></Suspense>} />
+              <Route path="/sms/dashboard" element={<SMSDashboard />} />
+              <Route path="/sms/disparo" element={<SMSDisparo />} />
+              <Route path="/sms/campanhas" element={<SMSCampanhas />} />
+              <Route path="/sms/listas" element={<SMSListas />} />
+              <Route path="/sms/listas/nova" element={<SMSNovaLista />} />
+              <Route path="/sms/blacklist" element={<SMSBlacklist />} />
+              <Route path="/sms/saida" element={<SMSSaida />} />
+              <Route path="/sms/logs" element={<SMSLogs />} />
+              <Route path="/sms/relatorios" element={<SMSRelatorios />} />
+              <Route path="/sms/inbox" element={<SMSInbox />} />
+              <Route path="/sms/api" element={<SMSApi />} />
+              <Route path="/sms/webhooks" element={<SMSWebhooks />} />
+              <Route path="/sms/configuracoes" element={<SMSConfiguracoes />} />
 
               {/* WhatsApp Agent Module Routes */}
-              <Route path="/agente" element={<Suspense fallback={<LoadingScreen />}><AgenteDashboard /></Suspense>} />
-              <Route path="/agente/leads" element={<Suspense fallback={<LoadingScreen />}><AgenteLeads /></Suspense>} />
-              <Route path="/agente/agentes" element={<Suspense fallback={<LoadingScreen />}><AgenteAgentes /></Suspense>} />
-              <Route path="/agente/mensagens" element={<Suspense fallback={<LoadingScreen />}><AgenteMensagens /></Suspense>} />
-              <Route path="/agente/configuracoes" element={<Suspense fallback={<LoadingScreen />}><AgenteConfig /></Suspense>} />
+              <Route path="/agente" element={<AgenteDashboard />} />
+              <Route path="/agente/leads" element={<AgenteLeads />} />
+              <Route path="/agente/agentes" element={<AgenteAgentes />} />
+              <Route path="/agente/mensagens" element={<AgenteMensagens />} />
+              <Route path="/agente/configuracoes" element={<AgenteConfig />} />
 
               {/* Master Admin Routes */}
-              <Route path="/master/central" element={<Suspense fallback={<LoadingScreen />}><MasterCentral /></Suspense>} />
-              <Route path="/master/dashboard" element={<Suspense fallback={<LoadingScreen />}><MasterDashboard /></Suspense>} />
-              <Route path="/master/financeiro" element={<Suspense fallback={<LoadingScreen />}><MasterFinanceiro /></Suspense>} />
-              <Route path="/master/afiliados" element={<Suspense fallback={<LoadingScreen />}><MasterAfiliados /></Suspense>} />
-              <Route path="/master/linhas" element={<Suspense fallback={<LoadingScreen />}><MasterLinhas /></Suspense>} />
-              <Route path="/master/whatsapp" element={<Suspense fallback={<LoadingScreen />}><MasterWhatsApp /></Suspense>} />
-              <Route path="/master/clientes" element={<Suspense fallback={<LoadingScreen />}><Dashboard /></Suspense>} />
-              <Route path="/master/telecom" element={<Suspense fallback={<LoadingScreen />}><Dashboard /></Suspense>} />
-              <Route path="/master/workers" element={<Suspense fallback={<LoadingScreen />}><MasterWorkers /></Suspense>} />
-              <Route path="/master/auditoria" element={<Suspense fallback={<LoadingScreen />}><MasterAuditoria /></Suspense>} />
-              <Route path="/master/notificacoes" element={<Suspense fallback={<LoadingScreen />}><NotificacoesVencimentoAudit /></Suspense>} />
-              <Route path="/master/alertas" element={<Suspense fallback={<LoadingScreen />}><MasterAlertas /></Suspense>} />
-              <Route path="/master/gateways" element={<Suspense fallback={<LoadingScreen />}><MasterGateways /></Suspense>} />
-              <Route path="/master/planos" element={<Suspense fallback={<LoadingScreen />}><MasterPlanos /></Suspense>} />
-              <Route path="/master/infraestrutura" element={<Suspense fallback={<LoadingScreen />}><MasterInfraestrutura /></Suspense>} />
-              <Route path="/master/usuarios" element={<Suspense fallback={<LoadingScreen />}><MasterUsuarios /></Suspense>} />
-              <Route path="/master/comissoes" element={<Suspense fallback={<LoadingScreen />}><MasterComissoes /></Suspense>} />
-              <Route path="/master/antifraude" element={<Suspense fallback={<LoadingScreen />}><MasterAntifraude /></Suspense>} />
-              <Route path="/master/projecoes" element={<Suspense fallback={<LoadingScreen />}><MasterProjecoes /></Suspense>} />
-              <Route path="/master/config" element={<Suspense fallback={<LoadingScreen />}><Dashboard /></Suspense>} />
+              <Route path="/master/central" element={<MasterCentral />} />
+              <Route path="/master/dashboard" element={<MasterDashboard />} />
+              <Route path="/master/financeiro" element={<MasterFinanceiro />} />
+              <Route path="/master/afiliados" element={<MasterAfiliados />} />
+              <Route path="/master/linhas" element={<MasterLinhas />} />
+              <Route path="/master/whatsapp" element={<MasterWhatsApp />} />
+              <Route path="/master/clientes" element={<Dashboard />} />
+              <Route path="/master/telecom" element={<Dashboard />} />
+              <Route path="/master/workers" element={<MasterWorkers />} />
+              <Route path="/master/auditoria" element={<MasterAuditoria />} />
+              <Route path="/master/notificacoes" element={<NotificacoesVencimentoAudit />} />
+              <Route path="/master/alertas" element={<MasterAlertas />} />
+              <Route path="/master/gateways" element={<MasterGateways />} />
+              <Route path="/master/planos" element={<MasterPlanos />} />
+              <Route path="/master/infraestrutura" element={<MasterInfraestrutura />} />
+              <Route path="/master/usuarios" element={<MasterUsuarios />} />
+              <Route path="/master/comissoes" element={<MasterComissoes />} />
+              <Route path="/master/antifraude" element={<MasterAntifraude />} />
+              <Route path="/master/projecoes" element={<MasterProjecoes />} />
+              <Route path="/master/config" element={<Dashboard />} />
             </Route>
+
+            {/* Other Public Routes */}
             <Route path="/termos" element={<Suspense fallback={<LoadingScreen />}><Termos /></Suspense>} />
             <Route path="/privacidade" element={<Suspense fallback={<LoadingScreen />}><Privacy /></Suspense>} />
             <Route path="*" element={<Suspense fallback={<LoadingScreen />}><NotFound /></Suspense>} />

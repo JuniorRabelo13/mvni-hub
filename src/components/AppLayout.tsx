@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { LoadingScreen } from "./LoadingScreen";
 import { 
   LayoutDashboard, 
   Users, 
@@ -254,7 +255,9 @@ export default function AppLayout() {
               </Button>
             </div>
           )}
-          <Outlet />
+          <Suspense fallback={<LoadingScreen />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>
