@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
+import { AuthGuard } from "@/components/AuthGuard";
 
 import AppLayout from "@/components/AppLayout";
 import Auth from "./pages/Auth";
@@ -78,76 +79,78 @@ const App = () => (
       <Sonner theme="dark" />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-            <Route path="/nova-senha" element={<NovaSenha />} />
-            <Route path="/cadastro" element={<Cadastro />} />
-            <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/painel" element={<Dashboard />} />
-              <Route path="/clientes" element={<Clientes />} />
-              <Route path="/estrutura" element={<Estrutura />} />
-              <Route path="/ganhos" element={<Ganhos />} />
-              <Route path="/pagamentos" element={<Pagamentos />} />
-              <Route path="/financeiro/saque" element={<SaquePix />} />
-              <Route path="/financeiro/extrato" element={<ExtratoFinanceiro />} />
-              <Route path="/configuracoes" element={<Configuracoes />} />
-              <Route path="/equipe" element={<Equipe />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/logs" element={<AdminLogs />} />
-              <Route path="/admin/security" element={<SecurityLogs />} />
-              <Route path="/admin/importacoes" element={<Importacoes />} />
+          <AuthGuard>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+              <Route path="/nova-senha" element={<NovaSenha />} />
+              <Route path="/cadastro" element={<Cadastro />} />
+              <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/painel" element={<Dashboard />} />
+                <Route path="/clientes" element={<Clientes />} />
+                <Route path="/estrutura" element={<Estrutura />} />
+                <Route path="/ganhos" element={<Ganhos />} />
+                <Route path="/pagamentos" element={<Pagamentos />} />
+                <Route path="/financeiro/saque" element={<SaquePix />} />
+                <Route path="/financeiro/extrato" element={<ExtratoFinanceiro />} />
+                <Route path="/configuracoes" element={<Configuracoes />} />
+                <Route path="/equipe" element={<Equipe />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/logs" element={<AdminLogs />} />
+                <Route path="/admin/security" element={<SecurityLogs />} />
+                <Route path="/admin/importacoes" element={<Importacoes />} />
 
-              {/* SMS Module Routes */}
-              <Route path="/sms/dashboard" element={<SMSDashboard />} />
-              <Route path="/sms/disparo" element={<SMSDisparo />} />
-              <Route path="/sms/campanhas" element={<SMSCampanhas />} />
-              <Route path="/sms/listas" element={<SMSListas />} />
-              <Route path="/sms/listas/nova" element={<SMSNovaLista />} />
-              <Route path="/sms/blacklist" element={<SMSBlacklist />} />
-              <Route path="/sms/saida" element={<SMSSaida />} />
-              <Route path="/sms/logs" element={<SMSLogs />} />
-              <Route path="/sms/relatorios" element={<SMSRelatorios />} />
-              <Route path="/sms/inbox" element={<SMSInbox />} />
-              <Route path="/sms/api" element={<SMSApi />} />
-              <Route path="/sms/webhooks" element={<SMSWebhooks />} />
-              <Route path="/sms/configuracoes" element={<SMSConfiguracoes />} />
+                {/* SMS Module Routes */}
+                <Route path="/sms/dashboard" element={<SMSDashboard />} />
+                <Route path="/sms/disparo" element={<SMSDisparo />} />
+                <Route path="/sms/campanhas" element={<SMSCampanhas />} />
+                <Route path="/sms/listas" element={<SMSListas />} />
+                <Route path="/sms/listas/nova" element={<SMSNovaLista />} />
+                <Route path="/sms/blacklist" element={<SMSBlacklist />} />
+                <Route path="/sms/saida" element={<SMSSaida />} />
+                <Route path="/sms/logs" element={<SMSLogs />} />
+                <Route path="/sms/relatorios" element={<SMSRelatorios />} />
+                <Route path="/sms/inbox" element={<SMSInbox />} />
+                <Route path="/sms/api" element={<SMSApi />} />
+                <Route path="/sms/webhooks" element={<SMSWebhooks />} />
+                <Route path="/sms/configuracoes" element={<SMSConfiguracoes />} />
 
-              {/* WhatsApp Agent Module Routes */}
-              <Route path="/agente" element={<AgenteDashboard />} />
-              <Route path="/agente/leads" element={<AgenteLeads />} />
-              <Route path="/agente/agentes" element={<AgenteAgentes />} />
-              <Route path="/agente/mensagens" element={<AgenteMensagens />} />
-              <Route path="/agente/configuracoes" element={<AgenteConfig />} />
+                {/* WhatsApp Agent Module Routes */}
+                <Route path="/agente" element={<AgenteDashboard />} />
+                <Route path="/agente/leads" element={<AgenteLeads />} />
+                <Route path="/agente/agentes" element={<AgenteAgentes />} />
+                <Route path="/agente/mensagens" element={<AgenteMensagens />} />
+                <Route path="/agente/configuracoes" element={<AgenteConfig />} />
 
-              {/* Master Admin Routes */}
-              <Route path="/master/central" element={<MasterCentral />} />
-              <Route path="/master/dashboard" element={<MasterDashboard />} />
-              <Route path="/master/financeiro" element={<MasterFinanceiro />} />
-              <Route path="/master/afiliados" element={<MasterAfiliados />} />
-              <Route path="/master/linhas" element={<MasterLinhas />} />
-              <Route path="/master/whatsapp" element={<MasterWhatsApp />} />
-              <Route path="/master/clientes" element={<Dashboard />} />
-              <Route path="/master/telecom" element={<Dashboard />} />
-              <Route path="/master/workers" element={<MasterWorkers />} />
-              <Route path="/master/auditoria" element={<MasterAuditoria />} />
-              <Route path="/master/notificacoes" element={<NotificacoesVencimentoAudit />} />
-              <Route path="/master/alertas" element={<MasterAlertas />} />
-              <Route path="/master/gateways" element={<MasterGateways />} />
-              <Route path="/master/planos" element={<MasterPlanos />} />
-              <Route path="/master/infraestrutura" element={<MasterInfraestrutura />} />
-              <Route path="/master/usuarios" element={<MasterUsuarios />} />
-              <Route path="/master/comissoes" element={<MasterComissoes />} />
-              <Route path="/master/antifraude" element={<MasterAntifraude />} />
-              <Route path="/master/projecoes" element={<MasterProjecoes />} />
-              <Route path="/master/config" element={<Dashboard />} />
-            </Route>
-            <Route path="/termos" element={<Termos />} />
-            <Route path="/privacidade" element={<Privacy />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+                {/* Master Admin Routes */}
+                <Route path="/master/central" element={<MasterCentral />} />
+                <Route path="/master/dashboard" element={<MasterDashboard />} />
+                <Route path="/master/financeiro" element={<MasterFinanceiro />} />
+                <Route path="/master/afiliados" element={<MasterAfiliados />} />
+                <Route path="/master/linhas" element={<MasterLinhas />} />
+                <Route path="/master/whatsapp" element={<MasterWhatsApp />} />
+                <Route path="/master/clientes" element={<Dashboard />} />
+                <Route path="/master/telecom" element={<Dashboard />} />
+                <Route path="/master/workers" element={<MasterWorkers />} />
+                <Route path="/master/auditoria" element={<MasterAuditoria />} />
+                <Route path="/master/notificacoes" element={<NotificacoesVencimentoAudit />} />
+                <Route path="/master/alertas" element={<MasterAlertas />} />
+                <Route path="/master/gateways" element={<MasterGateways />} />
+                <Route path="/master/planos" element={<MasterPlanos />} />
+                <Route path="/master/infraestrutura" element={<MasterInfraestrutura />} />
+                <Route path="/master/usuarios" element={<MasterUsuarios />} />
+                <Route path="/master/comissoes" element={<MasterComissoes />} />
+                <Route path="/master/antifraude" element={<MasterAntifraude />} />
+                <Route path="/master/projecoes" element={<MasterProjecoes />} />
+                <Route path="/master/config" element={<Dashboard />} />
+              </Route>
+              <Route path="/termos" element={<Termos />} />
+              <Route path="/privacidade" element={<Privacy />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthGuard>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
