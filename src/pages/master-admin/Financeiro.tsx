@@ -123,7 +123,19 @@ export default function MasterFinanceiro() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comissoes_mensais")
-// ...
+        .select(`
+          id,
+          valor_total,
+          valor_ativacoes,
+          valor_recorrencia_direta,
+          valor_recorrencia_indireta,
+          status,
+          clientes_diretos_ativos,
+          clientes_indiretos_ativos,
+          usuarios (
+            nome
+          )
+        `)
         .eq("mes_referencia", selectedMes)
         .order("valor_total", { ascending: false });
 
