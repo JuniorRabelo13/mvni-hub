@@ -125,10 +125,10 @@ export default function AppLayout() {
         )}
 
         <nav className="flex-1 space-y-4 px-3 overflow-y-auto pt-4">
-        {!loading && isMasterAdmin && (
+          {!loading && isMasterAdmin && (
             <div className="space-y-1">
               <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
-                <Crown className="h-3 w-3" /> Master Owner
+                MASTER OWNER
               </p>
               {masterItems.map(({ to, label, icon: Icon }) => (
                 <NavLink
