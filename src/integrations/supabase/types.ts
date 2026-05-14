@@ -228,60 +228,6 @@ export type Database = {
           },
         ]
       }
-      cobrancas: {
-        Row: {
-          cliente_id: string
-          created_at: string
-          id: string
-          is_primeira: boolean
-          linha_id: string
-          pago_em: string | null
-          status: Database["public"]["Enums"]["cobranca_status"]
-          user_id: string
-          valor: number
-          vencimento: string
-        }
-        Insert: {
-          cliente_id: string
-          created_at?: string
-          id?: string
-          is_primeira?: boolean
-          linha_id: string
-          pago_em?: string | null
-          status?: Database["public"]["Enums"]["cobranca_status"]
-          user_id: string
-          valor?: number
-          vencimento: string
-        }
-        Update: {
-          cliente_id?: string
-          created_at?: string
-          id?: string
-          is_primeira?: boolean
-          linha_id?: string
-          pago_em?: string | null
-          status?: Database["public"]["Enums"]["cobranca_status"]
-          user_id?: string
-          valor?: number
-          vencimento?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cobrancas_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cobrancas_linha_id_fkey"
-            columns: ["linha_id"]
-            isOneToOne: false
-            referencedRelation: "linhas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       comissoes: {
         Row: {
           cliente_id: string
