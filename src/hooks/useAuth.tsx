@@ -7,6 +7,7 @@ type Ctx = {
   effectiveUser: { id: string; email?: string } | null;
   session: Session | null;
   loading: boolean;
+  role: string | null;
   signOut: () => Promise<void>;
   viewAs: (userId: string | null) => void;
   isViewingAs: boolean;
@@ -17,6 +18,7 @@ const AuthCtx = createContext<Ctx>({
   effectiveUser: null,
   session: null, 
   loading: true, 
+  role: null,
   signOut: async () => {},
   viewAs: () => {},
   isViewingAs: false
