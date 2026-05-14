@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { QueryError } from "@/components/QueryError";
 
 export default function MasterAuditoria() {
   const { user, role, isAuthReady } = useAuth();
