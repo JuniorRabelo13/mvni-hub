@@ -117,7 +117,17 @@ export default function AuthPage() {
       }
 
       setLoading(false);
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+
+    if (profile?.role === "master") {
       navigate("/", { replace: true });
+    } else {
+      navigate("/painel", { replace: true });
+    }
     } catch (err) {
       setLoading(false);
       setLoginError("Erro ao conectar. Tente novamente em instantes.");
