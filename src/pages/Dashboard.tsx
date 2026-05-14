@@ -259,7 +259,7 @@ export default function Dashboard() {
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Recorrente Direto</p>
-                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`recorrente-${simulacao.ganhoRecorrenteDireto}`}>
+                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95">
                   {fmt(simulacao.ganhoRecorrenteDireto)}
                 </p>
               </div>
