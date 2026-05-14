@@ -38,18 +38,26 @@ import { useIsMasterAdmin } from "@/hooks/useIsMasterAdmin";
 export default function AppLayout() {
   const { user, effectiveUser, signOut, viewAs, isViewingAs } = useAuth();
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const { data: isMasterAdmin } = useIsMasterAdmin();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
     async function checkRole() {
       if (user) {
-        const { data } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-        setIsAdmin(data?.role === "admin");
+        setRoleLoading(true);
+        const { data } = await supabase
+          .from("usuarios")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        setUserRole(data?.role || "representante");
+        setRoleLoading(false);
       }
     }
     checkRole();
   }, [user]);
+
+  const isMasterAdmin = userRole === "master";
 
   const navItems = [
     { to: "/", label: "Painel", icon: LayoutDashboard, end: true },
@@ -89,7 +97,7 @@ export default function AppLayout() {
     { to: "/master/config", label: "Master Config", icon: Settings },
   ];
 
-  if (isAdmin) {
+  if (userRole === "admin" || userRole === "master") {
     navItems.push({ to: "/admin", label: "Admin Global", icon: ShieldCheck });
     navItems.push({ to: "/admin/logs", label: "Logs Admin", icon: ScrollText });
     navItems.push({ to: "/admin/security", label: "Logs Segurança", icon: ShieldAlert });
@@ -114,7 +122,7 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {isMasterAdmin && (
+        {!roleLoading && isMasterAdmin && (
           <div className="px-3 mb-3">
             <NavLink
               to="/master/central"
@@ -134,7 +142,7 @@ export default function AppLayout() {
         )}
 
         <nav className="flex-1 space-y-4 px-3 overflow-y-auto pt-4">
-          {isMasterAdmin && (
+          {!roleLoading && isMasterAdmin && (
             <div className="space-y-1">
               <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
                 <Crown className="h-3 w-3" /> Master Owner
@@ -207,7 +215,7 @@ export default function AppLayout() {
 
         <div className="border-t border-sidebar-border p-4">
           <div className="mb-3 truncate text-xs text-muted-foreground flex items-center gap-2">
-            {isMasterAdmin && <Crown className="h-3 w-3 text-primary shrink-0" />}
+            {!roleLoading && isMasterAdmin && <Crown className="h-3 w-3 text-primary shrink-0" />}
             <span className="truncate">{user?.email}</span>
           </div>
           <Button variant="outline" size="sm" className="w-full" onClick={handleSignOut}>
