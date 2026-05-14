@@ -20,6 +20,7 @@ const AuthCtx = createContext<Ctx>({
   session: null, 
   loading: true, 
   role: null,
+  authenticated: false,
   signOut: async () => {},
   viewAs: () => {},
   isViewingAs: false
@@ -102,6 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       session, 
       loading, 
       role,
+      authenticated: !!session,
       signOut,
       viewAs,
       isViewingAs: !!viewAsUserId
