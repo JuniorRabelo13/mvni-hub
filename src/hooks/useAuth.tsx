@@ -27,33 +27,51 @@ const AuthCtx = createContext<Ctx>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(localStorage.getItem("view_as_user_id"));
+
+  const fetchRole = async (userId: string) => {
+    try {
+      const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
+      setRole(data?.role ?? null);
+    } catch (error) {
+      console.error("Erro ao buscar role:", error);
+      setRole(null);
+    }
+  };
 
   useEffect(() => {
     // 1) listener primeiro
     const { data: sub } = supabase.auth.onAuthStateChange(async (_e, s) => {
       setSession(s);
-      setLoading(false);
       
       if (!s) {
+        setRole(null);
         setViewAsUserId(null);
         localStorage.removeItem("view_as_user_id");
+        setLoading(false);
       } else {
+        await fetchRole(s.user.id);
+        
         // Validar se o usuário é admin se estiver no modo "ver como"
         const storedViewAs = localStorage.getItem("view_as_user_id");
         if (storedViewAs) {
           const { data } = await supabase.from("profiles").select("role").eq("id", s.user.id).single();
-          if (data?.role !== "admin") {
+          if (data?.role !== "admin" && data?.role !== "master") {
             setViewAsUserId(null);
             localStorage.removeItem("view_as_user_id");
           }
         }
+        setLoading(false);
       }
     });
 
     // 2) sessão inicial
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
+      if (data.session) {
+        await fetchRole(data.session.user.id);
+      }
       setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
