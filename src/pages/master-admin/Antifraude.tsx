@@ -70,7 +70,7 @@ const MasterAntifraude = () => {
   });
 
   const stats = useMemo(() => {
-    const suspended = profiles?.filter(p => p.status === "suspenso")?.length || 0;
+    const suspended = profiles?.filter(p => (p.status as string) === "suspenso")?.length || 0;
     const blocked = profiles?.filter(p => p.is_blocked)?.length || 0;
     const highRisk = profiles?.filter(p => (p.risk_score || 0) >= 80)?.length || 0;
     const activeAlerts = whatsappAlerts?.length || 0;
