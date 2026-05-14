@@ -8,6 +8,7 @@ type Ctx = {
   session: Session | null;
   loading: boolean;
   role: string | null;
+  authenticated: boolean;
   signOut: () => Promise<void>;
   viewAs: (userId: string | null) => void;
   isViewingAs: boolean;
@@ -19,6 +20,7 @@ const AuthCtx = createContext<Ctx>({
   session: null, 
   loading: true, 
   role: null,
+  authenticated: false,
   signOut: async () => {},
   viewAs: () => {},
   isViewingAs: false
@@ -101,6 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       session, 
       loading, 
       role,
+      authenticated: !!session,
       signOut,
       viewAs,
       isViewingAs: !!viewAsUserId

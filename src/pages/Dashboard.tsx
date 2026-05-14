@@ -244,7 +244,7 @@ export default function Dashboard() {
             <div className="grid gap-4 pt-4 border-t border-white/5 sm:grid-cols-5">
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Indicações Diretas</p>
-                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`diretos-${diretos}`}>
+                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95">
                   {diretos} associados diretos
                 </p>
               </div>
@@ -253,25 +253,25 @@ export default function Dashboard() {
                   <p className="text-[10px] text-muted-foreground uppercase tracking-widest">GANHO IMEDIATO DE ATIVAÇÃO</p>
                   <Badge className="bg-gradient-gold text-[7px] h-3.5 w-fit px-1 border-none font-bold text-primary-foreground uppercase leading-none">Recebimento único</Badge>
                 </div>
-                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`ativacao-${simulacao.comissaoAtivacao}`}>
+                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95">
                   {fmt(simulacao.comissaoAtivacao)}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Recorrente Direto</p>
-                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`recorrente-${simulacao.ganhoRecorrenteDireto}`}>
+                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95">
                   {fmt(simulacao.ganhoRecorrenteDireto)}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Bônus Indireto</p>
-                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95" key={`indireto-${simulacao.ganhoIndireto}`}>
+                <p className="text-lg font-semibold transition-all duration-300 animate-in fade-in zoom-in-95">
                   {fmt(simulacao.ganhoIndireto)}
                 </p>
               </div>
               <div className="space-y-1 pt-2 sm:pt-0 sm:text-right border-t sm:border-t-0 sm:border-l border-white/5 sm:pl-4">
                 <p className="text-[10px] text-primary uppercase tracking-widest font-bold">GANHO RECORRENTE MENSAL</p>
-                <p className="text-3xl font-black text-gradient-gold transition-all duration-300 animate-in fade-in zoom-in-95" key={`total-${simulacao.total}`}>
+                <p className="text-3xl font-black text-gradient-gold transition-all duration-300 animate-in fade-in zoom-in-95">
                   {fmt(simulacao.total)}
                 </p>
                 <p className="text-[9px] text-primary/70 italic mt-1 font-medium">
@@ -283,7 +283,7 @@ export default function Dashboard() {
             <div className="mt-6 p-6 rounded-2xl bg-zinc-900/60 border border-primary/20 flex items-center justify-between">
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-1">Ganho Anual Estimado</p>
-                <p className="text-4xl font-black text-white transition-all duration-300 animate-in fade-in zoom-in-95" key={`anual-${simulacao.total * 12}`}>
+                <p className="text-4xl font-black text-white transition-all duration-300 animate-in fade-in zoom-in-95">
                   {fmt(simulacao.total * 12)}
                 </p>
                 <div className="mt-2 space-y-1">
