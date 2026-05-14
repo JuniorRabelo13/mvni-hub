@@ -9,6 +9,7 @@ type Ctx = {
   loading: boolean;
   role: string | null;
   authenticated: boolean;
+  isAuthReady: boolean;
   signOut: () => Promise<void>;
   viewAs: (userId: string | null) => void;
   isViewingAs: boolean;
@@ -21,6 +22,7 @@ const AuthCtx = createContext<Ctx>({
   loading: true, 
   role: null,
   authenticated: false,
+  isAuthReady: false,
   signOut: async () => {},
   viewAs: () => {},
   isViewingAs: false
@@ -29,6 +31,7 @@ const AuthCtx = createContext<Ctx>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(localStorage.getItem("view_as_user_id"));
 
@@ -68,6 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (mounted) {
           console.log('[AUTH] Loading complete');
           setLoading(false);
+          setIsAuthReady(true);
         }
       }
     };
@@ -90,6 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       setLoading(false);
+      setIsAuthReady(true);
     });
 
     return () => {

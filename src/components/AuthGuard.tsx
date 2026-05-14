@@ -32,10 +32,10 @@ const MASTER_ONLY_ROUTES = [
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { loading, authenticated, role } = useAuth()
+  const { loading, authenticated, role, isAuthReady } = useAuth()
 
   useEffect(() => {
-    if (loading) return;
+    if (!isAuthReady) return;
 
     const isPublicRoute = PUBLIC_ROUTES.includes(location.pathname);
     
@@ -69,7 +69,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [loading, authenticated, role, location.pathname, navigate]);
 
-  if (loading) {
+  if (!isAuthReady) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
