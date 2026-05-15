@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const BATCH_SIZE = 1000;
+const PARALLEL_CALLS = 3;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -16,91 +19,64 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
+  const workerId = crypto.randomUUID();
+
   try {
-    let continueProcessing = true;
-    let processedCount = 0;
+    // 1. Processamento em paralelo com Promise.all
+    const runBatch = async () => {
+      let totalProcessed = 0;
+      
+      // Busca um lote de chunks (até 1000)
+      const { data: chunks, error: claimError } = await supabaseAdmin.rpc("claim_batch_import_chunks", { 
+        p_batch_size: BATCH_SIZE 
+      });
 
-    while (continueProcessing && processedCount < 50) { // Limit loop per execution to avoid timeout
-      // 1. Reivindicar próximo chunk
-      const { data: chunk, error: claimError } = await supabaseAdmin.rpc("claim_next_import_chunk");
+      if (claimError || !chunks || chunks.length === 0) return 0;
 
-      if (claimError) {
-        console.error("Erro ao reivindicar chunk:", claimError);
-        break;
-      }
-
-      if (!chunk) {
-        console.log("Nenhum chunk pendente encontrado.");
-        break;
-      }
-
-      // 2. Verificar proteção contra loop infinito e cancelamento (conforme ETAPA 6)
-      const { data: job, error: jobError } = await supabaseAdmin
-        .from("import_jobs")
-        .select("status, cancelado")
-        .eq("id", chunk.job_id)
-        .single();
-
-      if (jobError || !job || job.cancelado || job.status === "canceled" || job.status === "done" || chunk.tentativas >= 3) {
-        console.log(`Parando processamento para chunk ${chunk.id}: Job cancelado ou limite atingido.`);
-        
-        // Se cancelado ou limite de tentativas atingido, atualizar chunk
-        if (chunk.tentativas >= 3) {
-          await supabaseAdmin.rpc("fail_import_chunk", { 
-            p_chunk_id: chunk.id, 
-            p_erro: "Limite de tentativas (3) atingido." 
-          });
-        }
-        continue;
-      }
+      const payloads = chunks.map((c: any) => c.payload);
+      const chunkIds = chunks.map((c: any) => c.id);
 
       try {
-        console.log(`Processando chunk ${chunk.id} do job ${chunk.job_id}...`);
-        
-        // LOGICA DE IMPORTAÇÃO (Exemplo genérico)
-        // Aqui você integraria com a lógica real de processamento de clientes/linhas
-        // Para este exemplo, apenas simulamos sucesso
-        
-        // 3. Simular sucesso
-        const { error: updateError } = await supabaseAdmin
+        // 2. UPSERT massivo em uma única query SQL via RPC
+        const { error: upsertError } = await supabaseAdmin.rpc("upsert_import_batch", { 
+          p_payloads: payloads 
+        });
+
+        if (upsertError) throw upsertError;
+
+        // 3. Marcar chunks como concluídos em massa
+        await supabaseAdmin
           .from("import_chunks")
           .update({ status: "done", updated_at: new Date().toISOString() })
-          .eq("id", chunk.id);
+          .in("id", chunkIds);
 
-        if (updateError) throw updateError;
-
-        // Atualizar progresso do job
-        const { data: currentJob } = await supabaseAdmin
-          .from("import_jobs")
-          .select("linhas_processadas, total_linhas")
-          .eq("id", chunk.id)
-          .single();
-        
-        // Nota: Idealmente usar um incremento atômico no DB
-        await supabaseAdmin.rpc("increment_job_progress", { p_job_id: chunk.job_id });
-
-      } catch (err: any) {
-        console.error(`Falha no chunk ${chunk.id}:`, err);
-        
-        // ETAPA 2 — RETRY COM BACKOFF
-        await supabaseAdmin.rpc("fail_import_chunk", { 
-          p_chunk_id: chunk.id, 
-          p_erro: err.message || "Erro desconhecido durante o processamento" 
+        // 4. Atualizar progresso do job (incremento atômico para evitar concorrência)
+        const jobId = chunks[0].job_id;
+        await supabaseAdmin.rpc("increment_job_progress_batch", { 
+          p_job_id: jobId, 
+          p_amount: chunks.length 
         });
 
-        // Registrar no log de erros (ETAPA 3)
-        await supabaseAdmin.from("import_logs").insert({
-          job_id: chunk.job_id,
-          cnpj: chunk.payload?.cnpj || null,
-          erro: err.message,
-          payload: chunk.payload
-        });
+        totalProcessed = chunks.length;
+      } catch (err) {
+        console.error("Erro no batch upsert:", err);
+        // Fallback: marcar chunks individuais como falha
+        for (const id of chunkIds) {
+          await supabaseAdmin.rpc("fail_import_chunk", { p_chunk_id: id, p_erro: err.message });
+        }
       }
 
-      processedCount++;
-    }
+      // 5. Heartbeat atualizado a cada batch
+      await supabaseAdmin.rpc("update_import_heartbeat", { p_worker_id: workerId });
 
-    return new Response(JSON.stringify({ success: true, processed: processedCount }), {
+      return totalProcessed;
+    };
+
+    // Executa 3 chamadas simultâneas
+    const results = await Promise.all(Array(PARALLEL_CALLS).fill(null).map(() => runBatch()));
+    const processedCount = results.reduce((a, b) => a + b, 0);
+
+    return new Response(JSON.stringify({ success: true, processed: processedCount, worker_id: workerId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

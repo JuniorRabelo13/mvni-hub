@@ -2593,6 +2593,10 @@ export type Database = {
         Returns: boolean
       }
       increment_job_progress: { Args: { p_job_id: string }; Returns: undefined }
+      increment_job_progress_batch: {
+        Args: { p_amount: number; p_job_id: string }
+        Returns: undefined
+      }
       is_master_admin: { Args: { _user_id: string }; Returns: boolean }
       liberar_transacao_wallet: {
         Args: { p_transacao_id: string; p_valor: number; p_wallet_id: string }
