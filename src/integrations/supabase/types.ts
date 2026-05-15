@@ -588,6 +588,24 @@ export type Database = {
           },
         ]
       }
+      import_heartbeats: {
+        Row: {
+          active_jobs: string[] | null
+          last_ping: string | null
+          worker_id: string
+        }
+        Insert: {
+          active_jobs?: string[] | null
+          last_ping?: string | null
+          worker_id?: string
+        }
+        Update: {
+          active_jobs?: string[] | null
+          last_ping?: string | null
+          worker_id?: string
+        }
+        Relationships: []
+      }
       import_jobs: {
         Row: {
           cancelado: boolean | null
@@ -2406,6 +2424,26 @@ export type Database = {
         Args: { p_function_name: string; p_user_id: string }
         Returns: undefined
       }
+      claim_batch_import_chunks: {
+        Args: { p_batch_size?: number }
+        Returns: {
+          created_at: string | null
+          erro: string | null
+          id: string
+          job_id: string | null
+          payload: Json
+          proxima_tentativa: string | null
+          status: string
+          tentativas: number | null
+          updated_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "import_chunks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_next_import_chunk: {
         Args: never
         Returns: {
@@ -2614,6 +2652,11 @@ export type Database = {
         Args: { p_campaign_id: string }
         Returns: undefined
       }
+      update_import_heartbeat: {
+        Args: { p_worker_id: string }
+        Returns: undefined
+      }
+      upsert_import_batch: { Args: { p_payloads: Json[] }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user" | "master_admin"
