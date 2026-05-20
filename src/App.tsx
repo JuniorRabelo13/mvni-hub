@@ -116,7 +116,7 @@ const App = () => (
               <Route path="/privacidade" element={<Privacy />} />
 
               <Route element={<AppLayout />}>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<RootRedirect />} />
                 <Route path="/painel" element={<Dashboard />} />
                 <Route path="/clientes" element={<Clientes />} />
                 <Route path="/estrutura" element={<Estrutura />} />
