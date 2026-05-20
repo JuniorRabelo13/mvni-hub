@@ -7,8 +7,18 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
 
 import React, { Suspense, lazy } from "react";
+import { Navigate } from "react-router-dom";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import AppLayout from "@/components/AppLayout";
+import { useAuth } from "@/hooks/useAuth";
+
+function RootRedirect() {
+  const { isAuthReady, authenticated, role } = useAuth();
+  if (!isAuthReady) return <LoadingScreen />;
+  if (!authenticated) return <Navigate to="/auth" replace />;
+  if (role === "master" || role === "master_admin") return <Navigate to="/master/central" replace />;
+  return <Navigate to="/painel" replace />;
+}
 
 // Auth Pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -106,7 +116,7 @@ const App = () => (
               <Route path="/privacidade" element={<Privacy />} />
 
               <Route element={<AppLayout />}>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<RootRedirect />} />
                 <Route path="/painel" element={<Dashboard />} />
                 <Route path="/clientes" element={<Clientes />} />
                 <Route path="/estrutura" element={<Estrutura />} />

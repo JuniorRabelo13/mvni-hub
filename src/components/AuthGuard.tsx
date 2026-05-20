@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 const PUBLIC_ROUTES = ["/auth", "/cadastro", "/cadastro/sucesso", "/termos", "/recuperar-senha", "/nova-senha"];
-const MASTER_ONLY_ROUTES = ["/", "/bi-executivo", "/projecoes-futuras", "/financeiro-global", "/gestao-comissoes", "/rede-afiliados", "/base-global", "/whatsapp-engine", "/infra-telecom", "/ia-workers", "/centro-critico", "/antifraude-risco", "/auditoria-global", "/usuarios-permissoes", "/master-config"];
+const MASTER_ONLY_ROUTES = ["/bi-executivo", "/projecoes-futuras", "/financeiro-global", "/gestao-comissoes", "/rede-afiliados", "/base-global", "/whatsapp-engine", "/infra-telecom", "/ia-workers", "/centro-critico", "/antifraude-risco", "/auditoria-global", "/usuarios-permissoes", "/master-config"];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
