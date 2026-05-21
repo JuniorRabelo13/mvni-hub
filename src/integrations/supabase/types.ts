@@ -2260,6 +2260,282 @@ export type Database = {
           },
         ]
       }
+      system_alerts: {
+        Row: {
+          created_at: string
+          fingerprint: string
+          id: string
+          last_seen: string
+          message: string | null
+          metadata: Json | null
+          module: string
+          occurrences: number
+          resolved_at: string | null
+          severity: Database["public"]["Enums"]["system_severity"]
+          status: Database["public"]["Enums"]["system_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fingerprint: string
+          id?: string
+          last_seen?: string
+          message?: string | null
+          metadata?: Json | null
+          module: string
+          occurrences?: number
+          resolved_at?: string | null
+          severity?: Database["public"]["Enums"]["system_severity"]
+          status?: Database["public"]["Enums"]["system_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fingerprint?: string
+          id?: string
+          last_seen?: string
+          message?: string | null
+          metadata?: Json | null
+          module?: string
+          occurrences?: number
+          resolved_at?: string | null
+          severity?: Database["public"]["Enums"]["system_severity"]
+          status?: Database["public"]["Enums"]["system_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_error_logs: {
+        Row: {
+          cpu_estimate: number | null
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          execution_time_ms: number | null
+          id: number
+          memory_usage_mb: number | null
+          metadata: Json | null
+          module: string
+          provider: string | null
+          provider_response: Json | null
+          request_id: string | null
+          retries: number | null
+          stacktrace: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cpu_estimate?: number | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: number
+          memory_usage_mb?: number | null
+          metadata?: Json | null
+          module: string
+          provider?: string | null
+          provider_response?: Json | null
+          request_id?: string | null
+          retries?: number | null
+          stacktrace?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cpu_estimate?: number | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: number
+          memory_usage_mb?: number | null
+          metadata?: Json | null
+          module?: string
+          provider?: string | null
+          provider_response?: Json | null
+          request_id?: string | null
+          retries?: number | null
+          stacktrace?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      system_health_checks: {
+        Row: {
+          checked_at: string
+          details: Json | null
+          id: string
+          latency_ms: number | null
+          service: string
+          status: Database["public"]["Enums"]["system_status"]
+        }
+        Insert: {
+          checked_at?: string
+          details?: Json | null
+          id?: string
+          latency_ms?: number | null
+          service: string
+          status: Database["public"]["Enums"]["system_status"]
+        }
+        Update: {
+          checked_at?: string
+          details?: Json | null
+          id?: string
+          latency_ms?: number | null
+          service?: string
+          status?: Database["public"]["Enums"]["system_status"]
+        }
+        Relationships: []
+      }
+      system_incidents: {
+        Row: {
+          auto_recovered: boolean
+          created_at: string
+          description: string | null
+          id: string
+          impact: string | null
+          metadata: Json | null
+          module: string
+          recovery_time_seconds: number | null
+          resolved_at: string | null
+          severity: Database["public"]["Enums"]["system_severity"]
+          started_at: string
+          status: Database["public"]["Enums"]["system_incident_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          auto_recovered?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          impact?: string | null
+          metadata?: Json | null
+          module: string
+          recovery_time_seconds?: number | null
+          resolved_at?: string | null
+          severity?: Database["public"]["Enums"]["system_severity"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["system_incident_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          auto_recovered?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          impact?: string | null
+          metadata?: Json | null
+          module?: string
+          recovery_time_seconds?: number | null
+          resolved_at?: string | null
+          severity?: Database["public"]["Enums"]["system_severity"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["system_incident_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_metrics: {
+        Row: {
+          created_at: string
+          dimensions: Json | null
+          id: number
+          metric_name: string
+          metric_value: number
+          module: string | null
+        }
+        Insert: {
+          created_at?: string
+          dimensions?: Json | null
+          id?: number
+          metric_name: string
+          metric_value: number
+          module?: string | null
+        }
+        Update: {
+          created_at?: string
+          dimensions?: Json | null
+          id?: number
+          metric_name?: string
+          metric_value?: number
+          module?: string | null
+        }
+        Relationships: []
+      }
+      system_performance_logs: {
+        Row: {
+          category: string
+          created_at: string
+          duration_ms: number
+          id: number
+          is_slow: boolean
+          metadata: Json | null
+          module: string | null
+          operation: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          duration_ms: number
+          id?: number
+          is_slow?: boolean
+          metadata?: Json | null
+          module?: string | null
+          operation: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          duration_ms?: number
+          id?: number
+          is_slow?: boolean
+          metadata?: Json | null
+          module?: string | null
+          operation?: string
+        }
+        Relationships: []
+      }
+      system_provider_status: {
+        Row: {
+          consecutive_failures: number | null
+          id: string
+          last_check: string
+          last_failure: string | null
+          last_success: string | null
+          latency_ms: number | null
+          metadata: Json | null
+          provider: string
+          status: Database["public"]["Enums"]["system_status"]
+        }
+        Insert: {
+          consecutive_failures?: number | null
+          id?: string
+          last_check?: string
+          last_failure?: string | null
+          last_success?: string | null
+          latency_ms?: number | null
+          metadata?: Json | null
+          provider: string
+          status?: Database["public"]["Enums"]["system_status"]
+        }
+        Update: {
+          consecutive_failures?: number | null
+          id?: string
+          last_check?: string
+          last_failure?: string | null
+          last_success?: string | null
+          latency_ms?: number | null
+          metadata?: Json | null
+          provider?: string
+          status?: Database["public"]["Enums"]["system_status"]
+        }
+        Relationships: []
+      }
       system_queues: {
         Row: {
           concurrency_limit: number | null
@@ -2284,6 +2560,69 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+        }
+        Relationships: []
+      }
+      system_resource_usage: {
+        Row: {
+          active_jobs: number | null
+          cpu_pct: number | null
+          id: number
+          memory_mb: number | null
+          metadata: Json | null
+          module: string | null
+          recorded_at: string
+          region: string | null
+          worker_id: string
+        }
+        Insert: {
+          active_jobs?: number | null
+          cpu_pct?: number | null
+          id?: number
+          memory_mb?: number | null
+          metadata?: Json | null
+          module?: string | null
+          recorded_at?: string
+          region?: string | null
+          worker_id: string
+        }
+        Update: {
+          active_jobs?: number | null
+          cpu_pct?: number | null
+          id?: number
+          memory_mb?: number | null
+          metadata?: Json | null
+          module?: string | null
+          recorded_at?: string
+          region?: string | null
+          worker_id?: string
+        }
+        Relationships: []
+      }
+      system_uptime_logs: {
+        Row: {
+          checked_at: string
+          downtime_seconds: number | null
+          id: number
+          module: string
+          status: Database["public"]["Enums"]["system_status"]
+          uptime_pct: number | null
+        }
+        Insert: {
+          checked_at?: string
+          downtime_seconds?: number | null
+          id?: number
+          module: string
+          status: Database["public"]["Enums"]["system_status"]
+          uptime_pct?: number | null
+        }
+        Update: {
+          checked_at?: string
+          downtime_seconds?: number | null
+          id?: number
+          module?: string
+          status?: Database["public"]["Enums"]["system_status"]
+          uptime_pct?: number | null
         }
         Relationships: []
       }
@@ -3381,6 +3720,7 @@ export type Database = {
     }
     Functions: {
       aprovar_saque: { Args: { p_saque_id: string }; Returns: undefined }
+      auto_recover_alerts: { Args: never; Returns: undefined }
       calculate_next_day_volume: {
         Args: { current_level: number; error_rate: number; reply_rate: number }
         Returns: number
@@ -3436,6 +3776,7 @@ export type Database = {
         }
       }
       cleanup_import_data: { Args: never; Returns: undefined }
+      cleanup_observability_data: { Args: never; Returns: undefined }
       cleanup_old_imports: { Args: never; Returns: undefined }
       complete_job: { Args: { p_job_id: string }; Returns: undefined }
       creditar_wallet: {
@@ -3588,6 +3929,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_system_health_overview: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3638,6 +3980,18 @@ export type Database = {
           metadata: Json
           similarity: number
         }[]
+      }
+      register_system_alert: {
+        Args: {
+          p_fingerprint?: string
+          p_message?: string
+          p_metadata?: Json
+          p_module: string
+          p_severity: Database["public"]["Enums"]["system_severity"]
+          p_status: Database["public"]["Enums"]["system_status"]
+          p_title: string
+        }
+        Returns: string
       }
       registrar_fatura_idempotente: {
         Args: {
@@ -3715,6 +4069,9 @@ export type Database = {
         | "delivered"
         | "failed"
         | "blacklist"
+      system_incident_status: "open" | "acknowledged" | "resolved" | "closed"
+      system_severity: "info" | "low" | "medium" | "high" | "critical"
+      system_status: "healthy" | "warning" | "critical" | "offline" | "degraded"
       user_status: "ativo" | "inativo"
       whatsapp_connection_status:
         | "qr"
@@ -3895,6 +4252,9 @@ export const Constants = {
         "failed",
         "blacklist",
       ],
+      system_incident_status: ["open", "acknowledged", "resolved", "closed"],
+      system_severity: ["info", "low", "medium", "high", "critical"],
+      system_status: ["healthy", "warning", "critical", "offline", "degraded"],
       user_status: ["ativo", "inativo"],
       whatsapp_connection_status: [
         "qr",
