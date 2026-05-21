@@ -1651,6 +1651,183 @@ export type Database = {
           },
         ]
       }
+      queue_dead_letters: {
+        Row: {
+          created_at: string | null
+          error_log: Json | null
+          final_status: string | null
+          id: string
+          original_job_id: string | null
+          payload: Json | null
+          queue_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_log?: Json | null
+          final_status?: string | null
+          id?: string
+          original_job_id?: string | null
+          payload?: Json | null
+          queue_name: string
+        }
+        Update: {
+          created_at?: string | null
+          error_log?: Json | null
+          final_status?: string | null
+          id?: string
+          original_job_id?: string | null
+          payload?: Json | null
+          queue_name?: string
+        }
+        Relationships: []
+      }
+      queue_jobs: {
+        Row: {
+          attempts: number | null
+          created_at: string | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          idempotency_key: string | null
+          last_error_at: string | null
+          max_attempts: number | null
+          payload: Json
+          priority: Database["public"]["Enums"]["job_priority"] | null
+          queue_name: string
+          run_at: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"] | null
+          timeout_seconds: number | null
+          worker_id: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          idempotency_key?: string | null
+          last_error_at?: string | null
+          max_attempts?: number | null
+          payload: Json
+          priority?: Database["public"]["Enums"]["job_priority"] | null
+          queue_name: string
+          run_at?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"] | null
+          timeout_seconds?: number | null
+          worker_id?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          idempotency_key?: string | null
+          last_error_at?: string | null
+          max_attempts?: number | null
+          payload?: Json
+          priority?: Database["public"]["Enums"]["job_priority"] | null
+          queue_name?: string
+          run_at?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"] | null
+          timeout_seconds?: number | null
+          worker_id?: string | null
+        }
+        Relationships: []
+      }
+      queue_metrics: {
+        Row: {
+          avg_latency_ms: number | null
+          id: string
+          jobs_failed: number | null
+          jobs_processed: number | null
+          measured_at: string | null
+          queue_name: string
+          throughput_per_min: number | null
+        }
+        Insert: {
+          avg_latency_ms?: number | null
+          id?: string
+          jobs_failed?: number | null
+          jobs_processed?: number | null
+          measured_at?: string | null
+          queue_name: string
+          throughput_per_min?: number | null
+        }
+        Update: {
+          avg_latency_ms?: number | null
+          id?: string
+          jobs_failed?: number | null
+          jobs_processed?: number | null
+          measured_at?: string | null
+          queue_name?: string
+          throughput_per_min?: number | null
+        }
+        Relationships: []
+      }
+      queue_rate_limits: {
+        Row: {
+          burst_limit: number | null
+          current_usage: number | null
+          id: string
+          last_reset: string | null
+          provider: string
+          requests_per_second: number | null
+        }
+        Insert: {
+          burst_limit?: number | null
+          current_usage?: number | null
+          id?: string
+          last_reset?: string | null
+          provider: string
+          requests_per_second?: number | null
+        }
+        Update: {
+          burst_limit?: number | null
+          current_usage?: number | null
+          id?: string
+          last_reset?: string | null
+          provider?: string
+          requests_per_second?: number | null
+        }
+        Relationships: []
+      }
+      queue_workers: {
+        Row: {
+          cpu_usage: number | null
+          created_at: string | null
+          id: string
+          last_ping: string | null
+          memory_usage: number | null
+          name: string
+          queues_handled: string[] | null
+          status: string | null
+        }
+        Insert: {
+          cpu_usage?: number | null
+          created_at?: string | null
+          id?: string
+          last_ping?: string | null
+          memory_usage?: number | null
+          name: string
+          queues_handled?: string[] | null
+          status?: string | null
+        }
+        Update: {
+          cpu_usage?: number | null
+          created_at?: string | null
+          id?: string
+          last_ping?: string | null
+          memory_usage?: number | null
+          name?: string
+          queues_handled?: string[] | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       rpc_logs: {
         Row: {
           created_at: string | null
@@ -2082,6 +2259,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_queues: {
+        Row: {
+          concurrency_limit: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          concurrency_limit?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          concurrency_limit?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
       }
       telecom_jobs: {
         Row: {
@@ -3181,6 +3385,7 @@ export type Database = {
         Args: { current_level: number; error_rate: number; reply_rate: number }
         Returns: number
       }
+      calculate_next_run: { Args: { p_attempts: number }; Returns: string }
       cancel_import_job: { Args: { p_job_id: string }; Returns: undefined }
       check_and_register_whatsapp_send: {
         Args: { target_phone: string }
@@ -3232,6 +3437,7 @@ export type Database = {
       }
       cleanup_import_data: { Args: never; Returns: undefined }
       cleanup_old_imports: { Args: never; Returns: undefined }
+      complete_job: { Args: { p_job_id: string }; Returns: undefined }
       creditar_wallet: {
         Args: {
           p_dias_carencia?: number
@@ -3248,6 +3454,10 @@ export type Database = {
       }
       fail_import_chunk: {
         Args: { p_chunk_id: string; p_erro: string }
+        Returns: undefined
+      }
+      fail_job: {
+        Args: { p_error: string; p_job_id: string }
         Returns: undefined
       }
       gerar_codigo_indicacao: { Args: never; Returns: string }
@@ -3351,6 +3561,33 @@ export type Database = {
           mrr_total: number
         }[]
       }
+      get_next_jobs: {
+        Args: { p_limit?: number; p_queue: string; p_worker_id: string }
+        Returns: {
+          attempts: number | null
+          created_at: string | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          idempotency_key: string | null
+          last_error_at: string | null
+          max_attempts: number | null
+          payload: Json
+          priority: Database["public"]["Enums"]["job_priority"] | null
+          queue_name: string
+          run_at: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"] | null
+          timeout_seconds: number | null
+          worker_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "queue_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3453,6 +3690,14 @@ export type Database = {
       app_role: "admin" | "user" | "master_admin"
       cobranca_status: "pendente" | "pago" | "atrasado" | "cancelado"
       comissao_tipo: "venda" | "recorrencia"
+      job_priority: "critical" | "high" | "normal" | "low"
+      job_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "retrying"
+        | "cancelled"
       linha_status:
         | "ativa"
         | "suspensa"
@@ -3622,6 +3867,15 @@ export const Constants = {
       app_role: ["admin", "user", "master_admin"],
       cobranca_status: ["pendente", "pago", "atrasado", "cancelado"],
       comissao_tipo: ["venda", "recorrencia"],
+      job_priority: ["critical", "high", "normal", "low"],
+      job_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "retrying",
+        "cancelled",
+      ],
       linha_status: [
         "ativa",
         "suspensa",
