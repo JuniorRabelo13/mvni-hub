@@ -118,12 +118,12 @@ export default function MasterFinanceiro() {
           .eq("mes_referencia", selectedMes)
       ]);
 
-      const receitaBruta = metrics?.mrr || 0;
+      const receitaBruta = (metrics as any)?.mrr || 0;
       const totalComissoesPagar = commissions?.reduce((acc, c) => acc + Number(c.valor_total), 0) || 0;
       const representantesPendentes = commissions?.filter(c => c.status === "pendente").length || 0;
       
       // Margem Real: Receita - (Comissões + Custo Operacional R$ 49,90)
-      const margemEstimada = metrics?.estimated_profit || 0;
+      const margemEstimada = (metrics as any)?.estimated_profit || 0;
 
       return {
         receitaBruta,
