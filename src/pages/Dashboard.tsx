@@ -95,7 +95,7 @@ export default function Dashboard() {
       ganhoIndireto,
       total,
       valorPorIndireto: MULTIPLICADOR_INDIRETO,
-      faixa: diretos > 40 ? "Acima de 41 associados (Bônus R$ 10)" : (diretos >= 21 ? "21 a 40 associados (Bônus R$ 5)" : "Abaixo de 21 associados")
+      faixa: diretos > 40 ? "Acima de 41 associados (Bônus R$ 10)" : (diretos >= 21 ? "Comissão da rede de 21 a 40 associados" : "Abaixo de 21 associados")
     };
   }, [diretos, indiretos]);
 
