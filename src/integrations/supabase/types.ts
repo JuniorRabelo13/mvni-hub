@@ -3385,6 +3385,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      match_ai_context: {
+        Args: {
+          match_count: number
+          match_threshold: number
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          id: string
+          metadata: Json
+          similarity: number
+        }[]
+      }
       registrar_fatura_idempotente: {
         Args: {
           p_cliente_id: string
