@@ -92,7 +92,7 @@ serve(async (req) => {
     }
 
     // Cálculos
-    const valor_ativacoes = activations.length * 5.00;
+    const valor_ativacoes = activations.length * 85.00;
     const valor_recorrencia_direta = directActiveCount * 20.00;
     
     const multiplicadorIndireto = directActiveCount > 40 ? 10.00 : 5.00;
@@ -130,7 +130,7 @@ serve(async (req) => {
         representante_id,
         cliente_id: a.id,
         tipo: "ativacao",
-        valor: 5.00,
+        valor: 85.00,
         mes_referencia
       });
     });
