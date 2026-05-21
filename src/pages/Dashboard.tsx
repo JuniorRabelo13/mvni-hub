@@ -59,8 +59,27 @@ export default function Dashboard() {
     }
   };
 
+  const fetchSimulacaoReal = async (numDiretos: number, numIndiretos: number) => {
+    setCalculandoSimulacao(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('calcular-comissao-representante', {
+        body: { 
+          simulate: true, 
+          diretos: numDiretos, 
+          indiretos: numIndiretos 
+        }
+      });
+      if (error) throw error;
+      setSimulacaoReal(data.dados);
+    } catch (err) {
+      console.error("Erro ao simular:", err);
+    } finally {
+      setCalculandoSimulacao(false);
+    }
+  };
+
   const simulacao = useMemo(() => {
-    // REGRAS OFICIAIS (IDÊNTICAS AO BACKEND)
+    // REGRAS OFICIAIS SINCRONIZADAS COM O BACKEND
     const VALOR_ATIVACAO = 85.00;
     const VALOR_RECORRENCIA_DIRETA = 20.00;
     const MULTIPLICADOR_INDIRETO = diretos > 40 ? 10.00 : 5.00;

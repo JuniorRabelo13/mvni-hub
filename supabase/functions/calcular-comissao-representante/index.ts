@@ -23,7 +23,33 @@ serve(async (req) => {
       }
     );
 
-    const { representante_id, mes_referencia } = await req.json();
+    const { representante_id, mes_referencia, simulate, diretos: simDiretos, indiretos: simIndiretos } = await req.json();
+
+    if (simulate) {
+      const VALOR_ATIVACAO = 85.00;
+      const VALOR_RECORRENCIA_DIRETA = 20.00;
+      const multIndireto = (simDiretos || 0) > 40 ? 10.00 : 5.00;
+      
+      const v_ativ = (simDiretos || 0) * VALOR_ATIVACAO; // Simulador de Dashboard foca em ativações imediatas
+      const v_rec_dir = (simDiretos || 0) * VALOR_RECORRENCIA_DIRETA;
+      const v_rec_ind = (simIndiretos || 0) * multIndireto;
+      
+      return new Response(
+        JSON.stringify({
+          sucesso: true,
+          dados: {
+            valor_ativacoes: v_ativ,
+            valor_recorrencia_direta: v_rec_dir,
+            valor_recorrencia_indireta: v_rec_ind,
+            valor_bonus: 0,
+            valor_total: v_rec_dir + v_rec_ind,
+            direct_active_count: simDiretos,
+            indirect_active_count: simIndiretos
+          }
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!representante_id || !mes_referencia) {
       throw new Error("representante_id e mes_referencia são obrigatórios");
