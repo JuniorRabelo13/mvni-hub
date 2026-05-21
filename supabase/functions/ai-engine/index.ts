@@ -19,116 +19,147 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    const body = await req.json()
     const { 
-      action, 
+      action, // 'message_in', 'automation_trigger'
       lead_id, 
       cliente_id, 
       whatsapp_instance_id, 
       message,
-      agent_code = 'agent_sdr' // Default to SDR
-    } = await req.json()
+      force_agent_code
+    } = body
 
-    // 1. Context Assembly
-    let context = ""
-    let clientName = "Cliente"
-    let statusContext = ""
+    // 1. Context Assembly (Intelligent)
+    let contextData: any = {}
+    let contextStr = ""
+    let clientName = "Contato"
 
     if (cliente_id) {
-      const { data: cliente } = await supabaseAdmin.from('clientes').select('*, linhas(*), pagamentos(*)').eq('id', cliente_id).single()
+      const { data: cliente } = await supabaseAdmin.from('clientes').select(`
+        *,
+        linhas(msisdn, status, plano, ativada_em),
+        pagamentos(id, status, valor, data_vencimento)
+      `).eq('id', cliente_id).single()
+      
       if (cliente) {
+        contextData = cliente
         clientName = cliente.nome
-        const activeLines = cliente.linhas?.filter((l: any) => l.status === 'active').length || 0
-        const pendingPayments = cliente.pagamentos?.filter((p: any) => p.status === 'pending').length || 0
-        statusContext = `Status: Cliente Ativo. Linhas Ativas: ${activeLines}. Pagamentos Pendentes: ${pendingPayments}.`
+        const activeLines = cliente.linhas?.filter((l: any) => l.status === 'active') || []
+        const pendingPayments = cliente.pagamentos?.filter((p: any) => p.status === 'pending') || []
+        contextStr = `
+        CLIENTE: ${cliente.nome}
+        LINHAS ATIVAS: ${activeLines.map((l: any) => `${l.msisdn} (${l.plano})`).join(', ')}
+        FINANCEIRO: ${pendingPayments.length > 0 ? `Inadimplente (${pendingPayments.length} faturas)` : 'Em dia'}
+        VALOR TOTAL PENDENTE: ${pendingPayments.reduce((acc: number, p: any) => acc + (p.valor || 0), 0)}
+        `
       }
     } else if (lead_id) {
       const { data: lead } = await supabaseAdmin.from('leads').select('*').eq('id', lead_id).single()
       if (lead) {
+        contextData = lead
         clientName = lead.nome
-        statusContext = `Status: Lead. Interesse registrado no histórico.`
+        contextStr = `LEAD: ${lead.nome}. STATUS ATUAL: ${lead.status}.`
       }
     }
 
-    // 2. Memory Retrieval
+    // 2. Memory Retrieval (Contextual History)
     const { data: memory } = await supabaseAdmin
       .from('ai_memory')
-      .select('key, value')
+      .select('key, value, importance_score')
       .or(`cliente_id.eq.${cliente_id},lead_id.eq.${lead_id}`)
+      .order('importance_score', { ascending: false })
     
-    const memoryContext = memory?.map(m => `${m.key}: ${m.value}`).join('\n') || "Sem memórias prévias."
+    const memoryStr = memory?.map(m => `- ${m.key}: ${m.value}`).join('\n') || "Sem memórias registradas."
 
-    // 3. Conversation Management
+    // 3. RAG - Search for knowledge (Simulated/Ready for Vector Search)
+    // Here we could use: const { data: knowledge } = await supabaseAdmin.rpc('match_context', { query_embedding: ... })
+    const knowledgeStr = "MVNI Hub é a maior plataforma de Telecom SaaS do Brasil. Oferecemos planos pré-pagos e controle com gestão via dashboard."
+
+    // 4. Intelligent Routing
+    let agentCode = force_agent_code
+    if (!agentCode) {
+      // Automatic decision based on context
+      if (contextData?.pagamentos?.some((p: any) => p.status === 'pending')) {
+        agentCode = 'agent_debt'
+      } else if (cliente_id && contextData?.linhas?.length === 0) {
+        agentCode = 'agent_onboarding'
+      } else if (cliente_id) {
+        agentCode = 'agent_support'
+      } else {
+        agentCode = 'agent_sdr'
+      }
+    }
+
+    const { data: agent } = await supabaseAdmin.from('ai_agent_settings').select('*').eq('code', agentCode).single()
+    if (!agent) throw new Error(`Agente ${agentCode} não configurado.`)
+
+    // 5. Conversation History
     let conversationId: string
-    const { data: existingConv } = await supabaseAdmin
+    const { data: conv } = await supabaseAdmin
       .from('ai_conversations')
-      .select('id, metadata')
+      .select('id')
       .or(`cliente_id.eq.${cliente_id},lead_id.eq.${lead_id}`)
-      .eq('whatsapp_instance_id', whatsapp_instance_id)
       .eq('status', 'active')
-      .single()
+      .maybeSingle()
 
-    if (existingConv) {
-      conversationId = existingConv.id
+    if (conv) {
+      conversationId = conv.id
     } else {
       const { data: newConv } = await supabaseAdmin
         .from('ai_conversations')
-        .insert({
-          cliente_id,
-          lead_id,
-          whatsapp_instance_id,
-          metadata: { initial_context: statusContext }
-        })
-        .select()
-        .single()
+        .insert({ cliente_id, lead_id, whatsapp_instance_id })
+        .select().single()
       conversationId = newConv.id
     }
 
-    // Load recent history (last 10 messages)
     const { data: history } = await supabaseAdmin
       .from('ai_messages')
       .select('role, content')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
-      .limit(10)
+      .limit(8)
+    
+    const historyMsgs = history?.reverse() || []
 
-    const historyMessages = history?.reverse().map(m => ({ role: m.role, content: m.content })) || []
+    // 6. OpenAI Enterprise Call (GPT-4o)
+    const openAiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openAiKey) throw new Error("API Key da OpenAI não encontrada nos segredos.")
 
-    // 4. Agent Settings
-    const { data: agent } = await supabaseAdmin
-      .from('ai_agent_settings')
-      .select('*')
-      .eq('code', agent_code)
-      .single()
-
-    if (!agent) throw new Error(`Agente ${agent_code} não encontrado`)
-
-    // 5. Build System Prompt
     const systemPrompt = `
 ${agent.base_prompt}
-Nome do Contato: ${clientName}
-Contexto Atual: ${statusContext}
-Memória de Longo Prazo:
-${memoryContext}
-    `
 
-    // 6. OpenAI API Call (GPT-4o)
-    const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
-    if (!openAiApiKey) throw new Error("OPENAI_API_KEY não configurada")
+# CONTEXTO DO CONTATO
+Nome: ${clientName}
+${contextStr}
+
+# MEMÓRIA PERSISTENTE
+${memoryStr}
+
+# BASE DE CONHECIMENTO (RAG)
+${knowledgeStr}
+
+# REGRAS ENTERPRISE
+- Use delays humanos.
+- Nunca repita a mesma frase duas vezes.
+- Se identificar interesse de compra, use o tom SDR.
+- Se houver inadimplência, foque na regularização.
+- Mantenha a resposta curta (max 3 parágrafos).
+    `
 
     const messages = [
       { role: "system", content: systemPrompt },
-      ...historyMessages,
+      ...historyMsgs,
       { role: "user", content: message }
     ]
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${openAiApiKey}`,
+        "Authorization": `Bearer ${openAiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: agent.model || "gpt-4o",
+        model: "gpt-4o",
         messages,
         temperature: agent.temperature,
         max_tokens: agent.max_tokens,
@@ -136,93 +167,84 @@ ${memoryContext}
       })
     })
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(`OpenAI Error: ${JSON.stringify(errorData)}`)
+    if (!openaiRes.ok) throw new Error(`Erro na OpenAI: ${await openaiRes.text()}`)
+    const aiData = await openaiRes.json()
+    const aiText = aiData.choices[0].message.content
+    const usage = aiData.usage
+
+    // 7. Lead Scoring Logic
+    if (lead_id) {
+      const scoringAnalysis = await analyzeLeadScore(aiText, message)
+      await updateLeadScore(supabaseAdmin, lead_id, scoringAnalysis)
     }
 
-    const aiResult = await response.json()
-    const aiText = aiResult.choices[0].message.content
-    const usage = aiResult.usage
-
-    // 7. Post-Processing & Persistence
-    // Save messages
+    // 8. Persistence & Observability
     await supabaseAdmin.from('ai_messages').insert([
       { conversation_id: conversationId, role: 'user', content: message },
       { conversation_id: conversationId, role: 'assistant', content: aiText, agent_id: agent.id }
     ])
 
-    // Save token usage
-    const costPerPromptToken = 0.000005 // Example for GPT-4o
-    const costPerCompletionToken = 0.000015
-    const estimatedCost = (usage.prompt_tokens * costPerPromptToken) + (usage.completion_tokens * costPerCompletionToken)
-
     await supabaseAdmin.from('ai_token_usage').insert({
       conversation_id: conversationId,
-      model: agent.model,
+      model: 'gpt-4o',
       prompt_tokens: usage.prompt_tokens,
       completion_tokens: usage.completion_tokens,
       total_tokens: usage.total_tokens,
-      estimated_cost: estimatedCost
+      estimated_cost: (usage.prompt_tokens * 0.000005) + (usage.completion_tokens * 0.000015)
     })
 
-    // Update conversation
-    await supabaseAdmin.from('ai_conversations').update({
-      last_message_at: new Date().toISOString()
-    }).eq('id', conversationId)
-
-    // Automation Log
     const executionTime = Date.now() - startTime
     await supabaseAdmin.from('ai_automation_logs').insert({
       conversation_id: conversationId,
-      action: 'generate_response',
+      action: 'generate_ai_response',
       status: 'success',
       execution_time_ms: executionTime,
-      metadata: { agent: agent_code, tokens: usage.total_tokens }
+      metadata: { agent: agentCode, tokens: usage.total_tokens }
     })
 
-    // Lead Scoring Logic (Simplified Enterprise)
-    if (lead_id) {
-      let scoreChange = 0
-      const lowerText = aiText.toLowerCase()
-      if (lowerText.includes('agendar') || lowerText.includes('demonstração')) scoreChange = 20
-      if (lowerText.includes('interessado')) scoreChange = 10
-      
-      const { data: currentScore } = await supabaseAdmin.from('ai_lead_scores').select('score_value').eq('lead_id', lead_id).single()
-      const newScore = Math.min(100, (currentScore?.score_value || 0) + scoreChange)
-      
-      let classification = 'cold'
-      if (newScore > 70) classification = 'hot'
-      else if (newScore > 30) classification = 'warm'
+    // 9. Return Response with Human Delays
+    const typingDelay = Math.min(6000, aiText.length * 40) // 40ms per char
 
-      await supabaseAdmin.from('ai_lead_scores').upsert({
-        lead_id,
-        score_value: newScore,
-        classification,
-        last_update: new Date().toISOString()
-      })
-    }
-
-    // Human-like delay return
-    const typingDelay = Math.min(5000, aiText.length * 50) // 50ms per char, max 5s
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      response: aiText, 
+    return new Response(JSON.stringify({
+      success: true,
+      response: aiText,
       delay_ms: typingDelay,
-      agent: agent_code,
-      tokens: usage.total_tokens,
-      cost: estimatedCost
-    }), { 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200 
-    })
+      agent: agentCode,
+      metrics: {
+        tokens: usage.total_tokens,
+        time: executionTime
+      }
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (error) {
-    console.error('AI Engine Error:', error)
     return new Response(JSON.stringify({ success: false, error: error.message }), { 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500 
+      status: 500, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     })
   }
 })
+
+async function analyzeLeadScore(aiText: string, userMessage: string) {
+  // Simple heuristic for demo, could be another AI call
+  let score = 5
+  const keywords = ['quero', 'comprar', 'preço', 'valor', 'plano', 'contratar']
+  keywords.forEach(k => {
+    if (userMessage.toLowerCase().includes(k)) score += 15
+  })
+  return score
+}
+
+async function updateLeadScore(supabase: any, leadId: string, value: number) {
+  const { data } = await supabase.from('ai_lead_scores').select('score_value').eq('lead_id', leadId).single()
+  const newScore = Math.min(100, (data?.score_value || 0) + value)
+  let classification = 'cold'
+  if (newScore > 70) classification = 'hot'
+  else if (newScore > 30) classification = 'warm'
+
+  await supabase.from('ai_lead_scores').upsert({
+    lead_id: leadId,
+    score_value: newScore,
+    classification,
+    last_update: new Date().toISOString()
+  })
+}
