@@ -1688,6 +1688,107 @@ export type Database = {
           },
         ]
       }
+      telecom_jobs: {
+        Row: {
+          action: string
+          attempts: number | null
+          created_at: string | null
+          id: string
+          last_error: string | null
+          linha_id: string | null
+          max_attempts: number | null
+          payload: Json | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          action: string
+          attempts?: number | null
+          created_at?: string | null
+          id?: string
+          last_error?: string | null
+          linha_id?: string | null
+          max_attempts?: number | null
+          payload?: Json | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          action?: string
+          attempts?: number | null
+          created_at?: string | null
+          id?: string
+          last_error?: string | null
+          linha_id?: string | null
+          max_attempts?: number | null
+          payload?: Json | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telecom_jobs_linha_id_fkey"
+            columns: ["linha_id"]
+            isOneToOne: false
+            referencedRelation: "linhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telecom_provider_logs: {
+        Row: {
+          action: string
+          cliente_id: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          linha_id: string | null
+          payload: Json | null
+          provider: string
+          response: Json | null
+          success: boolean | null
+        }
+        Insert: {
+          action: string
+          cliente_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          linha_id?: string | null
+          payload?: Json | null
+          provider: string
+          response?: Json | null
+          success?: boolean | null
+        }
+        Update: {
+          action?: string
+          cliente_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          linha_id?: string | null
+          payload?: Json | null
+          provider?: string
+          response?: Json | null
+          success?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telecom_provider_logs_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telecom_provider_logs_linha_id_fkey"
+            columns: ["linha_id"]
+            isOneToOne: false
+            referencedRelation: "linhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transacoes_wallet: {
         Row: {
           created_at: string | null
@@ -2666,7 +2767,16 @@ export type Database = {
       app_role: "admin" | "user" | "master_admin"
       cobranca_status: "pendente" | "pago" | "atrasado" | "cancelado"
       comissao_tipo: "venda" | "recorrencia"
-      linha_status: "ativa" | "suspensa" | "cancelada"
+      linha_status:
+        | "ativa"
+        | "suspensa"
+        | "cancelada"
+        | "pending_activation"
+        | "active"
+        | "suspended"
+        | "cancelled"
+        | "blocked"
+        | "inactive"
       sms_status:
         | "pending"
         | "processing"
@@ -2810,7 +2920,17 @@ export const Constants = {
       app_role: ["admin", "user", "master_admin"],
       cobranca_status: ["pendente", "pago", "atrasado", "cancelado"],
       comissao_tipo: ["venda", "recorrencia"],
-      linha_status: ["ativa", "suspensa", "cancelada"],
+      linha_status: [
+        "ativa",
+        "suspensa",
+        "cancelada",
+        "pending_activation",
+        "active",
+        "suspended",
+        "cancelled",
+        "blocked",
+        "inactive",
+      ],
       sms_status: [
         "pending",
         "processing",
