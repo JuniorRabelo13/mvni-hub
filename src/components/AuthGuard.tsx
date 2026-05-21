@@ -13,29 +13,61 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     const fallback = setTimeout(() => {
-      if (!cancelled) { navigate("/auth", { replace: true }); setReady(true); }
+      if (!cancelled) {
+        console.warn("[AUTH] Guard fallback triggered after 5s");
+        if (!PUBLIC_ROUTES.includes(location.pathname)) {
+          navigate("/auth", { replace: true });
+        }
+        setReady(true);
+      }
     }, 5000);
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (cancelled) return;
-      clearTimeout(fallback);
-      if (!session) {
-        if (!PUBLIC_ROUTES.includes(location.pathname)) navigate("/auth", { replace: true });
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (cancelled) return;
+        if (sessionError) throw sessionError;
+
+        if (!session) {
+          clearTimeout(fallback);
+          if (!PUBLIC_ROUTES.includes(location.pathname)) {
+            navigate("/auth", { replace: true });
+          }
+          setReady(true);
+          return;
+        }
+
+        const { data: userData, error: userError } = await supabase
+          .from("usuarios")
+          .select("role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (cancelled) return;
+        clearTimeout(fallback);
+
+        const role = userData?.role ?? "representante";
+        if (MASTER_ONLY_ROUTES.includes(location.pathname) && role !== "master") {
+          navigate("/painel", { replace: true });
+        }
         setReady(true);
-        return;
+      } catch (err) {
+        console.error("[AUTH] Guard error:", err);
+        if (!cancelled) {
+          clearTimeout(fallback);
+          if (!PUBLIC_ROUTES.includes(location.pathname)) {
+            navigate("/auth", { replace: true });
+          }
+          setReady(true);
+        }
       }
-      const { data: userData } = await supabase
-        .from("usuarios").select("role").eq("id", session.user.id).single();
-      if (cancelled) return;
-      const role = userData?.role ?? "representante";
-      if (MASTER_ONLY_ROUTES.includes(location.pathname) && role !== "master") {
-        navigate("/painel", { replace: true });
-      }
-      setReady(true);
-    });
+    };
+
+    checkAuth();
 
     return () => { cancelled = true; clearTimeout(fallback); };
-  }, [location.pathname]);
+  }, [location.pathname, navigate]);
 
   if (!ready) {
     return (

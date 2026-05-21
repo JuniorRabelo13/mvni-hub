@@ -78,8 +78,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initializeAuth = async () => {
       try {
         console.log('[AUTH] Getting session...');
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
+        if (sessionError) throw sessionError;
         if (!mounted) return;
         
         if (initialSession) {
@@ -92,6 +93,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error('[AUTH] Initialization error:', error);
+        if (mounted) {
+          setSession(null);
+          setRole(null);
+        }
       } finally {
         if (mounted) {
           console.log('[AUTH] Initialization complete, data ready');
@@ -164,7 +169,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user: session?.user ?? null, 
       effectiveUser: effectiveUser as any,
       session, 
-      loading,
+      loading: !isAuthReady,
       isAuthReady,
       role,
       authenticated: !!session,
