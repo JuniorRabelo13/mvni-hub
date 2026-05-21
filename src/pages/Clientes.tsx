@@ -70,7 +70,7 @@ export default function Clientes() {
       if (!stripeCustomer?.stripe_customer_id) throw new Error("ID do cliente Stripe não retornado");
 
       // 2. Criar assinatura
-      const valorCentavos = Math.round(parseFloat(recurringValue.replace(',', '.')) * 100);
+      const valorCentavos = 9990; // Fixed official value of R$ 99.90 in cents
       const { error: subscriptionError } = await supabase.functions.invoke('stripe-criar-assinatura', {
         body: {
           cliente_id: selectedCliente.id,
