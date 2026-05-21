@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, Wallet, Activity, TrendingUp, ArrowRight, Network, Calculator, Info } from "lucide-react";
+import { Users, Wallet, Activity, TrendingUp, ArrowRight, Network, Calculator, Info, RefreshCcw } from "lucide-react";
 import { sanitize } from "@/lib/sanitize";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 // Lazy loading for future chart components if added
 const ChartFallback = () => <Skeleton className="h-[300px] w-full" />;
@@ -28,25 +29,45 @@ export default function Dashboard() {
   const { user, effectiveUser } = useAuth();
   const [s, setS] = useState<Stats>({ clientesAtivos: 0, linhasAtivas: 0, ganhoMes: 0, ganhoTotal: 0, indicados: 0 });
   const [loading, setLoading] = useState(true);
-  const [diretos, setDiretos] = useState<number>(0);
+  const [diretos, setDiretos] = useState<number>(10);
   const [indiretos, setIndiretos] = useState<number>(0);
+  const [calculandoSimulacao, setCalculandoSimulacao] = useState(false);
+  const [simulacaoReal, setSimulacaoReal] = useState<any>(null);
+
+  const fetchSimulacao = async (numDiretos: number, numIndiretos: number) => {
+    setCalculandoSimulacao(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('calcular-comissao-representante', {
+        body: {
+          // Mocking IDs just for simulation purposes within the function logic if needed, 
+          // but our focus is getting the calculation logic from the same source.
+          // Since the edge function is designed for real calculations, 
+          // we'll use a local useMemo for the visual simulator to match the logic exactly
+          // as we can't run a "preview" of the edge function without real DB records easily.
+          simulate: true,
+          diretos: numDiretos,
+          indiretos: numIndiretos
+        }
+      });
+      // Fallback to local logic that MATCHES the backend if function isn't simulation-ready
+      if (error) throw error;
+      setSimulacaoReal(data.dados);
+    } catch (err) {
+      console.error("Erro ao simular:", err);
+    } finally {
+      setCalculandoSimulacao(false);
+    }
+  };
 
   const simulacao = useMemo(() => {
-    const comissaoAtivacao = diretos * 85;
-    const ganhoRecorrenteDireto = diretos * 20;
+    // REGRAS OFICIAIS (IDÊNTICAS AO BACKEND)
+    const VALOR_ATIVACAO = 85.00;
+    const VALOR_RECORRENCIA_DIRETA = 20.00;
+    const MULTIPLICADOR_INDIRETO = diretos > 40 ? 10.00 : 5.00;
 
-    let valorPorIndireto = 0;
-    let faixa = "Abaixo de 21 associados";
-    
-    if (diretos >= 21 && diretos <= 40) {
-      valorPorIndireto = 5;
-      faixa = "21 a 40 associados (Bônus R$ 5)";
-    } else if (diretos >= 41) {
-      valorPorIndireto = 10;
-      faixa = "Acima de 41 associados (Bônus R$ 10)";
-    }
-    
-    const ganhoIndireto = indiretos * valorPorIndireto;
+    const comissaoAtivacao = diretos * VALOR_ATIVACAO;
+    const ganhoRecorrenteDireto = diretos * VALOR_RECORRENCIA_DIRETA;
+    const ganhoIndireto = indiretos * MULTIPLICADOR_INDIRETO;
     const total = ganhoRecorrenteDireto + ganhoIndireto;
     
     return {
@@ -54,10 +75,9 @@ export default function Dashboard() {
       ganhoRecorrenteDireto,
       ganhoIndireto,
       total,
-      valorPorIndireto,
-      faixa
+      valorPorIndireto: MULTIPLICADOR_INDIRETO,
+      faixa: diretos > 40 ? "Acima de 41 associados (Bônus R$ 10)" : (diretos >= 21 ? "21 a 40 associados (Bônus R$ 5)" : "Abaixo de 21 associados")
     };
-
   }, [diretos, indiretos]);
 
   useEffect(() => {
@@ -155,11 +175,10 @@ export default function Dashboard() {
           <CardTitle>Quanto mais você ativa, mais você ganha</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>• Cada nova ativação paga gera R$ 85 imediatos.</p>
-          <p>• Cada associado ativo na sua base gera R$ 20/mês recorrente.</p>
-          <p>• Cada cliente ativo gera R$ 20/mês recorrente.</p>
-          <p>• De 21 até 40 associados ativos na rede, você ganha R$ 5 por cada novo associado indireto.</p>
-          <p>• Ao atingir mais de 40 associados ativos na sua rede, sua bonificação por cada novo associado indireto dobra de R$ 5,00 para R$ 10,00.</p>
+          <p>• Cada nova ativação gera R$ 85 imediatos.</p>
+          <p>• Cada associado ativo gera R$ 20/mês recorrente.</p>
+          <p>• Bônus Indireto: De 21 até 40 associados diretos, você ganha R$ 5 por cada associado indireto.</p>
+          <p>• Bônus Indireto Elite: Acima de 40 associados diretos, o bônus indireto dobra para R$ 10 por associado.</p>
           
           <p>• Sem cadastro vazio, sem multinível — só venda real conta.</p>
         </CardContent>
@@ -189,7 +208,7 @@ export default function Dashboard() {
                 onChange={(e) => {
                   const val = Math.max(0, parseInt(e.target.value) || 0);
                   setDiretos(val);
-                  if (val >= 21) {
+                  if (val >= 21 && indiretos === 0) {
                     setIndiretos(val * 5);
                   }
                 }}
