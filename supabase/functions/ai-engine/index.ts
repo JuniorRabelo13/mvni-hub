@@ -21,13 +21,16 @@ serve(async (req) => {
 
     const body = await req.json()
     const { 
-      action, // 'message_in', 'automation_trigger'
+      action, 
       lead_id, 
       cliente_id, 
       whatsapp_instance_id, 
       message,
       force_agent_code
     } = body
+
+    const openAiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openAiKey) throw new Error("API Key da OpenAI não encontrada.")
 
     // 1. Context Assembly (Intelligent)
     let contextData: any = {}
@@ -50,7 +53,7 @@ serve(async (req) => {
         CLIENTE: ${cliente.nome}
         LINHAS ATIVAS: ${activeLines.map((l: any) => `${l.msisdn} (${l.plano})`).join(', ')}
         FINANCEIRO: ${pendingPayments.length > 0 ? `Inadimplente (${pendingPayments.length} faturas)` : 'Em dia'}
-        VALOR TOTAL PENDENTE: ${pendingPayments.reduce((acc: number, p: any) => acc + (p.valor || 0), 0)}
+        VALOR TOTAL PENDENTE: R$ ${pendingPayments.reduce((acc: number, p: any) => acc + (p.valor || 0), 0)}
         `
       }
     } else if (lead_id) {
@@ -62,7 +65,7 @@ serve(async (req) => {
       }
     }
 
-    // 2. Memory Retrieval (Contextual History)
+    // 2. Memory Retrieval
     const { data: memory } = await supabaseAdmin
       .from('ai_memory')
       .select('key, value, importance_score')
@@ -71,17 +74,35 @@ serve(async (req) => {
     
     const memoryStr = memory?.map(m => `- ${m.key}: ${m.value}`).join('\n') || "Sem memórias registradas."
 
-    // 3. RAG - Search for knowledge (Simulated/Ready for Vector Search)
-    // Here we could use: const { data: knowledge } = await supabaseAdmin.rpc('match_context', { query_embedding: ... })
-    const knowledgeStr = "MVNI Hub é a maior plataforma de Telecom SaaS do Brasil. Oferecemos planos pré-pagos e controle com gestão via dashboard."
+    // 3. RAG - Real Semantic Search
+    let knowledgeStr = "MVNI Hub: Telecom SaaS Enterprise."
+    try {
+      const embRes = await fetch("https://api.openai.com/v1/embeddings", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${openAiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "text-embedding-3-small", input: message })
+      })
+      if (embRes.ok) {
+        const { data: [{ embedding }] } = await embRes.json()
+        const { data: matches } = await supabaseAdmin.rpc('match_ai_context', {
+          query_embedding: embedding,
+          match_threshold: 0.5,
+          match_count: 3
+        })
+        if (matches && matches.length > 0) {
+          knowledgeStr = matches.map((m: any) => m.content).join('\n---\n')
+        }
+      }
+    } catch (e) {
+      console.warn("RAG Search failed, continuing with default knowledge.", e)
+    }
 
     // 4. Intelligent Routing
     let agentCode = force_agent_code
     if (!agentCode) {
-      // Automatic decision based on context
       if (contextData?.pagamentos?.some((p: any) => p.status === 'pending')) {
         agentCode = 'agent_debt'
-      } else if (cliente_id && contextData?.linhas?.length === 0) {
+      } else if (cliente_id && (contextData?.linhas?.length || 0) === 0) {
         agentCode = 'agent_onboarding'
       } else if (cliente_id) {
         agentCode = 'agent_support'
@@ -93,38 +114,25 @@ serve(async (req) => {
     const { data: agent } = await supabaseAdmin.from('ai_agent_settings').select('*').eq('code', agentCode).single()
     if (!agent) throw new Error(`Agente ${agentCode} não configurado.`)
 
-    // 5. Conversation History
+    // 5. History
     let conversationId: string
-    const { data: conv } = await supabaseAdmin
-      .from('ai_conversations')
-      .select('id')
-      .or(`cliente_id.eq.${cliente_id},lead_id.eq.${lead_id}`)
-      .eq('status', 'active')
-      .maybeSingle()
+    const { data: conv } = await supabaseAdmin.from('ai_conversations')
+      .select('id').or(`cliente_id.eq.${cliente_id},lead_id.eq.${lead_id}`)
+      .eq('status', 'active').maybeSingle()
 
     if (conv) {
       conversationId = conv.id
     } else {
-      const { data: newConv } = await supabaseAdmin
-        .from('ai_conversations')
-        .insert({ cliente_id, lead_id, whatsapp_instance_id })
-        .select().single()
-      conversationId = newConv.id
+      const { data: nConv } = await supabaseAdmin.from('ai_conversations')
+        .insert({ cliente_id, lead_id, whatsapp_instance_id }).select().single()
+      conversationId = nConv.id
     }
 
-    const { data: history } = await supabaseAdmin
-      .from('ai_messages')
-      .select('role, content')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: false })
-      .limit(8)
-    
-    const historyMsgs = history?.reverse() || []
+    const { data: history } = await supabaseAdmin.from('ai_messages').select('role, content')
+      .eq('conversation_id', conversationId).order('created_at', { ascending: false }).limit(6)
+    const historyMsgs = (history || []).reverse()
 
-    // 6. OpenAI Enterprise Call (GPT-4o)
-    const openAiKey = Deno.env.get('OPENAI_API_KEY')
-    if (!openAiKey) throw new Error("API Key da OpenAI não encontrada nos segredos.")
-
+    // 6. OpenAI Call
     const systemPrompt = `
 ${agent.base_prompt}
 
@@ -135,50 +143,39 @@ ${contextStr}
 # MEMÓRIA PERSISTENTE
 ${memoryStr}
 
-# BASE DE CONHECIMENTO (RAG)
+# CONHECIMENTO ESPECÍFICO (RAG)
 ${knowledgeStr}
 
-# REGRAS ENTERPRISE
-- Use delays humanos.
-- Nunca repita a mesma frase duas vezes.
-- Se identificar interesse de compra, use o tom SDR.
-- Se houver inadimplência, foque na regularização.
-- Mantenha a resposta curta (max 3 parágrafos).
+# REGRAS OPERACIONAIS
+- Use tom profissional e amigável.
+- Nunca alucine informações. Se não souber, peça para aguardar um atendente humano.
+- Respostas em Português do Brasil.
+- Max 250 caracteres por mensagem.
     `
-
-    const messages = [
-      { role: "system", content: systemPrompt },
-      ...historyMsgs,
-      { role: "user", content: message }
-    ]
 
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${openAiKey}`,
-        "Content-Type": "application/json"
-      },
+      headers: { "Authorization": `Bearer ${openAiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o",
-        messages,
+        model: agent.model || "gpt-4o",
+        messages: [{ role: "system", content: systemPrompt }, ...historyMsgs, { role: "user", content: message }],
         temperature: agent.temperature,
         max_tokens: agent.max_tokens,
         user: conversationId
       })
     })
 
-    if (!openaiRes.ok) throw new Error(`Erro na OpenAI: ${await openaiRes.text()}`)
+    if (!openaiRes.ok) throw new Error(`OpenAI Error: ${await openaiRes.text()}`)
     const aiData = await openaiRes.json()
     const aiText = aiData.choices[0].message.content
     const usage = aiData.usage
 
-    // 7. Lead Scoring Logic
+    // 7. Lead Scoring & Logs
     if (lead_id) {
-      const scoringAnalysis = await analyzeLeadScore(aiText, message)
-      await updateLeadScore(supabaseAdmin, lead_id, scoringAnalysis)
+      const scoreInc = aiText.toLowerCase().includes('agend') ? 25 : (message.length > 20 ? 5 : 2)
+      await supabaseAdmin.rpc('increment_lead_score', { p_lead_id: lead_id, p_inc: scoreInc })
     }
 
-    // 8. Persistence & Observability
     await supabaseAdmin.from('ai_messages').insert([
       { conversation_id: conversationId, role: 'user', content: message },
       { conversation_id: conversationId, role: 'assistant', content: aiText, agent_id: agent.id }
@@ -186,7 +183,7 @@ ${knowledgeStr}
 
     await supabaseAdmin.from('ai_token_usage').insert({
       conversation_id: conversationId,
-      model: 'gpt-4o',
+      model: agent.model,
       prompt_tokens: usage.prompt_tokens,
       completion_tokens: usage.completion_tokens,
       total_tokens: usage.total_tokens,
@@ -196,55 +193,24 @@ ${knowledgeStr}
     const executionTime = Date.now() - startTime
     await supabaseAdmin.from('ai_automation_logs').insert({
       conversation_id: conversationId,
-      action: 'generate_ai_response',
+      action: 'generate_response',
       status: 'success',
       execution_time_ms: executionTime,
-      metadata: { agent: agentCode, tokens: usage.total_tokens }
+      metadata: { agent: agentCode, tokens: usage.total_tokens, rag_used: knowledgeStr !== "MVNI Hub: Telecom SaaS Enterprise." }
     })
-
-    // 9. Return Response with Human Delays
-    const typingDelay = Math.min(6000, aiText.length * 40) // 40ms per char
 
     return new Response(JSON.stringify({
       success: true,
       response: aiText,
-      delay_ms: typingDelay,
+      delay_ms: Math.min(5000, aiText.length * 35),
       agent: agentCode,
-      metrics: {
-        tokens: usage.total_tokens,
-        time: executionTime
-      }
+      metrics: { tokens: usage.total_tokens, time: executionTime }
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (error) {
+    console.error('AI Engine Error:', error)
     return new Response(JSON.stringify({ success: false, error: error.message }), { 
-      status: 500, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     })
   }
 })
-
-async function analyzeLeadScore(aiText: string, userMessage: string) {
-  // Simple heuristic for demo, could be another AI call
-  let score = 5
-  const keywords = ['quero', 'comprar', 'preço', 'valor', 'plano', 'contratar']
-  keywords.forEach(k => {
-    if (userMessage.toLowerCase().includes(k)) score += 15
-  })
-  return score
-}
-
-async function updateLeadScore(supabase: any, leadId: string, value: number) {
-  const { data } = await supabase.from('ai_lead_scores').select('score_value').eq('lead_id', leadId).single()
-  const newScore = Math.min(100, (data?.score_value || 0) + value)
-  let classification = 'cold'
-  if (newScore > 70) classification = 'hot'
-  else if (newScore > 30) classification = 'warm'
-
-  await supabase.from('ai_lead_scores').upsert({
-    lead_id: leadId,
-    score_value: newScore,
-    classification,
-    last_update: new Date().toISOString()
-  })
-}
