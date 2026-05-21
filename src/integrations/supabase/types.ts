@@ -3363,6 +3363,10 @@ export type Database = {
         Args: { p_amount: number; p_job_id: string }
         Returns: undefined
       }
+      increment_lead_score: {
+        Args: { p_inc: number; p_lead_id: string }
+        Returns: undefined
+      }
       increment_whatsapp_metrics: {
         Args: { p_instance_id: string; p_success: boolean }
         Returns: undefined
