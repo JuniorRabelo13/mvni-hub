@@ -163,7 +163,9 @@ export default function MasterWhatsApp() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="text-[10px] font-mono border-zinc-800">0</Badge>
+                      <Badge variant="outline" className="text-[10px] font-mono border-zinc-800">
+                        {report?.queue || 0}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-center font-mono text-xs text-emerald-400">
                       {inst.sent_count || 0}
