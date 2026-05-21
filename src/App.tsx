@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,11 +11,14 @@ import { Navigate } from "react-router-dom";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 function RootRedirect() {
   const { isAuthReady, authenticated, role } = useAuth();
+  
   if (!isAuthReady) return <LoadingScreen />;
   if (!authenticated) return <Navigate to="/auth" replace />;
+  
   if (role === "master" || role === "master_admin") return <Navigate to="/master/central" replace />;
   return <Navigate to="/painel" replace />;
 }
@@ -94,7 +97,26 @@ const MasterConfig = lazy(() => import("./pages/master-admin/MasterConfig"));
 
 
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: any) => {
+        if (error?.status === 404 || error?.status === 403) return false;
+        return failureCount < 2;
+      },
+      staleTime: 1000 * 30,
+      refetchOnWindowFocus: false,
+    },
+  },
+  queryCache: new QueryCache({
+    onError: (error: any) => {
+      console.error("[QUERY_CACHE_ERROR]", error);
+      if (error?.message?.includes("Failed to fetch") || error?.status === 500) {
+        toast.error("Erro de conexão com o servidor. Tente novamente.");
+      }
+    },
+  }),
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
