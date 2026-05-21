@@ -69,13 +69,11 @@ export default function Clientes() {
       if (stripeError) throw new Error(stripeError.message || "Erro ao criar cliente no Stripe");
       if (!stripeCustomer?.stripe_customer_id) throw new Error("ID do cliente Stripe não retornado");
 
-      // 2. Criar assinatura
-      const valorCentavos = 9990; // Fixed official value of R$ 99.90 in cents
+      // 2. Criar assinatura (backend agora força o valor oficial de R$ 99,90)
       const { error: subscriptionError } = await supabase.functions.invoke('stripe-criar-assinatura', {
         body: {
           cliente_id: selectedCliente.id,
           stripe_customer_id: stripeCustomer.stripe_customer_id,
-          valor: valorCentavos,
           dia_vencimento: parseInt(recurringDay)
         }
       });

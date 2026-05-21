@@ -12,14 +12,16 @@ serve(async (req) => {
   }
 
   try {
-    const { cliente_id, stripe_customer_id, valor, dia_vencimento } = await req.json()
+    const { cliente_id, stripe_customer_id, dia_vencimento } = await req.json()
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
 
     if (!stripeSecretKey) {
       throw new Error('STRIPE_SECRET_KEY não configurada')
     }
 
-    // 1. Criar Price no Stripe
+    // 1. Definir Valor Oficial R$ 99,90 (em centavos)
+    const VALOR_OFICIAL_CENTAVOS = 9990;
+
     const priceResponse = await fetch('https://api.stripe.com/v1/prices', {
       method: 'POST',
       headers: {
@@ -27,10 +29,10 @@ serve(async (req) => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        'unit_amount': '9990', // Official price of R$ 99.90 in cents
+        'unit_amount': VALOR_OFICIAL_CENTAVOS.toString(),
         'currency': 'brl',
         'recurring[interval]': 'month',
-        'product_data[name]': 'Assinatura MVNI',
+        'product_data[name]': 'Assinatura MVNI Hub - Plano Premium',
       }),
     })
 
@@ -81,7 +83,7 @@ serve(async (req) => {
       .update({
         stripe_subscription_id: subscriptionData.id,
         status: 'ativo',
-        valor: valor / 100, // Salva o valor em reais na tabela (numeric)
+        valor: 99.90, // Força o valor oficial de R$ 99,90 na tabela
         data_proxima_cobranca: anchorDate.toISOString().split('T')[0],
         stripe_customer_id: stripe_customer_id
       })
