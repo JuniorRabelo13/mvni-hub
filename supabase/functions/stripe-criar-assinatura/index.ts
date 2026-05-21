@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { cliente_id, stripe_customer_id, valor, dia_vencimento } = await req.json()
+    const { cliente_id, stripe_customer_id, dia_vencimento } = await req.json()
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
 
     if (!stripeSecretKey) {
@@ -81,7 +81,7 @@ serve(async (req) => {
       .update({
         stripe_subscription_id: subscriptionData.id,
         status: 'ativo',
-        valor: valor / 100, // Salva o valor em reais na tabela (numeric)
+        valor: 99.90, // Força o valor oficial de R$ 99,90 na tabela
         data_proxima_cobranca: anchorDate.toISOString().split('T')[0],
         stripe_customer_id: stripe_customer_id
       })
