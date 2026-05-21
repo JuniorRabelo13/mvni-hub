@@ -55,3 +55,12 @@ verify_jwt = false
 [cron.whatsapp-worker-cron]
 schedule = "*/1 * * * *" # A cada 1 minuto
 
+[functions.system-heartbeat]
+verify_jwt = false
+
+[cron.system-heartbeat]
+schedule = "*/1 * * * *" # Heartbeat global (mínimo permitido: 1 min)
+
+[cron.observability-cleanup]
+schedule = "0 3 * * *" # Limpeza diária às 3h
+
