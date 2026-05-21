@@ -80,9 +80,9 @@ export default function MasterPlanos() {
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Configure mensalidades, comissões e limites técnicos por nível de conta.</p>
         </div>
-        <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
-          <Plus className="h-4 w-4" /> CRIAR NOVO PLANO
-        </Button>
+        <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-primary text-xs font-bold uppercase backdrop-blur-sm">
+          Plano Único Ativado
+        </div>
       </header>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -150,11 +150,8 @@ export default function MasterPlanos() {
               </div>
 
               <div className="pt-4 mt-auto border-t border-zinc-900 flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1 text-[10px] h-8 border-zinc-800 hover:bg-zinc-900 gap-1.5">
-                  <Edit className="h-3 w-3" /> EDITAR
-                </Button>
-                <Button variant="ghost" size="sm" className="text-[10px] h-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 p-2">
-                  <Trash2 className="h-3.5 w-3.5" />
+                <Button disabled variant="outline" size="sm" className="flex-1 text-[10px] h-8 border-zinc-800 opacity-50 gap-1.5">
+                  <Edit className="h-3 w-3" /> ESTRUTURA FIXA
                 </Button>
               </div>
             </CardContent>

@@ -70,7 +70,7 @@ export default function Clientes() {
       if (!stripeCustomer?.stripe_customer_id) throw new Error("ID do cliente Stripe não retornado");
 
       // 2. Criar assinatura
-      const valorCentavos = Math.round(parseFloat(recurringValue.replace(',', '.')) * 100);
+      const valorCentavos = 9990; // Fixed official value of R$ 99.90 in cents
       const { error: subscriptionError } = await supabase.functions.invoke('stripe-criar-assinatura', {
         body: {
           cliente_id: selectedCliente.id,
@@ -399,8 +399,9 @@ export default function Clientes() {
                               <Label htmlFor="recurringValue">Valor mensal (R$)</Label>
                               <Input 
                                 id="recurringValue" 
-                                value={recurringValue} 
-                                onChange={(e) => setRecurringValue(e.target.value)}
+                                value="99,90" 
+                                disabled
+                                className="bg-zinc-900/50"
                               />
                             </div>
                             <div className="space-y-2">

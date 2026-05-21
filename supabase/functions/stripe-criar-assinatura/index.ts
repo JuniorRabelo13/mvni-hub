@@ -27,7 +27,7 @@ serve(async (req) => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        'unit_amount': valor.toString(),
+        'unit_amount': '9990', // Official price of R$ 99.90 in cents
         'currency': 'brl',
         'recurring[interval]': 'month',
         'product_data[name]': 'Assinatura MVNI',
