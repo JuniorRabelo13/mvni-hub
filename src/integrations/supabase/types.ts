@@ -2221,6 +2221,134 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_instance_health: {
+        Row: {
+          details: Json | null
+          heartbeat_at: string | null
+          id: string
+          instance_id: string | null
+          latency_ms: number | null
+          status: Database["public"]["Enums"]["whatsapp_instance_status"]
+        }
+        Insert: {
+          details?: Json | null
+          heartbeat_at?: string | null
+          id?: string
+          instance_id?: string | null
+          latency_ms?: number | null
+          status: Database["public"]["Enums"]["whatsapp_instance_status"]
+        }
+        Update: {
+          details?: Json | null
+          heartbeat_at?: string | null
+          id?: string
+          instance_id?: string | null
+          latency_ms?: number | null
+          status?: Database["public"]["Enums"]["whatsapp_instance_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_instance_health_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_instance_metrics: {
+        Row: {
+          avg_response_time_ms: number | null
+          delivery_rate: number | null
+          failed_count: number | null
+          id: string
+          instance_id: string | null
+          last_reset_at: string | null
+          sent_count: number | null
+        }
+        Insert: {
+          avg_response_time_ms?: number | null
+          delivery_rate?: number | null
+          failed_count?: number | null
+          id?: string
+          instance_id?: string | null
+          last_reset_at?: string | null
+          sent_count?: number | null
+        }
+        Update: {
+          avg_response_time_ms?: number | null
+          delivery_rate?: number | null
+          failed_count?: number | null
+          id?: string
+          instance_id?: string | null
+          last_reset_at?: string | null
+          sent_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_instance_metrics_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_instances: {
+        Row: {
+          connected_at: string | null
+          created_at: string | null
+          disconnected_at: string | null
+          health_score: number | null
+          id: string
+          last_seen: string | null
+          nome: string
+          numero_conectado: string | null
+          provider: string | null
+          qr_code: string | null
+          reconnect_attempts: number | null
+          session_id: string
+          status: Database["public"]["Enums"]["whatsapp_instance_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          connected_at?: string | null
+          created_at?: string | null
+          disconnected_at?: string | null
+          health_score?: number | null
+          id?: string
+          last_seen?: string | null
+          nome: string
+          numero_conectado?: string | null
+          provider?: string | null
+          qr_code?: string | null
+          reconnect_attempts?: number | null
+          session_id: string
+          status?:
+            | Database["public"]["Enums"]["whatsapp_instance_status"]
+            | null
+          updated_at?: string | null
+        }
+        Update: {
+          connected_at?: string | null
+          created_at?: string | null
+          disconnected_at?: string | null
+          health_score?: number | null
+          id?: string
+          last_seen?: string | null
+          nome?: string
+          numero_conectado?: string | null
+          provider?: string | null
+          qr_code?: string | null
+          reconnect_attempts?: number | null
+          session_id?: string
+          status?:
+            | Database["public"]["Enums"]["whatsapp_instance_status"]
+            | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_logs: {
         Row: {
           cliente_id: string | null
@@ -2252,6 +2380,110 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_message_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          execution_time_ms: number | null
+          id: string
+          instance_id: string | null
+          provider_response: Json | null
+          queue_id: string | null
+          status: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          instance_id?: string | null
+          provider_response?: Json | null
+          queue_id?: string | null
+          status: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          instance_id?: string | null
+          provider_response?: Json | null
+          queue_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_logs_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_logs_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_message_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_message_queue: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          instance_id: string | null
+          max_retries: number | null
+          mensagem: string
+          metadata: Json | null
+          prioridade: number | null
+          processed_at: string | null
+          retries: number | null
+          scheduled_at: string | null
+          status: Database["public"]["Enums"]["whatsapp_queue_status"] | null
+          telefone: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          instance_id?: string | null
+          max_retries?: number | null
+          mensagem: string
+          metadata?: Json | null
+          prioridade?: number | null
+          processed_at?: string | null
+          retries?: number | null
+          scheduled_at?: string | null
+          status?: Database["public"]["Enums"]["whatsapp_queue_status"] | null
+          telefone: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          instance_id?: string | null
+          max_retries?: number | null
+          mensagem?: string
+          metadata?: Json | null
+          prioridade?: number | null
+          processed_at?: string | null
+          retries?: number | null
+          scheduled_at?: string | null
+          status?: Database["public"]["Enums"]["whatsapp_queue_status"] | null
+          telefone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_queue_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
             referencedColumns: ["id"]
           },
         ]
@@ -2406,6 +2638,44 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_reconnect_logs: {
+        Row: {
+          attempt_number: number
+          backoff_seconds: number | null
+          created_at: string | null
+          id: string
+          instance_id: string | null
+          reason: string | null
+          success: boolean | null
+        }
+        Insert: {
+          attempt_number: number
+          backoff_seconds?: number | null
+          created_at?: string | null
+          id?: string
+          instance_id?: string | null
+          reason?: string | null
+          success?: boolean | null
+        }
+        Update: {
+          attempt_number?: number
+          backoff_seconds?: number | null
+          created_at?: string | null
+          id?: string
+          instance_id?: string | null
+          reason?: string | null
+          success?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_reconnect_logs_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
             referencedColumns: ["id"]
           },
         ]
@@ -2698,6 +2968,10 @@ export type Database = {
         Args: { p_amount: number; p_job_id: string }
         Returns: undefined
       }
+      increment_whatsapp_metrics: {
+        Args: { p_instance_id: string; p_success: boolean }
+        Returns: undefined
+      }
       is_master_admin: { Args: { _user_id: string }; Returns: boolean }
       liberar_transacao_wallet: {
         Args: { p_transacao_id: string; p_valor: number; p_wallet_id: string }
@@ -2790,6 +3064,22 @@ export type Database = {
         | "conectado"
         | "desconectado"
         | "iniciando"
+      whatsapp_instance_status:
+        | "connecting"
+        | "qr_pending"
+        | "connected"
+        | "reconnecting"
+        | "disconnected"
+        | "banned"
+        | "timeout"
+        | "rate_limited"
+      whatsapp_queue_status:
+        | "pending"
+        | "processing"
+        | "sent"
+        | "failed"
+        | "cancelled"
+        | "scheduled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2945,6 +3235,24 @@ export const Constants = {
         "conectado",
         "desconectado",
         "iniciando",
+      ],
+      whatsapp_instance_status: [
+        "connecting",
+        "qr_pending",
+        "connected",
+        "reconnecting",
+        "disconnected",
+        "banned",
+        "timeout",
+        "rate_limited",
+      ],
+      whatsapp_queue_status: [
+        "pending",
+        "processing",
+        "sent",
+        "failed",
+        "cancelled",
+        "scheduled",
       ],
     },
   },
