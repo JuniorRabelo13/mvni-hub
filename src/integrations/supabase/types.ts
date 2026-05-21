@@ -101,6 +101,401 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_agent_settings: {
+        Row: {
+          base_prompt: string
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          max_tokens: number | null
+          model: string | null
+          name: string
+          temperature: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          base_prompt: string
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_tokens?: number | null
+          model?: string | null
+          name: string
+          temperature?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          base_prompt?: string
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_tokens?: number | null
+          model?: string | null
+          name?: string
+          temperature?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ai_automation_logs: {
+        Row: {
+          action: string
+          conversation_id: string | null
+          created_at: string | null
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          metadata: Json | null
+          status: string
+        }
+        Insert: {
+          action: string
+          conversation_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          status: string
+        }
+        Update: {
+          action?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_automation_logs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_context_embeddings: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          source_type: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          source_type?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          source_type?: string | null
+        }
+        Relationships: []
+      }
+      ai_conversations: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          external_id: string | null
+          id: string
+          last_message_at: string | null
+          lead_id: string | null
+          metadata: Json | null
+          status: string | null
+          updated_at: string | null
+          whatsapp_instance_id: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          lead_id?: string | null
+          metadata?: Json | null
+          status?: string | null
+          updated_at?: string | null
+          whatsapp_instance_id?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          lead_id?: string | null
+          metadata?: Json | null
+          status?: string | null
+          updated_at?: string | null
+          whatsapp_instance_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_conversations_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_conversations_whatsapp_instance_id_fkey"
+            columns: ["whatsapp_instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_lead_scores: {
+        Row: {
+          classification: string | null
+          id: string
+          last_update: string | null
+          lead_id: string | null
+          reasons: string[] | null
+          score_value: number | null
+        }
+        Insert: {
+          classification?: string | null
+          id?: string
+          last_update?: string | null
+          lead_id?: string | null
+          reasons?: string[] | null
+          score_value?: number | null
+        }
+        Update: {
+          classification?: string | null
+          id?: string
+          last_update?: string | null
+          lead_id?: string | null
+          reasons?: string[] | null
+          score_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_lead_scores_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: true
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_memory: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          id: string
+          importance_score: number | null
+          instance_id: string | null
+          key: string
+          lead_id: string | null
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          id?: string
+          importance_score?: number | null
+          instance_id?: string | null
+          key: string
+          lead_id?: string | null
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          id?: string
+          importance_score?: number | null
+          instance_id?: string | null
+          key?: string
+          lead_id?: string | null
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_memory_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_memory_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_memory_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_messages: {
+        Row: {
+          agent_id: string | null
+          content: string
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          role: string
+          tokens: number | null
+        }
+        Insert: {
+          agent_id?: string | null
+          content: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+          tokens?: number | null
+        }
+        Update: {
+          agent_id?: string | null
+          content?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+          tokens?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_messages_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "ai_agent_settings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_prompt_templates: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+          template: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+          template: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+          template?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ai_token_usage: {
+        Row: {
+          completion_tokens: number | null
+          conversation_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          metadata: Json | null
+          model: string
+          prompt_tokens: number | null
+          total_tokens: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          metadata?: Json | null
+          model: string
+          prompt_tokens?: number | null
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          metadata?: Json | null
+          model?: string
+          prompt_tokens?: number | null
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_token_usage_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assinaturas: {
         Row: {
           cliente_id: string
