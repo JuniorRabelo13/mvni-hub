@@ -109,21 +109,21 @@ export default function MasterFinanceiro() {
     queryKey: ["master-finance-summary", selectedMes],
     queryFn: async () => {
       const [
-        { data: subscriptions },
+        { data: metrics },
         { data: commissions }
       ] = await Promise.all([
-        supabase.from("assinaturas").select("valor").eq("status", "ativo"),
+        supabase.rpc('get_global_finance_metrics'),
         supabase.from("comissoes_mensais")
           .select("valor_total, status")
           .eq("mes_referencia", selectedMes)
       ]);
 
-      const receitaBruta = subscriptions?.reduce((acc, sub) => acc + Number(sub.valor), 0) || 0;
+      const receitaBruta = (metrics as any)?.mrr || 0;
+      const totalComissoesPagar = commissions?.reduce((acc, c) => acc + Number(c.valor_total), 0) || 0;
+      const representantesPendentes = commissions?.filter(c => c.status === "pendente").length || 0;
       
-      const pendentes = commissions?.filter(c => c.status === "pendente") || [];
-      const totalComissoesPagar = pendentes.reduce((acc, c) => acc + Number(c.valor_total), 0);
-      const representantesPendentes = pendentes.length;
-      const margemEstimada = receitaBruta - totalComissoesPagar;
+      // Margem Real: Receita - (Comissões + Custo Operacional R$ 49,90)
+      const margemEstimada = (metrics as any)?.estimated_profit || 0;
 
       return {
         receitaBruta,
@@ -276,7 +276,7 @@ export default function MasterFinanceiro() {
               <Wallet className="h-4 w-4 text-emerald-500" />
             </div>
             <h2 className="text-2xl font-bold tabular-nums text-emerald-500">{fmt(masterSummary?.margemEstimada || 0)}</h2>
-            <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Receita bruta (-) Comissões pendentes</p>
+            <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Receita (-) Comissões (-) Custo Op. R$ 49,90</p>
           </CardContent>
         </Card>
 

@@ -34,7 +34,8 @@ export default function MasterDashboard() {
         mrr: fin?.mrr ?? 0,
         total_revenue: fin?.total_revenue ?? 0,
         overdue_revenue: fin?.overdue_revenue ?? 0,
-        active_clients: activeClients ?? 0,
+        active_clients: fin?.active_lines ?? activeClients ?? 0,
+        profit: fin?.estimated_profit ?? 0
       };
     },
     enabled: !!user && role === 'master' && isAuthReady
@@ -64,10 +65,12 @@ export default function MasterDashboard() {
           trend="up"
         />
         <MetricCard 
-          title="Receita Total" 
-          value={fmt(metrics?.total_revenue)} 
-          description="Desde o início da operação" 
-          icon={Wallet}
+          title="Lucro Mensal" 
+          value={fmt(metrics?.profit)} 
+          description="Líquido estimado (Pós-custos/comissões)" 
+          icon={TrendingUp}
+          trend="up"
+          color="text-emerald-500"
         />
         <MetricCard 
           title="Clientes Ativos" 
