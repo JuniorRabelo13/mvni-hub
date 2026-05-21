@@ -399,8 +399,9 @@ export default function Clientes() {
                               <Label htmlFor="recurringValue">Valor mensal (R$)</Label>
                               <Input 
                                 id="recurringValue" 
-                                value={recurringValue} 
-                                onChange={(e) => setRecurringValue(e.target.value)}
+                                value="99,90" 
+                                disabled
+                                className="bg-zinc-900/50"
                               />
                             </div>
                             <div className="space-y-2">
