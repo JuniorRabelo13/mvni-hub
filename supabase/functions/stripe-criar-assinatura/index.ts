@@ -19,7 +19,9 @@ serve(async (req) => {
       throw new Error('STRIPE_SECRET_KEY não configurada')
     }
 
-    // 1. Criar Price no Stripe
+    // 1. Definir Valor Oficial R$ 99,90 (em centavos)
+    const VALOR_OFICIAL_CENTAVOS = 9990;
+
     const priceResponse = await fetch('https://api.stripe.com/v1/prices', {
       method: 'POST',
       headers: {
@@ -27,10 +29,10 @@ serve(async (req) => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        'unit_amount': '9990', // Official price of R$ 99.90 in cents
+        'unit_amount': VALOR_OFICIAL_CENTAVOS.toString(),
         'currency': 'brl',
         'recurring[interval]': 'month',
-        'product_data[name]': 'Assinatura MVNI',
+        'product_data[name]': 'Assinatura MVNI Hub - Plano Premium',
       }),
     })
 
