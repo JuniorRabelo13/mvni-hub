@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/posthog";
 import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle, Activity, TrendingUp, Users, Wallet, AlertCircle, BarChart3, Mail, Phone, Hash, Calendar, PhoneCall, CreditCard, Sparkles } from "lucide-react";
 import { PixPaymentDialog } from "@/components/PixPaymentDialog";
 import { sanitize } from "@/lib/sanitize";
@@ -81,6 +82,7 @@ export default function Clientes() {
       if (subscriptionError) throw new Error(subscriptionError.message || "Erro ao criar assinatura");
 
       toast.success("Cobrança recorrente ativada com sucesso");
+      trackEvent('ativacao_recorrente', { cliente_id: selectedCliente.id });
       setShowRecurringModal(false);
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
     } catch (error: any) {
@@ -195,8 +197,10 @@ export default function Clientes() {
       if (e2 || !linha) throw new Error("Falha ao criar linha");
       return cli;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      trackEvent('cadastro_cliente_dashboard', { name: variables.nome });
+      trackEvent('ativacao_linha', { msisdn: variables.msisdn });
       setOpen(false);
       toast.success("Cliente cadastrado! Cobrança gerada (pendente).");
     },

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/posthog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { buildApiUrl } from "./utils/api-config";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -144,6 +145,7 @@ export default function AgenteAgentes() {
           setQrCode(null);
           setShowQrModal(false);
           toast.success("WhatsApp conectado com sucesso");
+          trackEvent('whatsapp_conectado', { agent_id: agentId, phone: connectedPhone });
           return;
         }
 
@@ -284,6 +286,7 @@ export default function AgenteAgentes() {
       });
 
       toast.success("Número removido com sucesso");
+      trackEvent('whatsapp_desconectado', { agent_id: agent.id });
     } catch (error: any) {
       console.error("[WHATSAPP_DELETE_ERROR]", error);
       toast.error("Erro ao remover número");

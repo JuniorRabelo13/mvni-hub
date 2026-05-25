@@ -2,8 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, MessageSquare, Target, Zap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { trackEvent } from "@/lib/posthog";
 
 export default function AgenteDashboard() {
+  useEffect(() => {
+    trackEvent('whatsapp_dashboard_view');
+  }, []);
   const { data: stats } = useQuery({
     queryKey: ["agente-stats"],
     queryFn: async () => {

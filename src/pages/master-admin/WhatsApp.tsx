@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/lib/posthog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -31,6 +32,10 @@ import { QueryError } from "@/components/QueryError";
 
 export default function MasterWhatsApp() {
   const [lastUpdate, setLastUpdate] = useState(new Date());
+
+  useEffect(() => {
+    trackEvent('master_whatsapp_view');
+  }, []);
 
   const { data: report, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["master-whatsapp-report"],

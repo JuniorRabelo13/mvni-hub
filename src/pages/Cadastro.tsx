@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/lib/posthog";
 
 const Cadastro = () => {
   const navigate = useNavigate();
@@ -89,6 +90,10 @@ const Cadastro = () => {
       if (funcError) throw funcError;
 
       if (data.sucesso) {
+        trackEvent('cadastro_cliente', {
+          email: formData.email,
+          indicado: !!referralCode
+        });
         navigate("/cadastro/sucesso");
       } else {
         setError(data.mensagem);

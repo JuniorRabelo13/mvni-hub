@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent, identifyUser, resetPostHog } from "@/lib/posthog";
 
 type Ctx = {
   user: User | null;
@@ -34,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<string | null>(null);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(localStorage.getItem("view_as_user_id"));
 
-  const fetchRole = async (userId: string) => {
+  const fetchRole = async (userId: string, currentSession?: Session | null) => {
     try {
       console.log('[AUTH] Fetching role for:', userId);
       const { data, error } = await supabase
@@ -61,6 +62,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const roleResult = data?.role ?? 'user';
       console.log('[AUTH] Role loaded:', roleResult);
       setRole(roleResult);
+
+      // PostHog Identify
+      const userSession = currentSession || session;
+      if (userSession) {
+        identifyUser(userId, {
+          email: userSession.user?.email,
+          role: roleResult,
+          tenant: 'default', // Or fetch tenant if available
+        });
+      }
+
       return roleResult;
     } catch (error) {
       console.error("[AUTH] critical error fetching role:", error);
@@ -68,6 +80,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return 'user';
     }
   };
+
+
 
   useEffect(() => {
     let mounted = true;
@@ -79,12 +93,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
 
-        
         if (!mounted) return;
 
         if (initialSession) {
           setSession(initialSession);
-          await fetchRole(initialSession.user.id);
+          trackEvent('login', { method: 'session_restore' });
+          await fetchRole(initialSession.user.id, initialSession);
         }
       } catch (err) {
         console.error('[AUTH] Init error:', err);
@@ -112,8 +126,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setSession(newSession);
       if (newSession) {
-        await fetchRole(newSession.user.id);
+        if (event === 'SIGNED_IN') {
+          trackEvent('login', { method: 'supabase_auth' });
+        }
+        await fetchRole(newSession.user.id, newSession);
       } else {
+        if (event === 'SIGNED_OUT') {
+          trackEvent('logout');
+          resetPostHog();
+        }
         setRole(null);
       }
       setIsAuthReady(true);

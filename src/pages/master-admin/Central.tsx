@@ -21,8 +21,13 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useEffect } from "react";
+import { trackEvent } from "@/lib/posthog";
 
 const MasterCentral = () => {
+  useEffect(() => {
+    trackEvent('master_central_view');
+  }, []);
   const chartData = [
     { time: "00:00", revenue: 4500, users: 120 },
     { time: "04:00", revenue: 3200, users: 85 },
