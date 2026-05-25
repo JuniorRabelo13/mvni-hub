@@ -12,7 +12,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    console.log('[AuthGuard] Checking:', { isAuthReady, authenticated, ready, path: location.pathname });
     if (!isAuthReady) return;
+
 
     const isPublic = PUBLIC_ROUTES.some(route => location.pathname.startsWith(route));
     
