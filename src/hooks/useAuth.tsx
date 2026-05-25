@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<string | null>(null);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(localStorage.getItem("view_as_user_id"));
 
-  const fetchRole = async (userId: string) => {
+  const fetchRole = async (userId: string, currentSession?: Session | null) => {
     try {
       console.log('[AUTH] Fetching role for:', userId);
       const { data, error } = await supabase
@@ -64,11 +64,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setRole(roleResult);
 
       // PostHog Identify
-      identifyUser(userId, {
-        email: initialSession?.user?.email,
-        role: roleResult,
-        tenant: 'default', // Or fetch tenant if available
-      });
+      const userSession = currentSession || session;
+      if (userSession) {
+        identifyUser(userId, {
+          email: userSession.user?.email,
+          role: roleResult,
+          tenant: 'default', // Or fetch tenant if available
+        });
+      }
 
       return roleResult;
     } catch (error) {
@@ -78,8 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // We need initialSession in fetchRole scope if called during init
-  let initialSessionRef: Session | null = null;
 
 
   useEffect(() => {
@@ -97,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (initialSession) {
           setSession(initialSession);
           trackEvent('login', { method: 'session_restore' });
-          await fetchRole(initialSession.user.id);
+          await fetchRole(initialSession.user.id, initialSession);
         }
       } catch (err) {
         console.error('[AUTH] Init error:', err);
@@ -128,7 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (event === 'SIGNED_IN') {
           trackEvent('login', { method: 'supabase_auth' });
         }
-        await fetchRole(newSession.user.id);
+        await fetchRole(newSession.user.id, newSession);
       } else {
         if (event === 'SIGNED_OUT') {
           trackEvent('logout');
