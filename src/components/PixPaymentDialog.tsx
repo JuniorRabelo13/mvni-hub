@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/posthog";
 import { Copy, Check, Loader2, QrCode } from "lucide-react";
 
 interface PixPaymentDialogProps {
@@ -42,6 +43,7 @@ export function PixPaymentDialog({ pagamentoId, onOpenChange, onSuccess }: PixPa
         (payload) => {
           if (payload.new.status === 'pago') {
             toast.success("Pagamento confirmado via Realtime!");
+            trackEvent('pagamento_confirmado', { pagamento_id: pagamentoId, method: 'pix' });
             onSuccess();
             onOpenChange(false);
           }
@@ -63,6 +65,7 @@ export function PixPaymentDialog({ pagamentoId, onOpenChange, onSuccess }: PixPa
 
       if (error) throw error;
       setPixData(data);
+      trackEvent('pix_gerado', { pagamento_id: pagamentoId });
     } catch (error: any) {
       toast.error("Erro ao gerar PIX: " + error.message);
       onOpenChange(false);
@@ -75,6 +78,7 @@ export function PixPaymentDialog({ pagamentoId, onOpenChange, onSuccess }: PixPa
     if (pixData?.copy_paste) {
       navigator.clipboard.writeText(pixData.copy_paste);
       setCopied(true);
+      trackEvent('pix_copiado', { pagamento_id: pagamentoId });
       toast.success("Código PIX copiado!");
       setTimeout(() => setCopied(false), 2000);
     }

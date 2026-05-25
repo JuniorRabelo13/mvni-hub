@@ -28,8 +28,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { QueryError } from "@/components/QueryError";
+import { useEffect } from "react";
+import { trackEvent } from "@/lib/posthog";
 
 export default function MasterWorkers() {
+  useEffect(() => {
+    trackEvent('master_workers_view');
+  }, []);
   const { user, role, isAuthReady } = useAuth();
   const { data: report, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["master-workers-report"],
