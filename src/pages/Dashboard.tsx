@@ -143,8 +143,9 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <div className="p-8">
+      <h1>Dashboard Ready</h1>
+
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Painel</p>
           <h1 className="mt-1 text-3xl font-bold md:text-4xl">
