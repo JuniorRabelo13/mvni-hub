@@ -200,6 +200,7 @@ export default function Clientes() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
       trackEvent('cadastro_cliente_dashboard', { name: variables.nome });
+      trackEvent('ativacao_linha', { msisdn: variables.msisdn });
       setOpen(false);
       toast.success("Cliente cadastrado! Cobrança gerada (pendente).");
     },
