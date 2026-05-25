@@ -1,0 +1,13 @@
+# MVNI Hub PF
+
+> Plataforma enterprise para gestão de pagamentos, clientes, comissões de representantes, telecom e WhatsApp em tempo real.
+
+MVNI Hub PF oferece controle completo de operações para representantes e administradores: cadastro de clientes, gestão de linhas telecom, comissões recorrentes, saques via Pix e atendimento automatizado via WhatsApp.
+
+## Pages
+
+- [Início](/): Visão geral da plataforma e acesso ao painel.
+- [Cadastro de Representante](/cadastro): Crie sua conta como representante MVNI.
+- [Login](/auth): Acesso ao painel do representante.
+- [Termos de Uso](/termos): Termos do contrato de representante.
+- [Política de Privacidade](/privacidade): Política de privacidade e tratamento de dados.
