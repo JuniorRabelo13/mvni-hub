@@ -80,7 +80,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('[AUTH] Getting session...');
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
+        console.log('[AUTH] Session received:', initialSession?.user?.id || 'none');
         if (sessionError) throw sessionError;
+
         if (!mounted) return;
         
         if (initialSession) {
