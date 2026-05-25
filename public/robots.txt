@@ -12,3 +12,6 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://gentle-life-journal.lovable.app/sitemap.xml
+
