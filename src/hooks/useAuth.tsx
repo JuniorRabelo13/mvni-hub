@@ -105,8 +105,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     };
+    
+    // Fallback de segurança para evitar tela preta infinita
+    const fallbackId = setTimeout(() => {
+      if (!isAuthReady && mounted) {
+        console.warn('[AUTH] Fallback triggered: marking auth as ready after timeout');
+        setIsAuthReady(true);
+        setLoading(false);
+      }
+    }, 6000);
 
     initializeAuth();
+
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log('[AUTH] Auth state changed:', event, newSession?.user?.id);
@@ -147,8 +157,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       mounted = false;
+      clearTimeout(fallbackId);
       subscription.unsubscribe();
     };
+
   }, []);
 
   const signOut = async () => {
