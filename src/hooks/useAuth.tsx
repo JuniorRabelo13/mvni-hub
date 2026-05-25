@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent, identifyUser, resetPostHog } from "@/lib/posthog";
 
 type Ctx = {
   user: User | null;
@@ -61,6 +62,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const roleResult = data?.role ?? 'user';
       console.log('[AUTH] Role loaded:', roleResult);
       setRole(roleResult);
+
+      // PostHog Identify
+      identifyUser(userId, {
+        email: initialSession?.user?.email,
+        role: roleResult,
+        tenant: 'default', // Or fetch tenant if available
+      });
+
       return roleResult;
     } catch (error) {
       console.error("[AUTH] critical error fetching role:", error);
@@ -68,6 +77,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return 'user';
     }
   };
+
+  // We need initialSession in fetchRole scope if called during init
+  let initialSessionRef: Session | null = null;
+
 
   useEffect(() => {
     let mounted = true;
@@ -79,11 +92,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
 
-        
         if (!mounted) return;
 
         if (initialSession) {
           setSession(initialSession);
+          trackEvent('login', { method: 'session_restore' });
           await fetchRole(initialSession.user.id);
         }
       } catch (err) {
@@ -112,8 +125,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setSession(newSession);
       if (newSession) {
+        if (event === 'SIGNED_IN') {
+          trackEvent('login', { method: 'supabase_auth' });
+        }
         await fetchRole(newSession.user.id);
       } else {
+        if (event === 'SIGNED_OUT') {
+          trackEvent('logout');
+          resetPostHog();
+        }
         setRole(null);
       }
       setIsAuthReady(true);
