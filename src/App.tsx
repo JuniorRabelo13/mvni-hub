@@ -16,12 +16,16 @@ import { toast } from "sonner";
 function RootRedirect() {
   const { isAuthReady, authenticated, role } = useAuth();
   
-  if (!isAuthReady) return <LoadingScreen />;
+  if (!isAuthReady) return null;
   if (!authenticated) return <Navigate to="/auth" replace />;
   
-  if (role === "master" || role === "master_admin") return <Navigate to="/master/central" replace />;
+  if (role === "master" || role === "master_admin") {
+    return <Navigate to="/master/central" replace />;
+  }
   return <Navigate to="/painel" replace />;
 }
+
+
 
 // Auth Pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -124,10 +128,13 @@ const App = () => (
       <Toaster />
       <Sonner theme="dark" />
       <BrowserRouter>
-        <AuthGuard>
         <AuthProvider>
+          <AuthGuard>
+
+
           
-            <Suspense fallback={<LoadingScreen />}>
+            <React.Fragment>
+
             <Routes>
               <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><Auth /></Suspense>} />
               <Route path="/recuperar-senha" element={<RecuperarSenha />} />
@@ -200,11 +207,12 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </Suspense>
-        
-      </AuthProvider>
-        </AuthGuard>
+          </React.Fragment>
+
+          </AuthGuard>
+        </AuthProvider>
       </BrowserRouter>
+
     </TooltipProvider>
   </QueryClientProvider>
 );
