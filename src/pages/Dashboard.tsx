@@ -103,30 +103,36 @@ export default function Dashboard() {
 
     if (!user) return;
     const load = async () => {
-      const inicioMes = new Date();
-      inicioMes.setDate(1);
-      inicioMes.setHours(0, 0, 0, 0);
+      try {
+        const inicioMes = new Date();
+        inicioMes.setDate(1);
+        inicioMes.setHours(0, 0, 0, 0);
 
-      const [clientes, linhas, comMes, comTotal, indic] = await Promise.all([
-        supabase.from("clientes").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("ativo", true),
-        supabase.from("linhas").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "ativa"),
-        supabase.from("comissoes").select("valor").eq("user_id", user.id).gte("created_at", inicioMes.toISOString()),
-        supabase.from("comissoes").select("valor").eq("user_id", user.id),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("indicador_id", user.id),
-      ]);
+        const [clientes, linhas, comMes, comTotal, indic] = await Promise.all([
+          supabase.from("clientes").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("ativo", true),
+          supabase.from("linhas").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "ativa"),
+          supabase.from("comissoes").select("valor").eq("user_id", user.id).gte("created_at", inicioMes.toISOString()),
+          supabase.from("comissoes").select("valor").eq("user_id", user.id),
+          supabase.from("profiles").select("id", { count: "exact", head: true }).eq("indicador_id", user.id),
+        ]);
 
-      const stats = {
-        clientesAtivos: clientes.count ?? 0,
-        linhasAtivas: linhas.count ?? 0,
-        ganhoMes: (comMes.data ?? []).reduce((a, b) => a + Number(b.valor), 0),
-        ganhoTotal: (comTotal.data ?? []).reduce((a, b) => a + Number(b.valor), 0),
-        indicados: indic.count ?? 0,
-      };
+        const stats = {
+          clientesAtivos: clientes.count ?? 0,
+          linhasAtivas: linhas.count ?? 0,
+          ganhoMes: (comMes.data ?? []).reduce((a, b) => a + Number(b.valor), 0),
+          ganhoTotal: (comTotal.data ?? []).reduce((a, b) => a + Number(b.valor), 0),
+          indicados: indic.count ?? 0,
+        };
 
-      setS(sanitize(stats, "dashboard", user.id));
-      setLoading(false);
+        setS(sanitize(stats, "dashboard", user.id));
+      } catch (err) {
+        console.error("[DASHBOARD] Error loading data:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     load();
+
   }, [user]);
 
   const cards = [
