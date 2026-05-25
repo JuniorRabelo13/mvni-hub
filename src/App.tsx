@@ -124,8 +124,9 @@ const App = () => (
       <Toaster />
       <Sonner theme="dark" />
       <BrowserRouter>
-        <AuthGuard>
         <AuthProvider>
+          <AuthGuard>
+
           
             <Suspense fallback={<LoadingScreen />}>
             <Routes>
@@ -201,10 +202,10 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-        
-      </AuthProvider>
-        </AuthGuard>
+          </AuthGuard>
+        </AuthProvider>
       </BrowserRouter>
+
     </TooltipProvider>
   </QueryClientProvider>
 );
