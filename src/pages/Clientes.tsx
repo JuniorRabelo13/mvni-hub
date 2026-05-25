@@ -197,9 +197,9 @@ export default function Clientes() {
       if (e2 || !linha) throw new Error("Falha ao criar linha");
       return cli;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
-      trackEvent('cadastro_cliente_dashboard', { name: values.nome });
+      trackEvent('cadastro_cliente_dashboard', { name: variables.nome });
       setOpen(false);
       toast.success("Cliente cadastrado! Cobrança gerada (pendente).");
     },
