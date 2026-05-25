@@ -133,7 +133,8 @@ const App = () => (
           <AuthGuard>
 
           
-            <Suspense fallback={<LoadingScreen />}>
+            <React.Fragment>
+
             <Routes>
               <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><Auth /></Suspense>} />
               <Route path="/recuperar-senha" element={<RecuperarSenha />} />
@@ -206,7 +207,8 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </Suspense>
+          </React.Fragment>
+
           </AuthGuard>
         </AuthProvider>
       </BrowserRouter>
