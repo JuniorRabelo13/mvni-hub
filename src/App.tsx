@@ -16,12 +16,17 @@ import { toast } from "sonner";
 function RootRedirect() {
   const { isAuthReady, authenticated, role } = useAuth();
   
+  console.log('[RootRedirect] state:', { isAuthReady, authenticated, role });
+  
   if (!isAuthReady) return <LoadingScreen />;
   if (!authenticated) return <Navigate to="/auth" replace />;
   
-  if (role === "master" || role === "master_admin") return <Navigate to="/master/central" replace />;
+  if (role === "master" || role === "master_admin") {
+    return <Navigate to="/master/central" replace />;
+  }
   return <Navigate to="/painel" replace />;
 }
+
 
 // Auth Pages
 const Auth = lazy(() => import("./pages/Auth"));
