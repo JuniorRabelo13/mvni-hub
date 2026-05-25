@@ -30,7 +30,6 @@ const AuthCtx = createContext<Ctx>({
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(localStorage.getItem("view_as_user_id"));
@@ -46,26 +45,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("[AUTH] Error fetching role from 'usuarios':", error);
-        const { data: profileData, error: profileError } = await supabase
+        // Tentar buscar em profiles se falhar em usuarios
+        const { data: profileData } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", userId)
           .maybeSingle();
         
-        if (profileError) throw profileError;
         if (profileData) {
-          console.log('[AUTH] Role loaded from profiles:', profileData.role);
           setRole(profileData.role);
           return profileData.role;
         }
       }
 
       const roleResult = data?.role ?? 'user';
-      console.log('[AUTH] Role loaded from usuarios:', roleResult);
+      console.log('[AUTH] Role loaded:', roleResult);
       setRole(roleResult);
       return roleResult;
     } catch (error) {
-      console.error("[AUTH] Erro crítico ao buscar role:", error);
+      console.error("[AUTH] critical error fetching role:", error);
       setRole('user');
       return 'user';
     }
@@ -73,96 +71,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
-    console.log('[AUTH] Initializing AuthProvider');
+    let fallbackTimer: any;
 
-    const initializeAuth = async () => {
+    const initialize = async () => {
       try {
-        console.log('[AUTH] Getting session...');
-        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
+        console.log('[AUTH] Initializing...');
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
         
-        console.log('[AUTH] Session received:', initialSession?.user?.id || 'none');
-        if (sessionError) throw sessionError;
-
         if (!mounted) return;
-        
+
         if (initialSession) {
           setSession(initialSession);
-          // O role DEVE ser carregado antes de marcar isAuthReady
           await fetchRole(initialSession.user.id);
-        } else {
-          setSession(null);
-          setRole(null);
         }
-      } catch (error) {
-        console.error('[AUTH] Initialization error:', error);
-        if (mounted) {
-          setSession(null);
-          setRole(null);
-        }
+      } catch (err) {
+        console.error('[AUTH] Init error:', err);
       } finally {
         if (mounted) {
-          console.log('[AUTH] Initialization complete, data ready');
+          console.log('[AUTH] Ready');
           setIsAuthReady(true);
-          setLoading(false);
         }
       }
     };
-    
-    // Fallback de segurança para evitar tela preta infinita
-    const fallbackId = setTimeout(() => {
-      if (!isAuthReady && mounted) {
-        console.warn('[AUTH] Fallback triggered: marking auth as ready after timeout');
+
+    // Segurança: se em 5s não estiver pronto, força o estado ready
+    fallbackTimer = setTimeout(() => {
+      if (mounted && !isAuthReady) {
+        console.warn('[AUTH] Fallback ready');
         setIsAuthReady(true);
-        setLoading(false);
       }
-    }, 6000);
+    }, 5000);
 
-    initializeAuth();
-
+    initialize();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log('[AUTH] Auth state changed:', event, newSession?.user?.id);
-      
+      console.log('[AUTH] State changed:', event);
       if (!mounted) return;
 
-      if (event === 'SIGNED_OUT') {
-        setSession(null);
-        setRole(null);
-        setViewAsUserId(null);
-        localStorage.removeItem("view_as_user_id");
-        setIsAuthReady(true);
-        setLoading(false);
-        return;
-      }
-
+      setSession(newSession);
       if (newSession) {
-        setSession(newSession);
-        setIsAuthReady(false);
-        setLoading(true);
-        try {
-          await fetchRole(newSession.user.id);
-        } catch (err) {
-          console.error('[AUTH] Error in auth change handler:', err);
-        } finally {
-          if (mounted) {
-            setIsAuthReady(true);
-            setLoading(false);
-          }
-        }
+        await fetchRole(newSession.user.id);
       } else {
-        setSession(null);
         setRole(null);
-        setIsAuthReady(true);
-        setLoading(false);
       }
+      setIsAuthReady(true);
     });
 
     return () => {
       mounted = false;
-      clearTimeout(fallbackId);
+      clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
-
   }, []);
 
   const signOut = async () => {
