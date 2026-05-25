@@ -7,7 +7,7 @@ const MASTER_ONLY_ROUTES = ["/master/central", "/master/dashboard", "/master/pro
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
-  const location = locationProp || useLocation();
+  const location = useLocation();
   const { authenticated, isAuthReady, role } = useAuth();
   const [ready, setReady] = useState(false);
 
@@ -47,6 +47,3 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
-
-// Support for testing/manual location if needed
-let locationProp: any = null;
