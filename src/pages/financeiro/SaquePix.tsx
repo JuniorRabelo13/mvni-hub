@@ -78,9 +78,9 @@ export default function SaquePix() {
         });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["dados-bancarios"] });
-      trackEvent('saque_configurado', { tipo_chave: values.tipo_chave });
+      trackEvent('saque_configurado', { tipo_chave: variables.tipo_chave });
       toast.success("Chave Pix salva com sucesso!");
     },
     onError: (err: any) => toast.error("Erro ao salvar: " + err.message),
@@ -101,7 +101,7 @@ export default function SaquePix() {
         });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, valor) => {
       queryClient.invalidateQueries({ queryKey: ["historico-saques", "wallet"] });
       trackEvent('saque_solicitado', { valor });
       toast.success("Solicitação de saque enviada!");
