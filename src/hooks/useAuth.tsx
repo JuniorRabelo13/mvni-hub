@@ -125,13 +125,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (newSession) {
         setSession(newSession);
-        setIsAuthReady(false); // Bloqueia o Guard enquanto carrega o novo role
+        setIsAuthReady(false);
         setLoading(true);
-        // Garante que o role seja buscado ANTES de liberar o AuthGuard
-        await fetchRole(newSession.user.id);
-        if (mounted) {
-          setIsAuthReady(true);
-          setLoading(false);
+        try {
+          await fetchRole(newSession.user.id);
+        } catch (err) {
+          console.error('[AUTH] Error in auth change handler:', err);
+        } finally {
+          if (mounted) {
+            setIsAuthReady(true);
+            setLoading(false);
+          }
         }
       } else {
         setSession(null);
