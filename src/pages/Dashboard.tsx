@@ -11,6 +11,7 @@ import { Users, Wallet, Activity, TrendingUp, ArrowRight, Network, Calculator, I
 import { sanitize } from "@/lib/sanitize";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/posthog";
 
 // Lazy loading for future chart components if added
 const ChartFallback = () => <Skeleton className="h-[300px] w-full" />;
@@ -103,6 +104,7 @@ export default function Dashboard() {
 
     if (!user) return;
     const load = async () => {
+      trackEvent('dashboard_view');
       try {
         const inicioMes = new Date();
         inicioMes.setDate(1);
@@ -234,6 +236,7 @@ export default function Dashboard() {
                 onChange={(e) => {
                   const val = Math.max(0, parseInt(e.target.value) || 0);
                   setDiretos(val);
+                  trackEvent('simulacao_comissao', { diretos: val, indiretos });
                   if (val >= 21 && indiretos === 0) {
                     setIndiretos(val * 5);
                   }

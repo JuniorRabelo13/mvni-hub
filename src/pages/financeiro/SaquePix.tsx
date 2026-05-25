@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Wallet, ArrowUpRight, CheckCircle2, Clock, AlertTriangle, Landmark, Receipt, Loader2, FileDown, Download } from "lucide-react";
+import { trackEvent } from "@/lib/posthog";
 import { maskSensitiveInfo } from "@/lib/mask";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -79,6 +80,7 @@ export default function SaquePix() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dados-bancarios"] });
+      trackEvent('saque_configurado', { tipo_chave: values.tipo_chave });
       toast.success("Chave Pix salva com sucesso!");
     },
     onError: (err: any) => toast.error("Erro ao salvar: " + err.message),
@@ -101,6 +103,7 @@ export default function SaquePix() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["historico-saques", "wallet"] });
+      trackEvent('saque_solicitado', { valor });
       toast.success("Solicitação de saque enviada!");
       setValorSaque("");
       setShowConfirm(false);
