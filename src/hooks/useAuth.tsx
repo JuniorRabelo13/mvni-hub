@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error("[AUTH] Error fetching role from 'usuarios':", error);
         // Tentar buscar em profiles se falhar em usuarios
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", userId)
@@ -76,7 +76,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initialize = async () => {
       try {
         console.log('[AUTH] Initializing...');
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+
         
         if (!mounted) return;
 
