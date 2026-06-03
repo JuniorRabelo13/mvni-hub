@@ -143,7 +143,7 @@ export default function CRM() {
   };
 
   const updateStatus = async (leadId: string, status: LeadStatus) => {
-    const patch: Record<string, unknown> = { status };
+    const patch: { status: LeadStatus; convertido_em?: string } = { status };
     if (status === "convertido") patch.convertido_em = new Date().toISOString();
     const { error } = await supabase.from("crm_leads").update(patch).eq("id", leadId);
     if (error) {
