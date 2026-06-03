@@ -503,6 +503,7 @@ export type Database = {
           data_proxima_cobranca: string | null
           data_vencimento: string | null
           id: string
+          produto_id: string | null
           status: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -514,6 +515,7 @@ export type Database = {
           data_proxima_cobranca?: string | null
           data_vencimento?: string | null
           id?: string
+          produto_id?: string | null
           status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -525,6 +527,7 @@ export type Database = {
           data_proxima_cobranca?: string | null
           data_vencimento?: string | null
           id?: string
+          produto_id?: string | null
           status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -536,6 +539,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assinaturas_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
             referencedColumns: ["id"]
           },
         ]
@@ -1192,6 +1202,7 @@ export type Database = {
           criado_em: string
           id: string
           mes_referencia: string
+          produto_id: string | null
           representante_id: string
           tipo: string
           valor: number
@@ -1202,6 +1213,7 @@ export type Database = {
           criado_em?: string
           id?: string
           mes_referencia: string
+          produto_id?: string | null
           representante_id: string
           tipo: string
           valor?: number
@@ -1212,6 +1224,7 @@ export type Database = {
           criado_em?: string
           id?: string
           mes_referencia?: string
+          produto_id?: string | null
           representante_id?: string
           tipo?: string
           valor?: number
@@ -1229,6 +1242,13 @@ export type Database = {
             columns: ["comissao_id"]
             isOneToOne: false
             referencedRelation: "comissoes_mensais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_comissao_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
             referencedColumns: ["id"]
           },
           {
