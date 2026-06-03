@@ -222,9 +222,10 @@ const AppContent = () => {
                     <Route path="/master/config" element={<MasterConfig />} />
                   </Route>
 
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </React.Fragment>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </ErrorBoundary>
             </AuthGuard>
           </AuthProvider>
         </BrowserRouter>
