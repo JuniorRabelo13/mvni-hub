@@ -35,6 +35,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMasterAdmin } from "@/hooks/useIsMasterAdmin";
+import { MobileNav } from "./MobileNav";
+import { InstallPWAPrompt } from "./InstallPWAPrompt";
 
 export default function AppLayout() {
   const { user, effectiveUser, signOut, viewAs, isViewingAs, loading } = useAuth();
