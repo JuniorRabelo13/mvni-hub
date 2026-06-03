@@ -35,6 +35,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMasterAdmin } from "@/hooks/useIsMasterAdmin";
+import { MobileNav } from "./MobileNav";
+import { InstallPWAPrompt } from "./InstallPWAPrompt";
 
 export default function AppLayout() {
   const { user, effectiveUser, signOut, viewAs, isViewingAs, loading } = useAuth();
@@ -232,25 +234,7 @@ export default function AppLayout() {
           </Button>
         </header>
 
-        <nav className="flex gap-1 overflow-x-auto border-b border-border bg-sidebar px-2 py-2 md:hidden">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs",
-                  isActive ? "bg-primary/10 text-primary" : "text-muted-foreground",
-                )
-              }
-            >
-              <Icon className="h-3.5 w-3.5" /> {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <main className="flex-1 p-4 md:p-8">
+        <main className="flex-1 p-4 pb-24 md:p-8 md:pb-8">
           {isViewingAs && (
             <div className="mb-6 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-4 animate-in fade-in slide-in-from-top-4">
               <div className="flex items-center gap-3">
@@ -272,6 +256,15 @@ export default function AppLayout() {
           </Suspense>
         </main>
       </div>
+
+      <MobileNav
+        primaryItems={navItems}
+        secondaryItems={[]}
+        waItems={waItems}
+        masterItems={masterItems}
+        isMasterAdmin={isMasterAdmin}
+      />
+      <InstallPWAPrompt />
     </div>
   );
 }
