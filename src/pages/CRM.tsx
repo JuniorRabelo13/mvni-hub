@@ -143,6 +143,43 @@ export default function CRM() {
   };
 
   const updateStatus = async (leadId: string, status: LeadStatus) => {
+    if (!user) return;
+    const lead = leads.find((l) => l.id === leadId);
+
+    // Conversão real: cria cliente em public.clientes e vincula
+    if (status === "convertido" && lead && !lead.cliente_id) {
+      const { data: novoCliente, error: clienteErr } = await supabase
+        .from("clientes")
+        .insert({
+          user_id: user.id,
+          nome: lead.nome,
+          telefone: lead.telefone || null,
+          email: lead.email || null,
+          ativo: true,
+        })
+        .select("id")
+        .single();
+      if (clienteErr || !novoCliente) {
+        toast.error("Erro ao criar cliente: " + (clienteErr?.message ?? "desconhecido"));
+        return;
+      }
+      const convertidoEm = new Date().toISOString();
+      const { error: leadErr } = await supabase
+        .from("crm_leads")
+        .update({ status: "convertido", convertido_em: convertidoEm, cliente_id: novoCliente.id })
+        .eq("id", leadId);
+      if (leadErr) {
+        toast.error("Cliente criado, mas falhou ao atualizar lead: " + leadErr.message);
+        return;
+      }
+      toast.success("Lead convertido em cliente real");
+      loadLeads();
+      if (selected?.id === leadId) {
+        setSelected({ ...selected, status: "convertido", convertido_em: convertidoEm, cliente_id: novoCliente.id });
+      }
+      return;
+    }
+
     const patch: { status: LeadStatus; convertido_em?: string } = { status };
     if (status === "convertido") patch.convertido_em = new Date().toISOString();
     const { error } = await supabase.from("crm_leads").update(patch).eq("id", leadId);
