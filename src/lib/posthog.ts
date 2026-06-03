@@ -2,11 +2,11 @@ import posthog from 'posthog-js';
 
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
 const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
+const IS_PROD = import.meta.env.PROD === true && import.meta.env.MODE === 'production';
+const POSTHOG_ENABLED = IS_PROD && !!POSTHOG_KEY;
 
 export const initPostHog = () => {
-  if (typeof window !== 'undefined' && POSTHOG_KEY) {
-    // Only initialize if we have a key (prevents errors if not configured)
-    // and ideally only in production environments, but user wants it based on presence of key/host
+  if (typeof window !== 'undefined' && POSTHOG_ENABLED) {
     posthog.init(POSTHOG_KEY, {
       api_host: POSTHOG_HOST,
       autocapture: true,
