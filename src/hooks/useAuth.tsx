@@ -38,42 +38,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchRole = async (userId: string, currentSession?: Session | null) => {
     try {
       console.log('[AUTH] Fetching role for:', userId);
-      const { data, error } = await supabase
-        .from("usuarios")
-        .select("role")
-        .eq("id", userId)
-        .maybeSingle();
 
-      if (error) {
-        console.error("[AUTH] Error fetching role from 'usuarios':", error);
-        // Tentar buscar em profiles se falhar em usuarios
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
+      // 1) Fonte de verdade para PRIVILÉGIOS: public.user_roles (enum app_role).
+      //    Evita escalation via UPDATE em usuarios.role.
+      const { data: rolesRows, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      if (rolesError) {
+        console.error("[AUTH] Error fetching user_roles:", rolesError);
+      }
+
+      const roleSet = new Set((rolesRows ?? []).map((r: any) => r.role as string));
+
+      let effectiveRole: string;
+      if (roleSet.has("master_admin")) {
+        effectiveRole = "master_admin";
+      } else if (roleSet.has("admin")) {
+        effectiveRole = "admin";
+      } else {
+        // 2) Fallback APENAS para role de exibição (representante, vendedor, etc.).
+        //    NUNCA usado por AuthGuard/rotas master — essas checam apenas master_admin/admin.
+        const { data: u } = await supabase
+          .from("usuarios")
           .select("role")
           .eq("id", userId)
           .maybeSingle();
-        
-        if (profileData) {
-          setRole(profileData.role);
-          return profileData.role;
+
+        if (u?.role) {
+          effectiveRole = u.role;
+        } else {
+          const { data: p } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", userId)
+            .maybeSingle();
+          effectiveRole = p?.role ?? "user";
         }
       }
 
-      const roleResult = data?.role ?? 'user';
-      console.log('[AUTH] Role loaded:', roleResult);
-      setRole(roleResult);
+      console.log('[AUTH] Role loaded:', effectiveRole);
+      setRole(effectiveRole);
 
       // PostHog Identify
       const userSession = currentSession || session;
       if (userSession) {
         identifyUser(userId, {
           email: userSession.user?.email,
-          role: roleResult,
-          tenant: 'default', // Or fetch tenant if available
+          role: effectiveRole,
+          tenant: 'default',
         });
       }
 
-      return roleResult;
+      return effectiveRole;
     } catch (error) {
       console.error("[AUTH] critical error fetching role:", error);
       setRole('user');
