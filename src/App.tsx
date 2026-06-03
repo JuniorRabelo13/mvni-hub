@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/AuthGuard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import React, { Suspense, lazy, useEffect } from "react";
 import { Navigate } from "react-router-dom";
@@ -149,15 +150,16 @@ const AppContent = () => {
           <PostHogPageviewTracker />
           <AuthProvider>
             <AuthGuard>
-              <React.Fragment>
-                <Routes>
-                  <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><Auth /></Suspense>} />
-                  <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-                  <Route path="/nova-senha" element={<NovaSenha />} />
-                  <Route path="/cadastro" element={<Cadastro />} />
-                  <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
-                  <Route path="/termos" element={<Termos />} />
-                  <Route path="/privacidade" element={<Privacy />} />
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingScreen />}>
+                  <Routes>
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+                    <Route path="/nova-senha" element={<NovaSenha />} />
+                    <Route path="/cadastro" element={<Cadastro />} />
+                    <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
+                    <Route path="/termos" element={<Termos />} />
+                    <Route path="/privacidade" element={<Privacy />} />
 
                   <Route element={<AppLayout />}>
                     <Route path="/" element={<RootRedirect />} />
@@ -220,9 +222,10 @@ const AppContent = () => {
                     <Route path="/master/config" element={<MasterConfig />} />
                   </Route>
 
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </React.Fragment>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </ErrorBoundary>
             </AuthGuard>
           </AuthProvider>
         </BrowserRouter>
