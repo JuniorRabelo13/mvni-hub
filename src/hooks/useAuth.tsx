@@ -171,10 +171,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const viewAs = async (userId: string | null) => {
-    if (userId) {
-      localStorage.setItem("view_as_user_id", userId);
-    } else {
-      localStorage.removeItem("view_as_user_id");
+    // Limpa qualquer resíduo de versões antigas que persistiam em localStorage.
+    try { localStorage.removeItem("view_as_user_id"); } catch {}
+
+    if (!userId) {
+      setViewAsUserId(null);
+      return;
+    }
+
+    // Validação server-side: somente master_admin pode impersonar.
+    const { data: isMaster, error } = await supabase.rpc("is_master_admin", {
+      _user_id: session?.user?.id,
+    });
+    if (error || !isMaster) {
+      console.warn("[AUTH] viewAs bloqueado: usuário não é master_admin");
+      setViewAsUserId(null);
+      return;
     }
     setViewAsUserId(userId);
   };
