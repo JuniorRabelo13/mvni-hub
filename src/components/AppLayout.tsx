@@ -69,6 +69,7 @@ export default function AppLayout() {
   const navItems = [
     { to: "/", label: "Painel", icon: LayoutDashboard, end: true },
     { to: "/clientes", label: "Clientes", icon: Users },
+    { to: "/crm", label: "CRM", icon: TrendingUp },
     { to: "/estrutura", label: "Estrutura", icon: Network },
     { to: "/equipe", label: "Equipe", icon: Users },
     { to: "/ganhos", label: "Ganhos", icon: Wallet },
