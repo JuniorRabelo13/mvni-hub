@@ -59,12 +59,45 @@ serve(async (req) => {
     const startDate = new Date(year, month - 1, 1).toISOString();
     const endDate = new Date(year, month, 0, 23, 59, 59, 999).toISOString();
 
-    // 1. Contar clientes diretos ativos para definir o multiplicador indireto
+    // Carregar catálogo de produtos ativos (para suporte multi-produto)
+    // Linha celular permanece como produto padrão; assinaturas sem produto_id ou com slug 'linha-celular' usam regra atual.
+    const { data: produtos } = await supabase
+      .from("produtos")
+      .select("id, slug, status, comissao_ativacao, comissao_recorrente");
+
+    const produtosMap = new Map<string, any>();
+    let linhaCelularId: string | null = null;
+    (produtos || []).forEach((p: any) => {
+      produtosMap.set(p.id, p);
+      if (p.slug === "linha-celular") linhaCelularId = p.id;
+    });
+
+    // Helpers — regra da linha celular preservada (R$ 85 ativação / R$ 20 recorrente / R$ 5-10 indireto)
+    const LC_ATIVACAO = 85.00;
+    const LC_RECORRENTE = 20.00;
+    const isLinhaCelular = (pid: string | null | undefined) =>
+      !pid || (linhaCelularId && pid === linhaCelularId);
+
+    const getAtivacaoValor = (pid: string | null | undefined): number => {
+      if (isLinhaCelular(pid)) return LC_ATIVACAO;
+      const p = produtosMap.get(pid as string);
+      if (!p || p.status !== "ativo" || p.comissao_ativacao == null) return 0;
+      return Number(p.comissao_ativacao);
+    };
+    const getRecorrenteValor = (pid: string | null | undefined): number => {
+      if (isLinhaCelular(pid)) return LC_RECORRENTE;
+      const p = produtosMap.get(pid as string);
+      if (!p || p.status !== "ativo" || p.comissao_recorrente == null) return 0;
+      return Number(p.comissao_recorrente);
+    };
+
+    // 1. Assinaturas ativas diretas (com produto_id quando existir)
     const { data: directActiveClients, error: directError } = await supabase
       .from("assinaturas")
       .select(`
         id,
         cliente_id,
+        produto_id,
         clientes!inner (
           id,
           nome,
@@ -77,7 +110,7 @@ serve(async (req) => {
     if (directError) throw directError;
     const directActiveCount = directActiveClients?.length || 0;
 
-    // 2. Clientes para ativação direta (criados no mês)
+    // 2. Clientes para ativação direta (criados no mês) — sem produto_id na tabela clientes hoje, assume linha celular
     const { data: activations, error: actError } = await supabase
       .from("clientes")
       .select("id, nome")
@@ -87,8 +120,7 @@ serve(async (req) => {
 
     if (actError) throw actError;
 
-    // 3. Clientes para recorrência indireta
-    // Buscar representantes indicados (filhos diretos)
+    // 3. Representantes indicados (filhos diretos)
     const { data: subReps, error: subError } = await supabase
       .from("usuarios")
       .select("id")
@@ -104,6 +136,7 @@ serve(async (req) => {
         .select(`
           id,
           cliente_id,
+          produto_id,
           clientes!inner (
             id,
             nome,
@@ -112,17 +145,30 @@ serve(async (req) => {
         `)
         .eq("status", "ativo")
         .in("clientes.user_id", subRepIds);
-      
+
       if (indError) throw indError;
       indirectActiveClients = indClients || [];
     }
 
-    // Cálculos
-    const valor_ativacoes = activations.length * 85.00;
-    const valor_recorrencia_direta = directActiveCount * 20.00;
-    
+    // Cálculos — Ativação (linha celular hoje, multi-produto preparado)
+    const valor_ativacoes = activations.reduce(
+      (sum: number) => sum + LC_ATIVACAO, // clientes sem produto_id → linha celular
+      0
+    );
+
+    // Recorrência direta — por produto
+    const valor_recorrencia_direta = (directActiveClients || []).reduce(
+      (sum: number, s: any) => sum + getRecorrenteValor(s.produto_id),
+      0
+    );
+
+    // Bônus indireto preserva regra atual: R$ 5 (<=40 diretos) ou R$ 10 (>40 diretos), aplicável a assinaturas de linha celular.
     const multiplicadorIndireto = directActiveCount > 40 ? 10.00 : 5.00;
-    const valor_recorrencia_indireta = indirectActiveClients.length * multiplicadorIndireto;
+    const valor_recorrencia_indireta = indirectActiveClients.reduce((sum: number, s: any) => {
+      if (isLinhaCelular(s.produto_id)) return sum + multiplicadorIndireto;
+      // Outros produtos: usar comissao_recorrente do catálogo (sem bônus indireto adicional)
+      return sum + getRecorrenteValor(s.produto_id);
+    }, 0);
     const valor_bonus = 0.00;
     const valor_total = valor_ativacoes + valor_recorrencia_direta + valor_recorrencia_indireta + valor_bonus;
 
@@ -147,40 +193,46 @@ serve(async (req) => {
       .delete()
       .eq("comissao_id", comissao.id);
 
-    const itensToInsert = [];
+    const itensToInsert: any[] = [];
 
-    // Itens de ativação
-    activations.forEach(a => {
+    // Itens de ativação (linha celular hoje)
+    activations.forEach((a: any) => {
       itensToInsert.push({
         comissao_id: comissao.id,
         representante_id,
         cliente_id: a.id,
+        produto_id: linhaCelularId,
         tipo: "ativacao",
-        valor: 85.00,
+        valor: LC_ATIVACAO,
         mes_referencia
       });
     });
 
-    // Itens de recorrência direta
-    directActiveClients.forEach(c => {
+    // Itens de recorrência direta — valor por produto
+    directActiveClients.forEach((c: any) => {
       itensToInsert.push({
         comissao_id: comissao.id,
         representante_id,
         cliente_id: c.cliente_id,
+        produto_id: c.produto_id ?? linhaCelularId,
         tipo: "recorrencia_direta",
-        valor: 20.00,
+        valor: getRecorrenteValor(c.produto_id),
         mes_referencia
       });
     });
 
     // Itens de recorrência indireta
-    indirectActiveClients.forEach(c => {
+    indirectActiveClients.forEach((c: any) => {
+      const valor = isLinhaCelular(c.produto_id)
+        ? multiplicadorIndireto
+        : getRecorrenteValor(c.produto_id);
       itensToInsert.push({
         comissao_id: comissao.id,
         representante_id,
         cliente_id: c.cliente_id,
+        produto_id: c.produto_id ?? linhaCelularId,
         tipo: "recorrencia_indireta",
-        valor: multiplicadorIndireto,
+        valor,
         mes_referencia
       });
     });
@@ -189,9 +241,10 @@ serve(async (req) => {
       const { error: insError } = await supabase
         .from("itens_comissao")
         .insert(itensToInsert);
-      
+
       if (insError) throw insError;
     }
+
 
     return new Response(
       JSON.stringify({
