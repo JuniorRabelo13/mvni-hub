@@ -150,15 +150,16 @@ const AppContent = () => {
           <PostHogPageviewTracker />
           <AuthProvider>
             <AuthGuard>
-              <React.Fragment>
-                <Routes>
-                  <Route path="/auth" element={<Suspense fallback={<LoadingScreen />}><Auth /></Suspense>} />
-                  <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-                  <Route path="/nova-senha" element={<NovaSenha />} />
-                  <Route path="/cadastro" element={<Cadastro />} />
-                  <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
-                  <Route path="/termos" element={<Termos />} />
-                  <Route path="/privacidade" element={<Privacy />} />
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingScreen />}>
+                  <Routes>
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+                    <Route path="/nova-senha" element={<NovaSenha />} />
+                    <Route path="/cadastro" element={<Cadastro />} />
+                    <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
+                    <Route path="/termos" element={<Termos />} />
+                    <Route path="/privacidade" element={<Privacy />} />
 
                   <Route element={<AppLayout />}>
                     <Route path="/" element={<RootRedirect />} />
