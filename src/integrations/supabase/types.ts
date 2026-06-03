@@ -1653,6 +1653,51 @@ export type Database = {
         }
         Relationships: []
       }
+      produtos: {
+        Row: {
+          comissao_ativacao: number | null
+          comissao_recorrente: number | null
+          created_at: string
+          custo_operacional: number | null
+          descricao_comercial: string | null
+          id: string
+          nome: string
+          produto_principal: boolean
+          slug: string
+          status: string
+          updated_at: string
+          valor_mensal: number | null
+        }
+        Insert: {
+          comissao_ativacao?: number | null
+          comissao_recorrente?: number | null
+          created_at?: string
+          custo_operacional?: number | null
+          descricao_comercial?: string | null
+          id?: string
+          nome: string
+          produto_principal?: boolean
+          slug: string
+          status?: string
+          updated_at?: string
+          valor_mensal?: number | null
+        }
+        Update: {
+          comissao_ativacao?: number | null
+          comissao_recorrente?: number | null
+          created_at?: string
+          custo_operacional?: number | null
+          descricao_comercial?: string | null
+          id?: string
+          nome?: string
+          produto_principal?: boolean
+          slug?: string
+          status?: string
+          updated_at?: string
+          valor_mensal?: number | null
+        }
+        Relationships: []
+      }
       profile_permissions: {
         Row: {
           permission_id: string
