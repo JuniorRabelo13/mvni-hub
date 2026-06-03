@@ -17,25 +17,25 @@ export const initPostHog = () => {
 };
 
 export const trackEvent = (eventName: string, properties?: Record<string, any>) => {
-  if (POSTHOG_KEY) {
+  if (POSTHOG_ENABLED) {
     posthog.capture(eventName, properties);
   }
 };
 
 export const identifyUser = (userId: string, traits: { email?: string; role?: string; tenant?: string; [key: string]: any }) => {
-  if (POSTHOG_KEY) {
+  if (POSTHOG_ENABLED) {
     posthog.identify(userId, traits);
   }
 };
 
 export const resetPostHog = () => {
-  if (POSTHOG_KEY) {
+  if (POSTHOG_ENABLED) {
     posthog.reset();
   }
 };
 
-// Auto-capture exceptions
-if (typeof window !== 'undefined' && POSTHOG_KEY) {
+// Auto-capture exceptions (production only)
+if (typeof window !== 'undefined' && POSTHOG_ENABLED) {
   window.addEventListener('error', (event) => {
     trackEvent('frontend_error', {
       message: event.message,
@@ -53,3 +53,4 @@ if (typeof window !== 'undefined' && POSTHOG_KEY) {
     });
   });
 }
+
