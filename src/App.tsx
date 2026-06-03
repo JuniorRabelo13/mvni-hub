@@ -166,6 +166,7 @@ const AppContent = () => {
                     <Route path="/" element={<RootRedirect />} />
                     <Route path="/painel" element={<Dashboard />} />
                     <Route path="/clientes" element={<Clientes />} />
+                    <Route path="/crm" element={<CRM />} />
                     <Route path="/estrutura" element={<Estrutura />} />
                     <Route path="/ganhos" element={<Ganhos />} />
                     <Route path="/pagamentos" element={<Pagamentos />} />
