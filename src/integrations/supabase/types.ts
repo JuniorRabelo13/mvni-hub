@@ -788,6 +788,98 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_interactions: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          lead_id: string
+          tipo: Database["public"]["Enums"]["crm_interaction_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          lead_id: string
+          tipo?: Database["public"]["Enums"]["crm_interaction_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          lead_id?: string
+          tipo?: Database["public"]["Enums"]["crm_interaction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_leads: {
+        Row: {
+          cliente_id: string | null
+          comissao_ativacao_estimada: number | null
+          comissao_recorrente_estimada: number | null
+          convertido_em: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          observacao: string | null
+          origem: string | null
+          proximo_contato_em: string | null
+          status: Database["public"]["Enums"]["crm_lead_status"]
+          telefone: string | null
+          updated_at: string
+          user_id: string
+          valor_mensal_estimado: number | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          comissao_ativacao_estimada?: number | null
+          comissao_recorrente_estimada?: number | null
+          convertido_em?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          observacao?: string | null
+          origem?: string | null
+          proximo_contato_em?: string | null
+          status?: Database["public"]["Enums"]["crm_lead_status"]
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+          valor_mensal_estimado?: number | null
+        }
+        Update: {
+          cliente_id?: string | null
+          comissao_ativacao_estimada?: number | null
+          comissao_recorrente_estimada?: number | null
+          convertido_em?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          observacao?: string | null
+          origem?: string | null
+          proximo_contato_em?: string | null
+          status?: Database["public"]["Enums"]["crm_lead_status"]
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+          valor_mensal_estimado?: number | null
+        }
+        Relationships: []
+      }
       dados_bancarios: {
         Row: {
           chave_pix: string
@@ -4044,6 +4136,19 @@ export type Database = {
       app_role: "admin" | "user" | "master_admin"
       cobranca_status: "pendente" | "pago" | "atrasado" | "cancelado"
       comissao_tipo: "venda" | "recorrencia"
+      crm_interaction_type:
+        | "ligacao"
+        | "mensagem"
+        | "reuniao"
+        | "email"
+        | "nota"
+        | "outro"
+      crm_lead_status:
+        | "novo"
+        | "em_contato"
+        | "em_negociacao"
+        | "convertido"
+        | "perdido"
       job_priority: "critical" | "high" | "normal" | "low"
       job_status:
         | "pending"
@@ -4224,6 +4329,21 @@ export const Constants = {
       app_role: ["admin", "user", "master_admin"],
       cobranca_status: ["pendente", "pago", "atrasado", "cancelado"],
       comissao_tipo: ["venda", "recorrencia"],
+      crm_interaction_type: [
+        "ligacao",
+        "mensagem",
+        "reuniao",
+        "email",
+        "nota",
+        "outro",
+      ],
+      crm_lead_status: [
+        "novo",
+        "em_contato",
+        "em_negociacao",
+        "convertido",
+        "perdido",
+      ],
       job_priority: ["critical", "high", "normal", "low"],
       job_status: [
         "pending",
