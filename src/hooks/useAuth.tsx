@@ -33,7 +33,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [role, setRole] = useState<string | null>(null);
-  const [viewAsUserId, setViewAsUserId] = useState<string | null>(localStorage.getItem("view_as_user_id"));
+  // viewAs é mantido apenas em memória (não persistido). Só efetiva se has_role('master_admin') no servidor.
+  const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
 
   const fetchRole = async (userId: string, currentSession?: Session | null) => {
     try {
