@@ -37,6 +37,7 @@ const NovaSenha = lazy(() => import("./pages/NovaSenha"));
 // Main Pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Clientes = lazy(() => import("./pages/Clientes"));
+const CRM = lazy(() => import("./pages/CRM"));
 const Estrutura = lazy(() => import("./pages/Estrutura"));
 const Ganhos = lazy(() => import("./pages/Ganhos"));
 const Pagamentos = lazy(() => import("./pages/Pagamentos"));
