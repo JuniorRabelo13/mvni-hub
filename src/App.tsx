@@ -99,6 +99,7 @@ const MasterCentral = lazy(() => import("./pages/master-admin/Central"));
 const NotificacoesVencimentoAudit = lazy(() => import("./pages/master-admin/NotificacoesVencimento"));
 const BaseGlobal = lazy(() => import("./pages/master-admin/BaseGlobal"));
 const MasterConfig = lazy(() => import("./pages/master-admin/MasterConfig"));
+const MasterProdutos = lazy(() => import("./pages/master-admin/Produtos"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -222,6 +223,7 @@ const AppContent = () => {
                     <Route path="/master/antifraude" element={<MasterAntifraude />} />
                     <Route path="/master/projecoes" element={<MasterProjecoes />} />
                     <Route path="/master/config" element={<MasterConfig />} />
+                    <Route path="/master/produtos" element={<MasterProdutos />} />
                   </Route>
 
                     <Route path="*" element={<NotFound />} />
