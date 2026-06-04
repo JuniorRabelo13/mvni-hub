@@ -28,7 +28,8 @@ import {
   EyeOff,
   ClipboardList,
   TrendingUp,
-  Bell
+  Bell,
+  Package
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
