@@ -103,6 +103,7 @@ export default function AppLayout() {
     { to: "/master/antifraude", label: "Antifraude & Risco", icon: ShieldAlert },
     { to: "/master/auditoria", label: "Auditoria Global", icon: ClipboardList },
     { to: "/master/usuarios", label: "Usuários & Permissões", icon: ShieldCheck },
+    { to: "/master/produtos", label: "Expansão de Produtos", icon: Package },
     { to: "/master/config", label: "Master Config", icon: Settings },
   ];
 
