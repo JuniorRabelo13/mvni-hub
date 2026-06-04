@@ -223,6 +223,7 @@ const AppContent = () => {
                     <Route path="/master/antifraude" element={<MasterAntifraude />} />
                     <Route path="/master/projecoes" element={<MasterProjecoes />} />
                     <Route path="/master/config" element={<MasterConfig />} />
+                    <Route path="/master/produtos" element={<MasterProdutos />} />
                   </Route>
 
                     <Route path="*" element={<NotFound />} />
