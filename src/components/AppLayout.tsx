@@ -29,7 +29,8 @@ import {
   ClipboardList,
   TrendingUp,
   Bell,
-  Package
+  Package,
+  Smartphone
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,7 @@ export default function AppLayout() {
     { to: "/master/auditoria", label: "Auditoria Global", icon: ClipboardList },
     { to: "/master/usuarios", label: "Usuários & Permissões", icon: ShieldCheck },
     { to: "/master/produtos", label: "Expansão de Produtos", icon: Package },
+    { to: "/master/chips", label: "Controle de Chips", icon: Smartphone },
     { to: "/master/config", label: "Master Config", icon: Settings },
   ];
 

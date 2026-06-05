@@ -100,6 +100,7 @@ const NotificacoesVencimentoAudit = lazy(() => import("./pages/master-admin/Noti
 const BaseGlobal = lazy(() => import("./pages/master-admin/BaseGlobal"));
 const MasterConfig = lazy(() => import("./pages/master-admin/MasterConfig"));
 const MasterProdutos = lazy(() => import("./pages/master-admin/Produtos"));
+const MasterChips = lazy(() => import("./pages/master-admin/Chips"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -224,6 +225,7 @@ const AppContent = () => {
                     <Route path="/master/projecoes" element={<MasterProjecoes />} />
                     <Route path="/master/config" element={<MasterConfig />} />
                     <Route path="/master/produtos" element={<MasterProdutos />} />
+                    <Route path="/master/chips" element={<MasterChips />} />
                   </Route>
 
                     <Route path="*" element={<NotFound />} />
