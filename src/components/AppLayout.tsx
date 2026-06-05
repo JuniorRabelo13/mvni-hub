@@ -29,7 +29,8 @@ import {
   ClipboardList,
   TrendingUp,
   Bell,
-  Package
+  Package,
+  Smartphone
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
