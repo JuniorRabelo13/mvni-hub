@@ -100,6 +100,7 @@ const NotificacoesVencimentoAudit = lazy(() => import("./pages/master-admin/Noti
 const BaseGlobal = lazy(() => import("./pages/master-admin/BaseGlobal"));
 const MasterConfig = lazy(() => import("./pages/master-admin/MasterConfig"));
 const MasterProdutos = lazy(() => import("./pages/master-admin/Produtos"));
+const MasterChips = lazy(() => import("./pages/master-admin/Chips"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
