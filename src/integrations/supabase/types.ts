@@ -583,6 +583,275 @@ export type Database = {
         }
         Relationships: []
       }
+      chip_estoque: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          data_ativacao: string | null
+          data_devolucao: string | null
+          data_entrada: string | null
+          data_envio: string | null
+          data_recebimento: string | null
+          data_reserva: string | null
+          iccid: string
+          id: string
+          lote_id: string | null
+          numero_linha: string | null
+          observacoes: string | null
+          operadora: string
+          produto_id: string | null
+          representante_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          data_ativacao?: string | null
+          data_devolucao?: string | null
+          data_entrada?: string | null
+          data_envio?: string | null
+          data_recebimento?: string | null
+          data_reserva?: string | null
+          iccid: string
+          id?: string
+          lote_id?: string | null
+          numero_linha?: string | null
+          observacoes?: string | null
+          operadora?: string
+          produto_id?: string | null
+          representante_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          data_ativacao?: string | null
+          data_devolucao?: string | null
+          data_entrada?: string | null
+          data_envio?: string | null
+          data_recebimento?: string | null
+          data_reserva?: string | null
+          iccid?: string
+          id?: string
+          lote_id?: string | null
+          numero_linha?: string | null
+          observacoes?: string | null
+          operadora?: string
+          produto_id?: string | null
+          representante_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chip_estoque_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "chip_lotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chip_estoque_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chip_kit_itens: {
+        Row: {
+          chip_id: string
+          created_at: string
+          id: string
+          kit_id: string
+          representante_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          chip_id: string
+          created_at?: string
+          id?: string
+          kit_id: string
+          representante_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          chip_id?: string
+          created_at?: string
+          id?: string
+          kit_id?: string
+          representante_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chip_kit_itens_chip_id_fkey"
+            columns: ["chip_id"]
+            isOneToOne: true
+            referencedRelation: "chip_estoque"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chip_kit_itens_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "chip_kits_representante"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chip_kits_representante: {
+        Row: {
+          aprovado_por: string | null
+          codigo_rastreio: string | null
+          created_at: string
+          data_aprovacao: string | null
+          data_envio: string | null
+          data_recebimento: string | null
+          data_solicitacao: string | null
+          endereco_entrega: string | null
+          id: string
+          motivo_bloqueio: string | null
+          observacoes: string | null
+          operadora_prioritaria: string
+          quantidade_enviada: number
+          quantidade_prevista: number
+          representante_id: string
+          status: string
+          tipo_kit: string
+          updated_at: string
+        }
+        Insert: {
+          aprovado_por?: string | null
+          codigo_rastreio?: string | null
+          created_at?: string
+          data_aprovacao?: string | null
+          data_envio?: string | null
+          data_recebimento?: string | null
+          data_solicitacao?: string | null
+          endereco_entrega?: string | null
+          id?: string
+          motivo_bloqueio?: string | null
+          observacoes?: string | null
+          operadora_prioritaria?: string
+          quantidade_enviada?: number
+          quantidade_prevista?: number
+          representante_id: string
+          status?: string
+          tipo_kit?: string
+          updated_at?: string
+        }
+        Update: {
+          aprovado_por?: string | null
+          codigo_rastreio?: string | null
+          created_at?: string
+          data_aprovacao?: string | null
+          data_envio?: string | null
+          data_recebimento?: string | null
+          data_solicitacao?: string | null
+          endereco_entrega?: string | null
+          id?: string
+          motivo_bloqueio?: string | null
+          observacoes?: string | null
+          operadora_prioritaria?: string
+          quantidade_enviada?: number
+          quantidade_prevista?: number
+          representante_id?: string
+          status?: string
+          tipo_kit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chip_lotes: {
+        Row: {
+          created_at: string
+          data_recebimento: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          operadora: string
+          quantidade_disponivel: number
+          quantidade_total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_recebimento?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          operadora?: string
+          quantidade_disponivel?: number
+          quantidade_total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_recebimento?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          operadora?: string
+          quantidade_disponivel?: number
+          quantidade_total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chip_movimentacoes: {
+        Row: {
+          chip_id: string
+          cliente_id: string | null
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          id: string
+          representante_id: string | null
+          status_anterior: string | null
+          status_novo: string | null
+          tipo_movimentacao: string
+        }
+        Insert: {
+          chip_id: string
+          cliente_id?: string | null
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          representante_id?: string | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          tipo_movimentacao: string
+        }
+        Update: {
+          chip_id?: string
+          cliente_id?: string | null
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          representante_id?: string | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          tipo_movimentacao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chip_movimentacoes_chip_id_fkey"
+            columns: ["chip_id"]
+            isOneToOne: false
+            referencedRelation: "chip_estoque"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           ativo: boolean
