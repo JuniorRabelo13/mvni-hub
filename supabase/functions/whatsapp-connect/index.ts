@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { requireUser, userHasRole } from "../_shared/auth.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,10 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // SECURITY: require authenticated user
+  const _auth = await requireUser(req)
+  if (_auth.response) return new Response(_auth.response.body, { status: _auth.response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -21,6 +26,19 @@ serve(async (req) => {
 
     if (!agentId) {
       throw new Error('agentId is required')
+    }
+
+    // SECURITY: caller must own the agent OR be admin/master
+    const _isAdmin = await userHasRole(_auth.user!.id, ["admin", "master_admin"])
+    if (!_isAdmin) {
+      const { data: agent } = await supabase
+        .from('whatsapp_agents')
+        .select('user_id')
+        .eq('id', agentId)
+        .maybeSingle()
+      if (!agent || agent.user_id !== _auth.user!.id) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
     }
 
     if (action === 'connect') {

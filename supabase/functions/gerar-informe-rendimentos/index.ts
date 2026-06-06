@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1"
+import { requireUser, userHasRole } from "../_shared/auth.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,14 +11,23 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
+  // SECURITY: must be authenticated
+  const _auth = await requireUser(req)
+  if (_auth.response) return new Response(_auth.response.body, { status: _auth.response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
   try {
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { user_id, ano } = await req.json()
-    if (!user_id || !ano) throw new Error("User ID e Ano são obrigatórios")
+    const body = await req.json()
+    const { ano } = body
+    const requestedUserId: string | undefined = body.user_id
+    // SECURITY: non-admins always get their own report; user_id from body is ignored unless admin
+    const _isAdmin = await userHasRole(_auth.user!.id, ["admin", "master_admin"])
+    const user_id = _isAdmin && requestedUserId ? requestedUserId : _auth.user!.id
+    if (!user_id || !ano) throw new Error("Ano é obrigatório")
 
     // 1. Buscar transações do ano
     const startDate = `${ano}-01-01T00:00:00Z`
@@ -74,7 +84,7 @@ serve(async (req) => {
 
     const { data: urlData } = await supabaseAdmin.storage
       .from('financeiro')
-      .createSignedUrl(fileName, 31536000)
+      .createSignedUrl(fileName, 3600)
 
     return new Response(JSON.stringify({ url: urlData?.signedUrl }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

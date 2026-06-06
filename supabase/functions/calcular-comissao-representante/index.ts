@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { requireUser, userHasRole } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +11,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // SECURITY: require authenticated user
+  const _auth = await requireUser(req);
+  if (_auth.response) return new Response(_auth.response.body, { status: _auth.response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  const _isAdmin = await userHasRole(_auth.user!.id, ["admin", "master_admin"]);
 
   try {
     const supabase = createClient(
@@ -24,6 +30,11 @@ serve(async (req) => {
     );
 
     const { representante_id, mes_referencia, simulate, diretos: simDiretos, indiretos: simIndiretos } = await req.json();
+
+    // SECURITY: non-admin callers can only recalc their own commissions
+    if (!simulate && !_isAdmin && representante_id && representante_id !== _auth.user!.id) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     if (simulate) {
       const VALOR_ATIVACAO = 85.00;

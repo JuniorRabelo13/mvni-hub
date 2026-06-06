@@ -19,6 +19,12 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'STRIPE_SECRET_KEY não configurada' }), { status: 500 })
   }
 
+  // SECURITY: webhook secret is REQUIRED. Never accept unverified events.
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET não configurada — rejeitando webhook')
+    return new Response(JSON.stringify({ error: 'Webhook secret not configured' }), { status: 500 })
+  }
+
   const stripe = new Stripe(stripeSecretKey, {
     apiVersion: '2022-11-15',
     httpClient: Stripe.createFetchHttpClient(),
@@ -26,22 +32,18 @@ serve(async (req) => {
 
   try {
     const signature = req.headers.get('Stripe-Signature')
-    if (!signature && webhookSecret) {
-      throw new Error('Assinatura do Stripe ausente')
+    if (!signature) {
+      return new Response(JSON.stringify({ error: 'Assinatura do Stripe ausente' }), { status: 400 })
     }
 
     const body = await req.text()
     let event
 
-    if (webhookSecret && signature) {
-      try {
-        event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
-      } catch (err) {
-        console.error(`Falha na validação do webhook: ${err.message}`)
-        return new Response(JSON.stringify({ error: `Webhook Error: ${err.message}` }), { status: 400 })
-      }
-    } else {
-      event = JSON.parse(body)
+    try {
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
+    } catch (err) {
+      console.error(`Falha na validação do webhook: ${(err as Error).message}`)
+      return new Response(JSON.stringify({ error: `Webhook Error: ${(err as Error).message}` }), { status: 400 })
     }
 
     const supabase = createClient(
