@@ -37,7 +37,7 @@ export function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERNS.some((re) => re.test(key));
 }
 
-export function isSensitiveValue(val: any): boolean {
+export function isSensitiveValue(val: unknown): boolean {
   if (typeof val !== "string") return false;
   return VALUE_PATTERNS.some((re) => re.test(val));
 }
@@ -46,7 +46,7 @@ export function isSensitiveValue(val: any): boolean {
  * Aplica máscara em strings sensíveis
  * Ex: "sk_live_abc123" -> "sk_l****c123"
  */
-function maskValue(val: any): string | null {
+function maskValue(val: unknown): string | null {
   if (typeof val !== "string") return null;
   if (val.length <= 4) return "****";
   // Manter últimos 3-4 chars conforme solicitado
@@ -57,7 +57,7 @@ function maskValue(val: any): string | null {
 /**
  * Gera um hash SHA-256 de um valor para log seguro (sem PII)
  */
-async function generateHash(value: any): Promise<string> {
+async function generateHash(value: unknown): Promise<string> {
   const msgUint8 = new TextEncoder().encode(JSON.stringify(value));
   const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -67,7 +67,7 @@ async function generateHash(value: any): Promise<string> {
 /**
  * Registra uma detecção de segurança no banco usando a função RPC segura
  */
-async function logSecurityDetection(userId: string | undefined, field: string, origin: string, payload?: any) {
+async function logSecurityDetection(userId: string | undefined, field: string, origin: string, payload?: unknown) {
   if (!userId) return;
   try {
     const hash = await generateHash(payload || field);
