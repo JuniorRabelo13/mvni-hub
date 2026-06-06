@@ -12,7 +12,7 @@ type LogRow = {
   admin_id: string;
   action: string;
   target_user_id: string | null;
-  metadata: any;
+  metadata: Record<string, unknown> | null;
   created_at: string;
 };
 
@@ -60,7 +60,7 @@ export default function AdminLogs() {
           .select("id, nome, email")
           .in("id", ids);
         const map: Record<string, string> = {};
-        (profs || []).forEach((p: any) => { map[p.id] = p.nome || p.email || p.id.slice(0, 8); });
+        (profs || []).forEach((p: { id: string; nome: string | null; email: string | null }) => { map[p.id] = p.nome || p.email || p.id.slice(0, 8); });
         setProfiles(map);
       }
       setLoading(false);
