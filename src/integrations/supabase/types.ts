@@ -1885,6 +1885,48 @@ export type Database = {
           },
         ]
       }
+      pagamentos_cadastro_representante: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json
+          moeda: string
+          pago_em: string
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string
+          updated_at: string
+          user_id: string
+          valor: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          moeda?: string
+          pago_em?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id: string
+          updated_at?: string
+          user_id: string
+          valor?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          moeda?: string
+          pago_em?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string
+          updated_at?: string
+          user_id?: string
+          valor?: number | null
+        }
+        Relationships: []
+      }
       planos: {
         Row: {
           ativo: boolean | null
@@ -3282,6 +3324,7 @@ export type Database = {
       }
       usuarios: {
         Row: {
+          cadastro_pago_em: string | null
           codigo_indicacao: string
           created_at: string
           email: string | null
@@ -3294,6 +3337,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cadastro_pago_em?: string | null
           codigo_indicacao?: string
           created_at?: string
           email?: string | null
@@ -3306,6 +3350,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cadastro_pago_em?: string | null
           codigo_indicacao?: string
           created_at?: string
           email?: string | null
