@@ -88,6 +88,76 @@ serve(async (req) => {
     }
 
     switch (event.type) {
+      case 'checkout.session.completed': {
+        const session: any = event.data.object
+        const md = (session?.metadata ?? {}) as Record<string, string>
+
+        // Only handle representante cadastro flow — ignore other checkouts safely
+        if (
+          md.tipo_cobranca !== 'cadastro_representante' ||
+          md.origem !== 'mvni_hub'
+        ) {
+          console.log('checkout.session.completed: metadata não corresponde a cadastro_representante, ignorando')
+          break
+        }
+
+        // SECURITY: never activate unless Stripe confirms paid
+        if (session.payment_status !== 'paid') {
+          console.log(`checkout.session.completed recebido com payment_status=${session.payment_status}, não ativando`)
+          break
+        }
+
+        const userId = md.user_id
+        if (!userId || typeof userId !== 'string') {
+          console.error('checkout.session.completed: metadata.user_id ausente')
+          break
+        }
+
+        const sessionId: string = session.id
+        const paymentIntentId: string | null =
+          typeof session.payment_intent === 'string' ? session.payment_intent : null
+        const valor =
+          typeof session.amount_total === 'number' ? session.amount_total / 100 : null
+        const moeda = (session.currency || 'brl') as string
+
+        // Idempotência: tenta inserir; se já existe (unique stripe_session_id), apenas mantém
+        const { error: insertErr } = await supabase
+          .from('pagamentos_cadastro_representante')
+          .insert({
+            user_id: userId,
+            stripe_session_id: sessionId,
+            stripe_payment_intent_id: paymentIntentId,
+            valor,
+            moeda,
+            status: 'pago',
+            metadata: {
+              tipo_cobranca: md.tipo_cobranca,
+              origem: md.origem,
+            },
+          })
+
+        if (insertErr && (insertErr as any).code !== '23505') {
+          // 23505 = unique_violation → já processado, ok
+          console.error('Erro ao registrar pagamento cadastro representante:', insertErr.message)
+          throw insertErr
+        }
+
+        // Marca representante como cadastro pago (idempotente — set apenas se nulo)
+        const { error: updErr } = await supabase
+          .from('usuarios')
+          .update({ cadastro_pago_em: new Date().toISOString() })
+          .eq('id', userId)
+          .is('cadastro_pago_em', null)
+
+        if (updErr) {
+          console.error('Erro ao marcar cadastro_pago_em em usuarios:', updErr.message)
+          throw updErr
+        }
+
+        console.log(`Cadastro representante confirmado para user ${userId} (session ${sessionId})`)
+        break
+      }
+
       case 'invoice.paid': {
         const invoice = event.data.object
         const subscriptionId = invoice.subscription
