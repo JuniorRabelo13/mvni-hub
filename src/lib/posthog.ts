@@ -16,13 +16,13 @@ export const initPostHog = () => {
   }
 };
 
-export const trackEvent = (eventName: string, properties?: Record<string, any>) => {
+export const trackEvent = (eventName: string, properties?: Record<string, unknown>) => {
   if (POSTHOG_ENABLED) {
     posthog.capture(eventName, properties);
   }
 };
 
-export const identifyUser = (userId: string, traits: { email?: string; role?: string; tenant?: string; [key: string]: any }) => {
+export const identifyUser = (userId: string, traits: { email?: string; role?: string; tenant?: string; [key: string]: unknown }) => {
   if (POSTHOG_ENABLED) {
     posthog.identify(userId, traits);
   }
