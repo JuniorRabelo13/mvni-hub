@@ -9,11 +9,11 @@ import {
   Menu,
   LogOut,
   Crown,
-} from "lucide-react";
+LucideIcon, } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
-type NavItem = { to: string; label: string; icon: any; end?: boolean };
+type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
 
 interface Props {
   primaryItems: NavItem[];
