@@ -1,12 +1,18 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.2";
+import { requireCronOrAdmin } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // SECURITY: cron/internal secret or admin only
+  const _authResp = await requireCronOrAdmin(req);
+  if (_authResp) return new Response(_authResp.body, { status: _authResp.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",

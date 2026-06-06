@@ -26,6 +26,35 @@ serve(async (req) => {
 
     const { nome, cpf, email, telefone, senha, codigo_indicador } = await req.json();
 
+    // SECURITY: input validation
+    const errs: string[] = [];
+    const isStr = (v: unknown, max = 255) => typeof v === "string" && v.trim().length > 0 && v.length <= max;
+    if (!isStr(nome, 120)) errs.push("nome inválido");
+    if (!isStr(email, 254) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.push("email inválido");
+    if (typeof senha !== "string" || senha.length < 8 || senha.length > 128) errs.push("senha deve ter 8-128 caracteres");
+    const cpfDigits = typeof cpf === "string" ? cpf.replace(/\D/g, "") : "";
+    if (cpfDigits.length !== 11) errs.push("CPF inválido");
+    // CPF check digit validation
+    const validCpf = (d: string) => {
+      if (/^(\d)\1{10}$/.test(d)) return false;
+      const calc = (slice: number) => {
+        let sum = 0;
+        for (let i = 0; i < slice; i++) sum += parseInt(d[i]) * (slice + 1 - i);
+        const r = (sum * 10) % 11;
+        return r === 10 ? 0 : r;
+      };
+      return calc(9) === parseInt(d[9]) && calc(10) === parseInt(d[10]);
+    };
+    if (cpfDigits.length === 11 && !validCpf(cpfDigits)) errs.push("CPF inválido");
+    const telDigits = typeof telefone === "string" ? telefone.replace(/\D/g, "") : "";
+    if (telefone !== undefined && telefone !== null && telefone !== "" && (telDigits.length < 10 || telDigits.length > 13)) errs.push("telefone inválido");
+    if (codigo_indicador !== undefined && codigo_indicador !== null && codigo_indicador !== "" && !isStr(codigo_indicador, 64)) errs.push("codigo_indicador inválido");
+    if (errs.length) {
+      return new Response(JSON.stringify({ sucesso: false, mensagem: errs.join("; ") }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
+    }
+
+
+
     // 1. Validar se o email já existe
     const { data: existingEmail } = await supabase
       .from("usuarios")

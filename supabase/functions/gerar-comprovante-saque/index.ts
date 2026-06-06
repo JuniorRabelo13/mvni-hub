@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1"
+import { requireUser, userHasRole } from "../_shared/auth.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,10 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
+  // SECURITY: must be authenticated
+  const _auth = await requireUser(req)
+  if (_auth.response) return new Response(_auth.response.body, { status: _auth.response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   try {
     const supabaseAdmin = createClient(
@@ -27,6 +32,12 @@ serve(async (req) => {
       .single()
 
     if (sError || !saque) throw new Error("Saque não encontrado")
+
+    // SECURITY: only the owner or an admin may generate the receipt
+    const _isAdmin = await userHasRole(_auth.user!.id, ["admin", "master_admin"])
+    if (saque.user_id !== _auth.user!.id && !_isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
 
     const { data: userProfile } = await supabaseAdmin
       .from('user_profiles')
@@ -67,10 +78,10 @@ serve(async (req) => {
 
     if (uploadError) throw uploadError
 
-    // 4. Gerar URL assinada (ou pública se o bucket fosse público)
+    // 4. Gerar URL assinada (TTL curto para reduzir exposição)
     const { data: urlData } = await supabaseAdmin.storage
       .from('financeiro')
-      .createSignedUrl(fileName, 31536000) // 1 ano de validade
+      .createSignedUrl(fileName, 3600) // 1 hora
 
     const comprobanteUrl = urlData?.signedUrl
 
