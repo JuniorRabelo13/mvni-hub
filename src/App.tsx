@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,7 +8,6 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import React, { Suspense, lazy, useEffect } from "react";
-import { Navigate } from "react-router-dom";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
