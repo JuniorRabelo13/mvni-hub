@@ -33,7 +33,7 @@ export default function Dashboard() {
   const [diretos, setDiretos] = useState<number>(10);
   const [indiretos, setIndiretos] = useState<number>(0);
   const [calculandoSimulacao, setCalculandoSimulacao] = useState(false);
-  const [simulacaoReal, setSimulacaoReal] = useState<any>(null);
+  const [simulacaoReal, setSimulacaoReal] = useState<Record<string, unknown> | null>(null);
 
   const fetchSimulacao = async (numDiretos: number, numIndiretos: number) => {
     setCalculandoSimulacao(true);
