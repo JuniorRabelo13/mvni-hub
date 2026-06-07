@@ -1,6 +1,7 @@
 import { Workbox } from "workbox-window";
 
 const SW_URL = "/sw.js";
+const RECOVERY_FLAG = "mvni-sw-recovered";
 
 function shouldSkipRegistration(): boolean {
   if (typeof window === "undefined") return true;
@@ -32,11 +33,31 @@ async function unregisterMatching() {
   if (!("serviceWorker" in navigator)) return;
   try {
     const regs = await navigator.serviceWorker.getRegistrations();
-    await Promise.allSettled(
-      regs
-        .filter((r) => r.active?.scriptURL?.endsWith(SW_URL) || r.installing?.scriptURL?.endsWith(SW_URL) || r.waiting?.scriptURL?.endsWith(SW_URL))
-        .map((r) => r.unregister())
+    const matchingRegs = regs.filter(
+      (r) =>
+        r.active?.scriptURL?.endsWith(SW_URL) ||
+        r.installing?.scriptURL?.endsWith(SW_URL) ||
+        r.waiting?.scriptURL?.endsWith(SW_URL)
     );
+    const hadController = !!navigator.serviceWorker.controller;
+    const results = await Promise.allSettled(matchingRegs.map((r) => r.unregister()));
+    const unregistered = results.some((result) => result.status === "fulfilled" && result.value === true);
+
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.allSettled(
+        keys
+          .filter((key) => key.startsWith("workbox-") || key.includes("precache") || key.includes("runtime") || key === "html-navigations" || key === "static-assets")
+          .map((key) => caches.delete(key))
+      );
+    }
+
+    if (hadController && unregistered && sessionStorage.getItem(RECOVERY_FLAG) !== "1") {
+      sessionStorage.setItem(RECOVERY_FLAG, "1");
+      const url = new URL(window.location.href);
+      url.searchParams.set("sw", "off");
+      window.location.replace(url.toString());
+    }
   } catch {
     // noop
   }
