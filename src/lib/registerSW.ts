@@ -64,6 +64,10 @@ async function unregisterMatching() {
 }
 
 export async function registerServiceWorker() {
+  // Desativado para evitar tela preta recorrente causada por caches antigos do PWA/SW.
+  await unregisterMatching();
+  return;
+
   if (shouldSkipRegistration()) {
     await unregisterMatching();
     return;
