@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, Wallet, Activity, TrendingUp, ArrowRight, Network, Calculator, Info, RefreshCcw } from "lucide-react";
+import { Users, Wallet, Activity, TrendingUp, ArrowRight, Network, Calculator, Info, RefreshCcw, AlertCircle, Loader2 } from "lucide-react";
 import { sanitize } from "@/lib/sanitize";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -35,22 +35,65 @@ export default function Dashboard() {
   const [calculandoSimulacao, setCalculandoSimulacao] = useState(false);
   const [simulacaoReal, setSimulacaoReal] = useState<Record<string, unknown> | null>(null);
 
+  // ETAPA 1: Estado do pagamento de cadastro
+  const [cadastroPagoEm, setCadastroPagoEm] = useState<string | null | undefined>(undefined);
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // ETAPA 1: Consulta cadastro_pago_em do usuário atual
+  useEffect(() => {
+    if (!user) return;
+    const checkCadastroPago = async () => {
+      try {
+        const { data, error } = await (supabase as any)
+          .from("usuarios")
+          .select("cadastro_pago_em")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (error) {
+          console.error("[DASHBOARD] Erro ao verificar cadastro_pago_em:", error);
+          setCadastroPagoEm(null);
+          return;
+        }
+        setCadastroPagoEm(data?.cadastro_pago_em ?? null);
+      } catch (err) {
+        console.error("[DASHBOARD] Erro inesperado ao verificar cadastro:", err);
+        setCadastroPagoEm(null);
+      }
+    };
+    checkCadastroPago();
+  }, [user]);
+
+  // ETAPA 1: Handler do botão de ativar cadastro
+  const handleAtivarCadastro = async () => {
+    setLoadingCheckout(true);
+    setCheckoutError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "stripe-checkout-cadastro-representante"
+      );
+      if (error) throw new Error(error.message || "Erro ao iniciar checkout");
+      if (!data?.url) throw new Error("URL de checkout não retornada");
+      window.location.assign(data.url);
+    } catch (err: any) {
+      const msg = err?.message || "Erro ao conectar com o servidor. Tente novamente.";
+      setCheckoutError(msg);
+      toast.error(msg);
+    } finally {
+      setLoadingCheckout(false);
+    }
+  };
+
   const fetchSimulacao = async (numDiretos: number, numIndiretos: number) => {
     setCalculandoSimulacao(true);
     try {
       const { data, error } = await supabase.functions.invoke('calcular-comissao-representante', {
         body: {
-          // Mocking IDs just for simulation purposes within the function logic if needed, 
-          // but our focus is getting the calculation logic from the same source.
-          // Since the edge function is designed for real calculations, 
-          // we'll use a local useMemo for the visual simulator to match the logic exactly
-          // as we can't run a "preview" of the edge function without real DB records easily.
           simulate: true,
           diretos: numDiretos,
           indiretos: numIndiretos
         }
       });
-      // Fallback to local logic that MATCHES the backend if function isn't simulation-ready
       if (error) throw error;
       setSimulacaoReal(data.dados);
     } catch (err) {
@@ -64,10 +107,10 @@ export default function Dashboard() {
     setCalculandoSimulacao(true);
     try {
       const { data, error } = await supabase.functions.invoke('calcular-comissao-representante', {
-        body: { 
-          simulate: true, 
-          diretos: numDiretos, 
-          indiretos: numIndiretos 
+        body: {
+          simulate: true,
+          diretos: numDiretos,
+          indiretos: numIndiretos
         }
       });
       if (error) throw error;
@@ -89,7 +132,7 @@ export default function Dashboard() {
     const ganhoRecorrenteDireto = diretos * VALOR_RECORRENCIA_DIRETA;
     const ganhoIndireto = indiretos * MULTIPLICADOR_INDIRETO;
     const total = ganhoRecorrenteDireto + ganhoIndireto;
-    
+
     return {
       comissaoAtivacao,
       ganhoRecorrenteDireto,
@@ -160,6 +203,42 @@ export default function Dashboard() {
         </Button>
       </header>
 
+      {/* ETAPA 1: Card de ativação de cadastro — exibido apenas quando cadastro_pago_em for null */}
+      {cadastroPagoEm === null && (
+        <Card className="border-amber-500/40 bg-amber-500/5">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              <CardTitle className="text-amber-400">Ative seu cadastro de representante</CardTitle>
+            </div>
+            <CardDescription className="text-sm text-muted-foreground">
+              Pague a taxa única de R$ 99,90 para liberar seu acesso completo ao MVNI Hub.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Após a confirmação do pagamento pelo Stripe, seu cadastro será ativado automaticamente.
+            </p>
+            {checkoutError && (
+              <p className="text-sm text-red-400">{checkoutError}</p>
+            )}
+            <Button
+              className="bg-amber-500 hover:bg-amber-600 text-white font-bold"
+              onClick={handleAtivarCadastro}
+              disabled={loadingCheckout}
+            >
+              {loadingCheckout ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Aguarde...
+                </>
+              ) : (
+                "Ativar meu cadastro"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Hero saldo */}
       <Card className="overflow-hidden border-primary/30 bg-gradient-noir shadow-gold">
@@ -207,7 +286,6 @@ export default function Dashboard() {
           <p>• Cada associado ativo gera R$ 20/mês recorrente.</p>
           <p>• Bônus Indireto: De 21 até 40 associados diretos, você ganha R$ 5 por cada associado indireto.</p>
           <p>• Bônus Indireto Elite: Acima de 40 associados diretos, o bônus indireto dobra para R$ 10 por associado.</p>
-          
           <p>• Sem cadastro vazio, sem multinível — só venda real conta.</p>
         </CardContent>
       </Card>
@@ -370,7 +448,7 @@ export default function Dashboard() {
       </Card>
 
       <div className="flex justify-center pt-4">
-        <Button 
+        <Button
           className="bg-gradient-gold text-primary-foreground font-bold py-6 px-8 text-lg hover:opacity-90 transition-all shadow-gold-sm rounded-full"
           onClick={() => {
             document.getElementById('cadastro-sessao')?.scrollIntoView({ behavior: 'smooth' });
@@ -407,6 +485,4 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
-
-
+        }

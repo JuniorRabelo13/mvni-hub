@@ -158,6 +158,130 @@ serve(async (req) => {
         break
       }
 
+      // ETAPA 3: Pagamento assíncrono — sucesso
+      case 'checkout.session.async_payment_succeeded': {
+        const session: any = event.data.object
+        const md = (session?.metadata ?? {}) as Record<string, string>
+
+        if (
+          md.tipo_cobranca !== 'cadastro_representante' ||
+          md.origem !== 'mvni_hub'
+        ) {
+          console.log('checkout.session.async_payment_succeeded: metadata não corresponde a cadastro_representante, ignorando')
+          break
+        }
+
+        const userId = md.user_id
+        if (!userId || typeof userId !== 'string') {
+          console.error('checkout.session.async_payment_succeeded: metadata.user_id ausente')
+          break
+        }
+
+        const sessionId: string = session.id
+        const paymentIntentId: string | null =
+          typeof session.payment_intent === 'string' ? session.payment_intent : null
+        const valor =
+          typeof session.amount_total === 'number' ? session.amount_total / 100 : null
+        const moeda = (session.currency || 'brl') as string
+
+        // Upsert: registrar ou atualizar como 'pago' (idempotente via stripe_session_id)
+        const { error: asyncInsertErr } = await supabase
+          .from('pagamentos_cadastro_representante')
+          .upsert(
+            {
+              user_id: userId,
+              stripe_session_id: sessionId,
+              stripe_payment_intent_id: paymentIntentId,
+              valor,
+              moeda,
+              status: 'pago',
+              metadata: {
+                tipo_cobranca: md.tipo_cobranca,
+                origem: md.origem,
+                evento: 'async_payment_succeeded',
+              },
+            },
+            { onConflict: 'stripe_session_id' }
+          )
+
+        if (asyncInsertErr) {
+          console.error('Erro ao registrar pagamento assíncrono:', asyncInsertErr.message)
+          throw asyncInsertErr
+        }
+
+        // Ativar representante apenas se ainda não foi ativado
+        const { error: asyncUpdErr } = await supabase
+          .from('usuarios')
+          .update({ cadastro_pago_em: new Date().toISOString() })
+          .eq('id', userId)
+          .is('cadastro_pago_em', null)
+
+        if (asyncUpdErr) {
+          console.error('Erro ao marcar cadastro_pago_em (async):', asyncUpdErr.message)
+          throw asyncUpdErr
+        }
+
+        console.log(`Pagamento assíncrono confirmado para user ${userId} (session ${sessionId})`)
+        break
+      }
+
+      // ETAPA 3: Pagamento assíncrono — falha
+      case 'checkout.session.async_payment_failed': {
+        const session: any = event.data.object
+        const md = (session?.metadata ?? {}) as Record<string, string>
+
+        if (
+          md.tipo_cobranca !== 'cadastro_representante' ||
+          md.origem !== 'mvni_hub'
+        ) {
+          console.log('checkout.session.async_payment_failed: metadata não corresponde a cadastro_representante, ignorando')
+          break
+        }
+
+        const userId = md.user_id
+        if (!userId || typeof userId !== 'string') {
+          console.error('checkout.session.async_payment_failed: metadata.user_id ausente')
+          break
+        }
+
+        const sessionId: string = session.id
+
+        // Inserir falha apenas se ainda não existir registro para esta sessão
+        const { data: existingPagamento } = await supabase
+          .from('pagamentos_cadastro_representante')
+          .select('id, status')
+          .eq('stripe_session_id', sessionId)
+          .maybeSingle()
+
+        if (!existingPagamento) {
+          const { error: failInsertErr } = await supabase
+            .from('pagamentos_cadastro_representante')
+            .insert({
+              user_id: userId,
+              stripe_session_id: sessionId,
+              valor: typeof session.amount_total === 'number' ? session.amount_total / 100 : null,
+              moeda: (session.currency || 'brl') as string,
+              status: 'falhou',
+              metadata: {
+                tipo_cobranca: md.tipo_cobranca,
+                origem: md.origem,
+                evento: 'async_payment_failed',
+              },
+            })
+
+          if (failInsertErr && (failInsertErr as any).code !== '23505') {
+            console.error('Erro ao registrar falha de pagamento assíncrono:', failInsertErr.message)
+            throw failInsertErr
+          }
+        } else {
+          console.log(`Pagamento assíncrono: falha registrada, sessão ${sessionId} já existente com status ${existingPagamento.status}`)
+        }
+
+        // NÃO ativar representante em caso de falha
+        console.log(`Pagamento assíncrono falhou para user ${userId} (session ${sessionId})`)
+        break
+      }
+
       case 'invoice.paid': {
         const invoice = event.data.object
         const subscriptionId = invoice.subscription
