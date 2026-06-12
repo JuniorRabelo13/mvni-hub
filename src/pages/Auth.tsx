@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, Chrome } from "lucide-react";
 
 const signupSchema = z.object({
   nome: z.string().trim().min(2, "Nome muito curto").max(80),
@@ -88,7 +88,9 @@ export default function AuthPage() {
 
       if (error) {
         setLoading(false);
-        if (error.message.includes("Invalid login credentials") || error.status === 400) {
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          setLoginError("Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.");
+        } else if (error.message.includes("Invalid login credentials") || error.status === 400) {
           setLoginError("E-mail ou senha incorretos. Verifique seus dados e tente novamente.");
         } else if (error.message.includes("User not found")) {
           setLoginError("Nenhuma conta encontrada com este e-mail.");
@@ -131,6 +133,23 @@ export default function AuthPage() {
     } catch (err) {
       setLoading(false);
       setLoginError("Erro ao conectar. Tente novamente em instantes.");
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoginError(null);
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/painel" },
+    });
+    setLoading(false);
+    if (error) {
+      if (error.message.includes("provider is not enabled") || error.message.includes("Unsupported provider")) {
+        setLoginError("Login com Google ainda não está habilitado. Use e-mail e senha por enquanto.");
+      } else {
+        setLoginError("Erro ao conectar com Google. Tente novamente em instantes.");
+      }
     }
   };
 
@@ -183,6 +202,17 @@ export default function AuthPage() {
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="h-4 w-4 animate-spin" />} Entrar
+                  </Button>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">ou</span>
+                    </div>
+                  </div>
+                  <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={loading}>
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Chrome className="h-4 w-4" />} Continuar com Google
                   </Button>
                   {loginError && (
                     <p className="text-sm font-medium text-destructive animate-in fade-in slide-in-from-top-1">
