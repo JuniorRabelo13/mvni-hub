@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, Chrome } from "lucide-react";
 
 const signupSchema = z.object({
   nome: z.string().trim().min(2, "Nome muito curto").max(80),
@@ -88,7 +88,9 @@ export default function AuthPage() {
 
       if (error) {
         setLoading(false);
-        if (error.message.includes("Invalid login credentials") || error.status === 400) {
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          setLoginError("Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.");
+        } else if (error.message.includes("Invalid login credentials") || error.status === 400) {
           setLoginError("E-mail ou senha incorretos. Verifique seus dados e tente novamente.");
         } else if (error.message.includes("User not found")) {
           setLoginError("Nenhuma conta encontrada com este e-mail.");
