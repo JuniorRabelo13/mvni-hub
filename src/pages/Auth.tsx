@@ -136,6 +136,23 @@ export default function AuthPage() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setLoginError(null);
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/painel" },
+    });
+    setLoading(false);
+    if (error) {
+      if (error.message.includes("provider is not enabled") || error.message.includes("Unsupported provider")) {
+        setLoginError("Login com Google ainda não está habilitado. Use e-mail e senha por enquanto.");
+      } else {
+        setLoginError("Erro ao conectar com Google. Tente novamente em instantes.");
+      }
+    }
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-noir p-4">
       <div className="w-full max-w-md space-y-6">
