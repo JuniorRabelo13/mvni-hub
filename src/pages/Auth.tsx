@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, Sparkles, Chrome } from "lucide-react";
+import { lovable } from "@/integrations/lovable/index";
 
 const signupSchema = z.object({
   nome: z.string().trim().min(2, "Nome muito curto").max(80),
