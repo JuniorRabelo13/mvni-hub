@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, Sparkles, Chrome } from "lucide-react";
+import { lovable } from "@/integrations/lovable/index";
 
 const signupSchema = z.object({
   nome: z.string().trim().min(2, "Nome muito curto").max(80),
@@ -139,17 +140,30 @@ export default function AuthPage() {
   const handleGoogleLogin = async () => {
     setLoginError(null);
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin + "/painel" },
-    });
-    setLoading(false);
-    if (error) {
-      if (error.message.includes("provider is not enabled") || error.message.includes("Unsupported provider")) {
-        setLoginError("Login com Google ainda não está habilitado. Use e-mail e senha por enquanto.");
-      } else {
-        setLoginError("Erro ao conectar com Google. Tente novamente em instantes.");
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin + "/painel",
+      });
+
+      if (result.error) {
+        setLoading(false);
+        const msg = (result.error as any).message || String(result.error);
+        if (msg.includes("provider is not enabled") || msg.includes("Unsupported provider")) {
+          setLoginError("Login com Google ainda não está habilitado. Use e-mail e senha por enquanto.");
+        } else {
+          setLoginError("Erro ao conectar com Google. Tente novamente em instantes.");
+        }
+        return;
       }
+
+      if (result.redirected) {
+        return;
+      }
+
+      navigate("/painel", { replace: true });
+    } catch (err) {
+      setLoading(false);
+      setLoginError("Erro ao conectar com Google. Tente novamente em instantes.");
     }
   };
 
