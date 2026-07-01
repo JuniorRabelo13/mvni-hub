@@ -153,7 +153,7 @@ const AppContent = () => {
           <AuthProvider>
             <AuthGuard>
               <ErrorBoundary>
-                <Suspense fallback={<LoadingScreen />}>
+                <Suspense fallback={<AppFallback />}>
                   <Routes>
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/recuperar-senha" element={<RecuperarSenha />} />
