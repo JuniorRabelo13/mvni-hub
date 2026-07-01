@@ -45,6 +45,7 @@ const Equipe = lazy(() => import("./pages/Equipe"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Termos = lazy(() => import("./pages/Termos"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const Diagnostico = lazy(() => import("./pages/Diagnostico"));
 
 // Finance Pages
 const SaquePix = lazy(() => import("./pages/financeiro/SaquePix"));
