@@ -163,6 +163,7 @@ const AppContent = () => {
                     <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
                     <Route path="/termos" element={<Termos />} />
                     <Route path="/privacidade" element={<Privacy />} />
+                    <Route path="/diagnostico" element={<Diagnostico />} />
 
                   <Route element={<AppLayout />}>
                     <Route path="/" element={<RootRedirect />} />
