@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-const PUBLIC_ROUTES = ["/auth", "/cadastro", "/cadastro/sucesso", "/termos", "/recuperar-senha", "/nova-senha", "/privacidade"];
+const PUBLIC_ROUTES = ["/auth", "/cadastro", "/cadastro/sucesso", "/termos", "/recuperar-senha", "/nova-senha", "/privacidade", "/diagnostico"];
 const MASTER_ONLY_ROUTES = ["/master/central", "/master/dashboard", "/master/projecoes", "/master/financeiro", "/master/comissoes", "/master/afiliados", "/master/clientes", "/master/whatsapp", "/master/linhas", "/master/workers", "/master/alertas", "/master/antifraude", "/master/auditoria", "/master/usuarios", "/master/config"];
 
 // ETAPA 2: Rotas operacionais bloqueadas para representantes sem cadastro_pago_em
