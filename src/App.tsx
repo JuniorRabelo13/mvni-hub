@@ -8,7 +8,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import React, { Suspense, lazy, useEffect } from "react";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { AppFallback } from "@/components/AppFallback";
 import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -45,6 +45,7 @@ const Equipe = lazy(() => import("./pages/Equipe"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Termos = lazy(() => import("./pages/Termos"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const Diagnostico = lazy(() => import("./pages/Diagnostico"));
 
 // Finance Pages
 const SaquePix = lazy(() => import("./pages/financeiro/SaquePix"));
@@ -153,7 +154,7 @@ const AppContent = () => {
           <AuthProvider>
             <AuthGuard>
               <ErrorBoundary>
-                <Suspense fallback={<LoadingScreen />}>
+                <Suspense fallback={<AppFallback />}>
                   <Routes>
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/recuperar-senha" element={<RecuperarSenha />} />
@@ -162,6 +163,7 @@ const AppContent = () => {
                     <Route path="/cadastro/sucesso" element={<CadastroSucesso />} />
                     <Route path="/termos" element={<Termos />} />
                     <Route path="/privacidade" element={<Privacy />} />
+                    <Route path="/diagnostico" element={<Diagnostico />} />
 
                   <Route element={<AppLayout />}>
                     <Route path="/" element={<RootRedirect />} />
