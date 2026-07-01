@@ -13,7 +13,7 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     .filter(Boolean)
     .join(', ');
   throw new Error(
-    `Configuração Supabase ausente (${missing}). Preencha VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY no arquivo .env local. Veja docs/CONFIGURAR_ENV_LOCAL.md.`,
+    `Configuração Supabase ausente (${missing}). Preencha VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY no arquivo .env local ou verifique as variáveis do Lovable Cloud. Veja docs/CONFIGURAR_ENV_LOCAL.md ou abra /diagnostico.`,
   );
 }
 
