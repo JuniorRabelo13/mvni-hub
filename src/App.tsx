@@ -8,7 +8,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import React, { Suspense, lazy, useEffect } from "react";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { AppFallback } from "@/components/AppFallback";
 import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
