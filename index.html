@@ -50,8 +50,50 @@
     </script>
   </head>
 
-  <body>
-    <div id="root"></div>
+  <body style="margin:0;background:#0B0F1A;">
+    <style>
+      #mvni-boot-fallback{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0B0F1A 0%,#131A2E 100%);color:#E5E7EB;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:24px;z-index:1;}
+      #mvni-boot-fallback .card{max-width:460px;width:100%;background:rgba(17,24,39,.85);border:1px solid #262f45;border-radius:14px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.45);text-align:center;display:flex;flex-direction:column;gap:14px;}
+      #mvni-boot-fallback .tag{font-size:11px;letter-spacing:.24em;color:#9b87f5;text-transform:uppercase;font-weight:600;}
+      #mvni-boot-fallback h1{font-size:20px;font-weight:600;margin:0;color:#F9FAFB;}
+      #mvni-boot-fallback p{font-size:14px;color:#9CA3AF;margin:0;line-height:1.5;}
+      #mvni-boot-fallback .actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
+      #mvni-boot-fallback a,#mvni-boot-fallback button{padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;cursor:pointer;border:1px solid #3f3f46;background:transparent;color:#E5E7EB;font-family:inherit;}
+      #mvni-boot-fallback a.primary{background:#9b87f5;border-color:#9b87f5;color:#fff;}
+      #mvni-boot-fallback .hint{font-size:12px;color:#6B7280;margin-top:4px;}
+      #mvni-boot-fallback .spinner{width:22px;height:22px;border:2px solid #262f45;border-top-color:#9b87f5;border-radius:50%;margin:0 auto;animation:mvni-spin 1s linear infinite;}
+      @keyframes mvni-spin{to{transform:rotate(360deg);}}
+    </style>
+    <div id="root">
+      <div id="mvni-boot-fallback">
+        <div class="card">
+          <div class="tag">MVNI HUB</div>
+          <div class="spinner"></div>
+          <h1 id="mvni-boot-title">Carregando MVNI HUB</h1>
+          <p id="mvni-boot-message">Se esta mensagem permanecer por mais de alguns segundos, a aplicação não conseguiu iniciar corretamente.</p>
+          <div class="actions">
+            <a class="primary" href="/diagnostico">Abrir diagnóstico</a>
+            <a href="/auth">Ir para login</a>
+            <button type="button" onclick="window.location.reload()">Recarregar</button>
+          </div>
+          <div class="hint">Abra o diagnóstico para verificar o ambiente.</div>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        try {
+          setTimeout(function () {
+            var fb = document.getElementById("mvni-boot-fallback");
+            if (!fb) return; // React já substituiu o #root
+            var t = document.getElementById("mvni-boot-title");
+            var m = document.getElementById("mvni-boot-message");
+            if (t) t.textContent = "O MVNI HUB demorou mais que o esperado para carregar.";
+            if (m) m.textContent = "Tente recarregar a página ou abrir /diagnostico para verificar o ambiente.";
+          }, 10000);
+        } catch (e) { /* noop */ }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
