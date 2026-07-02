@@ -2,28 +2,37 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  const missing = [
-    !SUPABASE_URL && 'VITE_SUPABASE_URL',
-    !SUPABASE_PUBLISHABLE_KEY && 'VITE_SUPABASE_PUBLISHABLE_KEY',
-  ]
-    .filter(Boolean)
-    .join(', ');
-  throw new Error(
-    `Configuração Supabase ausente (${missing}). Preencha VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY no arquivo .env local ou verifique as variáveis do Lovable Cloud. Veja docs/CONFIGURAR_ENV_LOCAL.md ou abra /diagnostico.`,
-  );
+export const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+
+export const supabaseConfigError = hasSupabaseConfig
+  ? null
+  : `Configuração ausente (${[
+      !SUPABASE_URL && 'VITE_SUPABASE_URL',
+      !SUPABASE_PUBLISHABLE_KEY && 'VITE_SUPABASE_PUBLISHABLE_KEY',
+    ]
+      .filter(Boolean)
+      .join(', ')}). Preencha o .env local ou verifique as variáveis do Lovable Cloud. Abra /diagnostico para verificar o ambiente.`;
+
+if (!hasSupabaseConfig) {
+  // Não lança throw fatal no import — permite que /diagnostico renderize e o fallback global apareça.
+  // Qualquer chamada real à API do supabase abaixo irá falhar em runtime com mensagem clara.
+  console.error('[supabase/client]', supabaseConfigError);
 }
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-  }
-});
+export const supabase = createClient<Database>(
+  SUPABASE_URL ?? 'http://localhost:54321',
+  SUPABASE_PUBLISHABLE_KEY ?? 'missing-key',
+  {
+    auth: {
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  },
+);
