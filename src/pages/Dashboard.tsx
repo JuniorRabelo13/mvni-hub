@@ -39,6 +39,18 @@ export default function Dashboard() {
   const [cadastroPagoEm, setCadastroPagoEm] = useState<string | null | undefined>(undefined);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Toast de checkout cancelado (retorno do Stripe)
+  useEffect(() => {
+    if (searchParams.get("checkout") === "canceled") {
+      toast.info("Checkout cancelado. Quando quiser, retome a ativação por aqui.");
+      searchParams.delete("checkout");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+
 
   // ETAPA 1: Consulta cadastro_pago_em do usuário atual
   useEffect(() => {
