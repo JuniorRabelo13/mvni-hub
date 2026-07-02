@@ -205,40 +205,67 @@ export default function Dashboard() {
 
       {/* ETAPA 1: Card de ativação de cadastro — exibido apenas quando cadastro_pago_em for null */}
       {cadastroPagoEm === null && (
-        <Card className="border-amber-500/40 bg-amber-500/5">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-500" />
-              <CardTitle className="text-amber-400">Ative seu cadastro de representante</CardTitle>
+        <Card className="relative overflow-hidden border-amber-500/40 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent shadow-[0_0_40px_-15px_rgba(245,158,11,0.35)]">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-amber-500/20 blur-3xl" />
+          <CardHeader className="relative">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-amber-500/15 p-2 ring-1 ring-amber-500/30">
+                  <AlertCircle className="h-5 w-5 text-amber-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-amber-300">Ative seu cadastro de representante</CardTitle>
+                  <CardDescription className="mt-1 text-sm text-muted-foreground">
+                    Pagamento único que libera todo o painel operacional.
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Taxa de ativação</p>
+                <p className="text-3xl font-bold text-amber-300">R$ 99,90</p>
+                <p className="text-[10px] text-muted-foreground">pagamento único</p>
+              </div>
             </div>
-            <CardDescription className="text-sm text-muted-foreground">
-              Pague a taxa única de R$ 99,90 para liberar seu acesso completo ao MVNI Hub.
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-xs text-muted-foreground">
-              Após a confirmação do pagamento pelo Stripe, seu cadastro será ativado automaticamente.
-            </p>
+          <CardContent className="relative space-y-4">
+            <ul className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+              <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" /> Cadastro ilimitado de clientes e linhas</li>
+              <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" /> CRM completo e funil de vendas</li>
+              <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" /> Comissões multinível recorrentes</li>
+              <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" /> App mobile (PWA) incluído</li>
+            </ul>
             {checkoutError && (
-              <p className="text-sm text-red-400">{checkoutError}</p>
+              <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                {checkoutError}
+              </div>
             )}
-            <Button
-              className="bg-amber-500 hover:bg-amber-600 text-white font-bold"
-              onClick={handleAtivarCadastro}
-              disabled={loadingCheckout}
-            >
-              {loadingCheckout ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Aguarde...
-                </>
-              ) : (
-                "Ativar meu cadastro"
-              )}
-            </Button>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Button
+                size="lg"
+                className="bg-amber-500 font-bold text-black hover:bg-amber-400"
+                onClick={handleAtivarCadastro}
+                disabled={loadingCheckout}
+              >
+                {loadingCheckout ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Abrindo checkout seguro…
+                  </>
+                ) : (
+                  <>
+                    Ativar meu cadastro
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Pagamento processado pela Stripe. Ativação automática após a confirmação.
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
+
 
       {/* Hero saldo */}
       <Card className="overflow-hidden border-primary/30 bg-gradient-noir shadow-gold">
