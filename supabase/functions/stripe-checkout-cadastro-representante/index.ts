@@ -42,7 +42,7 @@ serve(async (req) => {
       req.headers.get("referer")?.replace(/\/+$/, "") ||
       "https://app.mvni.hub";
     const success_url = `${origin}/cadastro/sucesso?session_id={CHECKOUT_SESSION_ID}`;
-    const cancel_url = `${origin}/cadastro?canceled=1`;
+    const cancel_url = `${origin}/painel?checkout=canceled`;
 
     // 4) Try to reuse existing stripe_customer_id (no duplicate customer)
     let stripeCustomerId: string | null = null;
