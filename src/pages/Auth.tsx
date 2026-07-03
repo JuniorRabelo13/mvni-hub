@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, Sparkles, Chrome } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
+import { SEO } from "@/components/SEO";
+
 
 const signupSchema = z.object({
   nome: z.string().trim().min(2, "Nome muito curto").max(80),
@@ -169,7 +171,13 @@ export default function AuthPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-noir p-4">
+      <SEO
+        title="Entrar no MVNI Hub — Login de Representantes"
+        description="Acesse o painel MVNI Hub para gerenciar clientes, comissões, chips e pagamentos em tempo real."
+        path="/auth"
+      />
       <div className="w-full max-w-md space-y-6">
+
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-xs text-primary">
             <Sparkles className="h-3 w-3" /> MVNI Hub PF

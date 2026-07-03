@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SEO } from "@/components/SEO";
+
 
 export default function RecuperarSenha() {
   const navigate = useNavigate();
@@ -48,7 +50,13 @@ export default function RecuperarSenha() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-noir p-4">
+      <SEO
+        title="Recuperar senha — MVNI Hub"
+        description="Recupere o acesso à sua conta MVNI Hub. Enviaremos um link seguro para redefinir sua senha por e-mail."
+        path="/recuperar-senha"
+      />
       <div className="w-full max-w-md space-y-6">
+
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-xs text-primary">
             <Sparkles className="h-3 w-3" /> MVNI Hub PF

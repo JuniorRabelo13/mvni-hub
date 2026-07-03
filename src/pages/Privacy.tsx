@@ -1,9 +1,16 @@
+import { SEO } from "@/components/SEO";
+
 export default function Privacy() {
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <main className="max-w-4xl mx-auto p-6 space-y-6">
+      <SEO
+        title="Política de Privacidade — MVNI Hub"
+        description="Saiba como o MVNI Hub coleta, utiliza e protege seus dados pessoais e financeiros de acordo com a LGPD."
+        path="/privacidade"
+      />
       <h1 className="text-3xl font-bold">Política de Privacidade</h1>
       <p className="text-muted-foreground">Última atualização: 10 de maio de 2026</p>
-      
+
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">1. Coleta de Dados</h2>
         <p>Coletamos dados necessários para a prestação do serviço, como nome, e-mail, telefone e informações financeiras para processamento de comissões.</p>
@@ -18,6 +25,6 @@ export default function Privacy() {
         <h2 className="text-xl font-semibold">3. Segurança</h2>
         <p>Implementamos medidas de segurança técnicas e administrativas para proteger seus dados pessoais.</p>
       </section>
-    </div>
+    </main>
   );
 }
