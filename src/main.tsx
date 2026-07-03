@@ -1,10 +1,12 @@
 import { createRoot } from "react-dom/client";
 import { StrictMode, Suspense } from "react";
+import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 import { registerServiceWorker } from "./lib/registerSW";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppFallback } from "./components/AppFallback";
+
 
 const BOOT_TAG = "[MVNI_BOOT]";
 
@@ -68,12 +70,15 @@ try {
 
   createRoot(container).render(
     <StrictMode>
-      <ErrorBoundary>
-        <Suspense fallback={<AppFallback />}>
-          <App />
-        </Suspense>
-      </ErrorBoundary>
+      <HelmetProvider>
+        <ErrorBoundary>
+          <Suspense fallback={<AppFallback />}>
+            <App />
+          </Suspense>
+        </ErrorBoundary>
+      </HelmetProvider>
     </StrictMode>,
+
   );
 
   console.info(`${BOOT_TAG} react mounted`);
