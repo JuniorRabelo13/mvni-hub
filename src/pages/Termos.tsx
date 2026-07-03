@@ -2,14 +2,19 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const Termos = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center p-6 md:p-12">
+    <main className="min-h-screen bg-background text-foreground flex flex-col items-center p-6 md:p-12">
+      <SEO
+        title="Termos do Representante MVNI Hub"
+        description="Leia os termos e condições da parceria MVNI Hub: comissionamento, regras de conduta e encerramento."
+        path="/termos"
+      />
       <div className="max-w-3xl w-full space-y-8">
-        {/* Header */}
         <div className="flex flex-col items-center space-y-4 text-center">
           <div className="flex items-center gap-2">
             <div className="bg-primary p-2 rounded-lg">
@@ -20,7 +25,6 @@ const Termos = () => {
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Termos do Representante MVNI</h1>
         </div>
 
-        {/* Content */}
         <div className="space-y-8 bg-card p-6 md:p-10 rounded-xl border border-border shadow-sm">
           <section className="space-y-3">
             <h2 className="text-xl font-bold border-b pb-2">Seção 1 — O que é ser um Representante MVNI</h2>
@@ -51,10 +55,9 @@ const Termos = () => {
           </section>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-center pt-4">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => navigate(-1)}
             className="gap-2"
           >
@@ -63,7 +66,7 @@ const Termos = () => {
           </Button>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 

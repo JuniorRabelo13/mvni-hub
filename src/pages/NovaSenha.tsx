@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { SEO } from "@/components/SEO";
+
 
 export default function NovaSenha() {
   const navigate = useNavigate();
@@ -67,7 +69,13 @@ export default function NovaSenha() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-noir p-4">
+      <SEO
+        title="Criar nova senha — MVNI Hub"
+        description="Defina uma nova senha segura para sua conta MVNI Hub e retome o acesso ao painel de gestão."
+        path="/nova-senha"
+      />
       <div className="w-full max-w-md space-y-6">
+
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-xs text-primary">
             <Sparkles className="h-3 w-3" /> MVNI Hub PF

@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/posthog";
+import { SEO } from "@/components/SEO";
+
 
 const Cadastro = () => {
   const navigate = useNavigate();
@@ -117,8 +119,14 @@ const Cadastro = () => {
     !loading;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6">
+    <main className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6">
+      <SEO
+        title="Cadastro de Representante MVNI Hub"
+        description="Crie sua conta MVNI Hub em minutos e comece a indicar clientes, gerenciar comissões e ativar chips."
+        path="/cadastro"
+      />
       <div className="max-w-md w-full space-y-8">
+
         <div className="flex flex-col items-center space-y-4 text-center">
           <div className="flex items-center gap-2">
             <div className="bg-primary p-2 rounded-lg">
@@ -271,8 +279,9 @@ const Cadastro = () => {
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
+
 };
 
 export default Cadastro;
