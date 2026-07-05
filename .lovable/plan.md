@@ -1,81 +1,97 @@
-## Objetivo
-Criar a Edge Function `stripe-checkout-cadastro-representante` que gera uma Stripe Checkout Session em modo `payment` (pagamento único) usando o Price ID guardado no secret `STRIPE_PRICE_CADASTRO_REPRESENTANTE`, exigindo usuário autenticado e retornando apenas a URL de checkout.
+# MVNI HUB — Fase 2: Plataforma MVNO
 
-## Pré-requisitos / Secrets
-- `STRIPE_SECRET_KEY` — já existe ✅
-- `STRIPE_PRICE_CADASTRO_REPRESENTANTE` — **NÃO existe ainda**. Será solicitado via `add_secret` antes de finalizar (a função tolera ausência retornando 500 controlado, mas só funcionará após o secret).
-- `STRIPE_WEBHOOK_SECRET` — já validado pelo webhook existente. Webhook NÃO será alterado neste passo (apenas relato).
+Escopo enorme (14 fases). Entregar tudo em um único passo geraria migration gigante, risco alto de quebra e review inviável. Proponho **3 sprints sequenciais**, cada um com build limpo, tipos regenerados e testável de forma isolada. Nada existente (Stripe, checkout, comissões, indicação, AuthGuard, Dashboard atual, RLS atuais) é tocado.
 
-## Arquivos
-**Criar:**
-- `supabase/functions/stripe-checkout-cadastro-representante/index.ts`
+---
 
-**Não alterar:**
-- `stripe-webhook/index.ts` (sem mudanças — apenas relatar que `checkout.session.completed` ainda não é tratado lá; ativação do representante via webhook fica para etapa futura, fora do escopo).
-- `cadastrar-representante/index.ts`, `stripe-criar-assinatura/index.ts`, `stripe-criar-cliente/index.ts`, motor de comissão, chips, clientes, assinaturas — intocados.
-- `supabase/config.toml` — não precisa de bloco novo (verify_jwt já é false por padrão Lovable; validação JWT é feita em código).
+## Sprint 1 — Fundação (banco + RLS + storage + auditoria)
 
-**Frontend:** não há tela/botão claro de "ativar cadastro pagando R$ 99,90" hoje (`Cadastro.tsx` apenas cria a conta e redireciona para `/cadastro/sucesso`). Conforme o prompt, **não criarei tela nova**. Apenas relatarei o ponto de integração recomendado.
+**Migration única** cria toda a base normalizada, já preparada para White Label (`tenant_id UUID` em toda tabela, default `NULL`, índice — sem forçar multi-tenant agora, mas pronto):
 
-## Comportamento da função
+Tabelas novas:
+- `operadoras` (nome, slug, cor, logo_url)
+- `planos_mvno` (operadora_id, nome, franquia_dados_mb, sms_incluidos, minutos_incluidos, valor_mensal, ativo)
+- `mvno_linhas` (numero, iccid, imsi, operadora_id, plano_id, cliente_id, user_id representante, status enum, ativada_em, proximo_vencimento, valor_mensal, tenant_id)
+- `mvno_linha_historico` (linha_id, evento enum, descricao, metadata jsonb, actor_id)
+- `mvno_faturas` (linha_id, cliente_id, competencia, valor, vencimento, pago_em, status enum, pdf_url, tenant_id)
+- `mvno_fatura_itens` (fatura_id, descricao, categoria enum, quantidade, valor_unit, valor_total)
+- `mvno_consumos` (linha_id, competencia, dados_mb, sms_qtd, minutos_qtd, roaming_mb)
+- `mvno_uploads_faturas` (uploader_id, operadora_id, competencia, arquivo_url, mime, status, total_linhas, processadas, erros_count)
+- `mvno_parser_jobs` (upload_id, tipo enum pdf/csv/xlsx/ocr, status, iniciado_em, finalizado_em, resultado jsonb)
+- `mvno_parser_logs` (job_id, nivel, mensagem, contexto jsonb)
+- `mvno_audit_logs` (actor_id, entidade, entidade_id, acao, antes jsonb, depois jsonb, ip, user_agent)
 
-```text
-POST /functions/v1/stripe-checkout-cadastro-representante
-Authorization: Bearer <jwt do usuário logado>
-Body: {} (ignorado — nada é lido do frontend)
-```
+Enums: `mvno_linha_status`, `mvno_fatura_status`, `mvno_evento_tipo`, `mvno_parser_status`, `mvno_item_categoria`.
 
-Fluxo:
-1. CORS + OPTIONS handler.
-2. `requireUser(req)` do helper compartilhado `_shared/auth.ts` → 401 se não houver JWT válido.
-3. Ler secrets `STRIPE_SECRET_KEY` e `STRIPE_PRICE_CADASTRO_REPRESENTANTE`. Se faltar qualquer um → 500 genérico (sem expor valores).
-4. Resolver `origin` a partir do header `Origin` (fallback para um valor seguro), montar:
-   - `success_url = ${origin}/cadastro/sucesso?session_id={CHECKOUT_SESSION_ID}`
-   - `cancel_url = ${origin}/cadastro?canceled=1`
-5. (Opcional, sem duplicar customer) tentar localizar `stripe_customer_id` já existente para o usuário em `assinaturas` via service role; se houver, passar `customer`. Caso contrário, passar `customer_email` (sem criar customer manualmente — Stripe cria 1 no checkout). **Não chama** `stripe-criar-cliente`.
-6. Criar Checkout Session via REST Stripe:
-   - `mode=payment`
-   - `line_items[0][price]=<STRIPE_PRICE_CADASTRO_REPRESENTANTE>`
-   - `line_items[0][quantity]=1`
-   - `payment_method_types[]=card`
-   - `metadata[user_id]=<sub do JWT>`
-   - `metadata[tipo_cobranca]=cadastro_representante`
-   - `metadata[origem]=mvni_hub`
-   - `payment_intent_data[metadata][user_id]`, `[tipo_cobranca]`, `[origem]` (mesmos valores — facilita reconciliação futura sem alterar webhook agora)
-   - `success_url`, `cancel_url`
-   - Moeda BRL vem do próprio Price cadastrado no Stripe (não enviada pelo frontend).
-7. Retornar `{ url: session.url }` com 200. Em erro: log genérico `console.error("checkout error", err.message)` (sem stack com segredos) e `{ error: "Falha ao criar checkout" }` com 500.
+**RLS por tabela:**
+- Cliente (via `clientes.user_id`) → SELECT em `mvno_linhas`/`mvno_faturas`/`mvno_consumos`/`mvno_linha_historico` apenas onde a linha pertence a um cliente dele.
+- Representante → SELECT nas linhas cujo `user_id = auth.uid()` (sem dados financeiros de terceiros: policy separa `mvno_faturas` — representante só vê faturas de linhas próprias).
+- Admin/master_admin → ALL via `has_role`/`is_master_admin`.
+- Uploads/parser/audit → apenas admin/master.
 
-## Garantias de segurança
-- ❌ Não lê `price_id`, `amount`, `currency`, `user_id`, `customer_id` do body.
-- ✅ `user_id` vem exclusivamente do JWT (`requireUser`).
-- ✅ `mode=payment` (jamais `subscription`).
-- ✅ Nenhuma escrita em `assinaturas`, `clientes`, `usuarios`, `chips`, `comissoes`.
-- ✅ Nenhuma ativação de representante, kit, ou comissão nesta etapa.
-- ✅ `STRIPE_SECRET_KEY` nunca sai do servidor nem é logada.
+**Storage:** bucket privado `mvno-faturas` para PDF da operadora e `mvno-faturas-pdf` para PDF individual por cliente. Policies limitam leitura ao owner/admin.
 
-## Webhook (apenas relato, sem alterar)
-O webhook atual trata `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted` — todos focados em **assinatura mensal de cliente final**. Para o evento `checkout.session.completed` com `metadata.tipo_cobranca='cadastro_representante'` será necessário um handler dedicado em etapa futura. Como o prompt proíbe "mexer muito no webhook", **não tocarei nele agora** e listarei como risco/risco-restante.
+**Grants:** `authenticated` recebe DML nas tabelas de dados; `service_role` recebe ALL em tudo (edge functions).
 
-## Integração frontend (não implementar agora)
-Ponto recomendado para etapa futura: novo botão "Pagar R$ 99,90 e ativar cadastro" em `/cadastro/sucesso` (`src/pages/CadastroSucesso.tsx`) chamando:
-```ts
-const { data } = await supabase.functions.invoke('stripe-checkout-cadastro-representante');
-window.location.href = data.url;
-```
-Sem criar UI nova nesta tarefa.
+---
 
-## Validação
-- Build / TypeScript limpos.
-- Função compila no Deno (imports `npm:stripe` ou fetch REST — usarei REST para casar com o estilo das outras funções).
-- Sem alteração em regra financeira, comissão, clientes, assinaturas, chips, motor de payout.
+## Sprint 2 — Área do cliente (frontend)
 
-## Risco restante
-1. Webhook ainda não consome `checkout.session.completed` → pagamento será cobrado mas a ativação do representante exigirá etapa futura (fora do escopo deste prompt).
-2. Secret `STRIPE_PRICE_CADASTRO_REPRESENTANTE` precisa ser criado pelo usuário (será solicitado).
-3. Sem tela de pagamento, função fica disponível mas não invocada até integração futura.
+Novas rotas dentro do `AuthGuard` (não gated por `cadastro_pago_em` — são áreas do cliente final, não do representante):
+- `/minhas-linhas` — lista com filtros por status, card por linha, drawer de detalhes com histórico timeline.
+- `/minhas-linhas/:id` — detalhe completo (número, ICCID, IMSI, plano, consumo, vencimento, timeline).
+- `/minhas-faturas` — lista paginada, filtros, download PDF (signed URL 5 min), botão "segunda via".
+- `/minhas-faturas/:id` — detalhamento por item + histórico.
 
-## Passos
-1. Solicitar secret `STRIPE_PRICE_CADASTRO_REPRESENTANTE` via `add_secret`.
-2. Criar `supabase/functions/stripe-checkout-cadastro-representante/index.ts` conforme spec acima.
-3. Entregar relatório final.
+Componentes novos:
+- `LinhaCard`, `LinhaStatusBadge`, `LinhaTimeline`, `FaturaRow`, `FaturaStatusBadge`, `FaturaDetalhe`, `ConsumoBarras`.
+
+Hooks:
+- `useMinhasLinhas`, `useLinha(id)`, `useMinhasFaturas`, `useFatura(id)`, `useSignedFaturaUrl(fatura)`.
+
+Todos com React Query + paginação server-side (`.range()`) + empty/loading/error padronizados.
+
+Dashboard: adicionar bloco "Suas linhas" com cards (total, ativas, suspensas, bloqueadas, próxima fatura, valor mensal, dias restantes) — **novo bloco abaixo** do card de ativação atual, sem tocar no card existente.
+
+---
+
+## Sprint 3 — Admin + parser stub + edge functions
+
+Rotas admin (protegidas por `MASTER_ONLY_ROUTES` já existente):
+- `/master/mvno/linhas` — CRUD, filtros, exportação CSV, ações (suspender/cancelar/trocar plano/transferir titularidade).
+- `/master/mvno/planos` — CRUD planos.
+- `/master/mvno/operadoras` — CRUD operadoras.
+- `/master/mvno/uploads` — upload de fatura da operadora, lista de jobs, logs, reprocessar.
+- `/master/mvno/auditoria` — visualizador de `mvno_audit_logs`.
+
+Edge Functions novas:
+- `mvno-fatura-upload` — recebe arquivo, cria `mvno_uploads_faturas` + `mvno_parser_jobs (status=pending)`, salva no bucket privado.
+- `mvno-fatura-parser` — **stub preparado** com switch por MIME (`pdf`/`csv`/`xlsx`). Implementa apenas CSV/XLSX básicos (leitura de colunas mapeadas). PDF/OCR retorna `status=pending_ai` para futura integração. Distribui itens para `mvno_faturas`/`mvno_fatura_itens`/`mvno_consumos` respeitando `cliente_id` — nunca vaza dados de outro CPF.
+- `mvno-fatura-signed-url` — gera signed URL 5 min para o cliente baixar seu PDF (verifica ownership via RLS + JWT).
+- Todas com CORS, validação Zod, `requireUser`/`requireRole` do `_shared/auth.ts`, logs em `mvno_audit_logs`.
+
+Cron opcional (não neste sprint): job diário que marca faturas vencidas como "atrasada".
+
+---
+
+## Detalhes técnicos
+
+- **White Label ready:** coluna `tenant_id UUID NULL` + índice em toda tabela nova; RLS já referencia `tenant_id` via helper `current_tenant_id()` (function `stable` que hoje retorna NULL, mas pode ser trocada sem migration adicional de policy).
+- **Performance:** índices em `(cliente_id, status)`, `(user_id)`, `(linha_id, competencia)`, `(status, proximo_vencimento)`; paginação `.range()`; React Query com `staleTime: 30s`.
+- **Segurança:** ownership dupla (RLS + edge re-check), signed URLs com expiração curta, `service_role` só em edge, nenhuma coluna sensível exposta em policies de anon.
+- **UX:** padrão shadcn + tokens existentes; dark mode automático; loading/empty/error em todos os componentes; toasts em ações.
+- **Não implementar agora:** OCR real, OpenAI, integração APIs de operadora. Arquitetura fica pronta (`parser_jobs.tipo='ocr'` aceito, retorna `pending_ai`).
+
+## Não altero
+
+Stripe · webhook · checkout · comissões · indicação · AuthGuard (só adiciono rotas em `PUBLIC_ROUTES`? não — todas novas são autenticadas) · Dashboard atual (apenas **acrescento** um bloco novo abaixo) · Google login · RLS existentes · Edge Functions atuais.
+
+## Entrega ao fim de cada sprint
+
+- Sprint 1: 1 migration + relatório de tabelas/policies/grants + tipos regenerados.
+- Sprint 2: rotas cliente + Dashboard bloco + build limpo + validação Playwright em `/minhas-linhas` e `/minhas-faturas` (empty state).
+- Sprint 3: admin + 3 edge functions + relatório final com percentual.
+
+## Confirmação
+
+Aprovando este plano executo **Sprint 1** agora (só migration + storage + tipos). Sprints 2 e 3 seguem em respostas subsequentes para manter cada entrega auditável e revertível. Se preferir, posso comprimir os 3 sprints em uma única execução — mas o risco de erro cresce muito e reverter fica difícil.
