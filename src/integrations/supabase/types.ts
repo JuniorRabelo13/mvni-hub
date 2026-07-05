@@ -1714,6 +1714,475 @@ export type Database = {
         }
         Relationships: []
       }
+      mvno_audit_logs: {
+        Row: {
+          acao: string
+          actor_id: string | null
+          antes: Json | null
+          created_at: string
+          depois: Json | null
+          entidade: string
+          entidade_id: string | null
+          id: string
+          ip: string | null
+          tenant_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          acao: string
+          actor_id?: string | null
+          antes?: Json | null
+          created_at?: string
+          depois?: Json | null
+          entidade: string
+          entidade_id?: string | null
+          id?: string
+          ip?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          acao?: string
+          actor_id?: string | null
+          antes?: Json | null
+          created_at?: string
+          depois?: Json | null
+          entidade?: string
+          entidade_id?: string | null
+          id?: string
+          ip?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      mvno_consumos: {
+        Row: {
+          competencia: string
+          created_at: string
+          dados_mb: number
+          id: string
+          linha_id: string
+          metadata: Json
+          minutos_qtd: number
+          roaming_mb: number
+          sms_qtd: number
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          competencia: string
+          created_at?: string
+          dados_mb?: number
+          id?: string
+          linha_id: string
+          metadata?: Json
+          minutos_qtd?: number
+          roaming_mb?: number
+          sms_qtd?: number
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          competencia?: string
+          created_at?: string
+          dados_mb?: number
+          id?: string
+          linha_id?: string
+          metadata?: Json
+          minutos_qtd?: number
+          roaming_mb?: number
+          sms_qtd?: number
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvno_consumos_linha_id_fkey"
+            columns: ["linha_id"]
+            isOneToOne: false
+            referencedRelation: "mvno_linhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mvno_fatura_itens: {
+        Row: {
+          categoria: Database["public"]["Enums"]["mvno_item_categoria"]
+          created_at: string
+          descricao: string
+          fatura_id: string
+          id: string
+          metadata: Json
+          quantidade: number
+          valor_total: number
+          valor_unit: number
+        }
+        Insert: {
+          categoria?: Database["public"]["Enums"]["mvno_item_categoria"]
+          created_at?: string
+          descricao: string
+          fatura_id: string
+          id?: string
+          metadata?: Json
+          quantidade?: number
+          valor_total?: number
+          valor_unit?: number
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["mvno_item_categoria"]
+          created_at?: string
+          descricao?: string
+          fatura_id?: string
+          id?: string
+          metadata?: Json
+          quantidade?: number
+          valor_total?: number
+          valor_unit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvno_fatura_itens_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "mvno_faturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mvno_faturas: {
+        Row: {
+          cliente_id: string | null
+          competencia: string
+          created_at: string
+          id: string
+          linha_id: string
+          metadata: Json
+          pago_em: string | null
+          pdf_path: string | null
+          status: Database["public"]["Enums"]["mvno_fatura_status"]
+          tenant_id: string | null
+          updated_at: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          competencia: string
+          created_at?: string
+          id?: string
+          linha_id: string
+          metadata?: Json
+          pago_em?: string | null
+          pdf_path?: string | null
+          status?: Database["public"]["Enums"]["mvno_fatura_status"]
+          tenant_id?: string | null
+          updated_at?: string
+          valor?: number
+          vencimento: string
+        }
+        Update: {
+          cliente_id?: string | null
+          competencia?: string
+          created_at?: string
+          id?: string
+          linha_id?: string
+          metadata?: Json
+          pago_em?: string | null
+          pdf_path?: string | null
+          status?: Database["public"]["Enums"]["mvno_fatura_status"]
+          tenant_id?: string | null
+          updated_at?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvno_faturas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvno_faturas_linha_id_fkey"
+            columns: ["linha_id"]
+            isOneToOne: false
+            referencedRelation: "mvno_linhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mvno_linha_historico: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          descricao: string | null
+          evento: Database["public"]["Enums"]["mvno_evento_tipo"]
+          id: string
+          linha_id: string
+          metadata: Json
+          tenant_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          evento: Database["public"]["Enums"]["mvno_evento_tipo"]
+          id?: string
+          linha_id: string
+          metadata?: Json
+          tenant_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          evento?: Database["public"]["Enums"]["mvno_evento_tipo"]
+          id?: string
+          linha_id?: string
+          metadata?: Json
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvno_linha_historico_linha_id_fkey"
+            columns: ["linha_id"]
+            isOneToOne: false
+            referencedRelation: "mvno_linhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mvno_linhas: {
+        Row: {
+          ativada_em: string | null
+          cliente_id: string | null
+          created_at: string
+          iccid: string | null
+          id: string
+          imsi: string | null
+          metadata: Json
+          numero: string
+          observacoes: string | null
+          operadora_id: string | null
+          plano_id: string | null
+          proximo_vencimento: string | null
+          status: Database["public"]["Enums"]["mvno_linha_status"]
+          tenant_id: string | null
+          updated_at: string
+          user_id: string | null
+          valor_mensal: number
+        }
+        Insert: {
+          ativada_em?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          iccid?: string | null
+          id?: string
+          imsi?: string | null
+          metadata?: Json
+          numero: string
+          observacoes?: string | null
+          operadora_id?: string | null
+          plano_id?: string | null
+          proximo_vencimento?: string | null
+          status?: Database["public"]["Enums"]["mvno_linha_status"]
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          valor_mensal?: number
+        }
+        Update: {
+          ativada_em?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          iccid?: string | null
+          id?: string
+          imsi?: string | null
+          metadata?: Json
+          numero?: string
+          observacoes?: string | null
+          operadora_id?: string | null
+          plano_id?: string | null
+          proximo_vencimento?: string | null
+          status?: Database["public"]["Enums"]["mvno_linha_status"]
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          valor_mensal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvno_linhas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvno_linhas_operadora_id_fkey"
+            columns: ["operadora_id"]
+            isOneToOne: false
+            referencedRelation: "operadoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvno_linhas_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "planos_mvno"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mvno_parser_jobs: {
+        Row: {
+          created_at: string
+          erro: string | null
+          finalizado_em: string | null
+          id: string
+          iniciado_em: string | null
+          resultado: Json
+          status: Database["public"]["Enums"]["mvno_parser_status"]
+          tenant_id: string | null
+          tipo: Database["public"]["Enums"]["mvno_parser_tipo"]
+          updated_at: string
+          upload_id: string
+        }
+        Insert: {
+          created_at?: string
+          erro?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string | null
+          resultado?: Json
+          status?: Database["public"]["Enums"]["mvno_parser_status"]
+          tenant_id?: string | null
+          tipo: Database["public"]["Enums"]["mvno_parser_tipo"]
+          updated_at?: string
+          upload_id: string
+        }
+        Update: {
+          created_at?: string
+          erro?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string | null
+          resultado?: Json
+          status?: Database["public"]["Enums"]["mvno_parser_status"]
+          tenant_id?: string | null
+          tipo?: Database["public"]["Enums"]["mvno_parser_tipo"]
+          updated_at?: string
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvno_parser_jobs_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "mvno_uploads_faturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mvno_parser_logs: {
+        Row: {
+          contexto: Json
+          created_at: string
+          id: string
+          job_id: string
+          mensagem: string
+          nivel: string
+        }
+        Insert: {
+          contexto?: Json
+          created_at?: string
+          id?: string
+          job_id: string
+          mensagem: string
+          nivel?: string
+        }
+        Update: {
+          contexto?: Json
+          created_at?: string
+          id?: string
+          job_id?: string
+          mensagem?: string
+          nivel?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvno_parser_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "mvno_parser_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mvno_uploads_faturas: {
+        Row: {
+          arquivo_path: string
+          competencia: string
+          created_at: string
+          erros_count: number
+          id: string
+          mime: string | null
+          observacoes: string | null
+          operadora_id: string | null
+          processadas: number
+          size_bytes: number | null
+          status: Database["public"]["Enums"]["mvno_parser_status"]
+          tenant_id: string | null
+          total_linhas: number
+          updated_at: string
+          uploader_id: string | null
+        }
+        Insert: {
+          arquivo_path: string
+          competencia: string
+          created_at?: string
+          erros_count?: number
+          id?: string
+          mime?: string | null
+          observacoes?: string | null
+          operadora_id?: string | null
+          processadas?: number
+          size_bytes?: number | null
+          status?: Database["public"]["Enums"]["mvno_parser_status"]
+          tenant_id?: string | null
+          total_linhas?: number
+          updated_at?: string
+          uploader_id?: string | null
+        }
+        Update: {
+          arquivo_path?: string
+          competencia?: string
+          created_at?: string
+          erros_count?: number
+          id?: string
+          mime?: string | null
+          observacoes?: string | null
+          operadora_id?: string | null
+          processadas?: number
+          size_bytes?: number | null
+          status?: Database["public"]["Enums"]["mvno_parser_status"]
+          tenant_id?: string | null
+          total_linhas?: number
+          updated_at?: string
+          uploader_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvno_uploads_faturas_operadora_id_fkey"
+            columns: ["operadora_id"]
+            isOneToOne: false
+            referencedRelation: "operadoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notificacoes: {
         Row: {
           canal: string
@@ -1833,6 +2302,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      operadoras: {
+        Row: {
+          ativo: boolean
+          cor: string | null
+          created_at: string
+          id: string
+          logo_url: string | null
+          nome: string
+          slug: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          nome: string
+          slug: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          slug?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       pagamentos: {
         Row: {
@@ -1956,6 +2461,59 @@ export type Database = {
           valor?: number
         }
         Relationships: []
+      }
+      planos_mvno: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          franquia_dados_mb: number
+          id: string
+          minutos_incluidos: number
+          nome: string
+          operadora_id: string | null
+          sms_incluidos: number
+          tenant_id: string | null
+          updated_at: string
+          valor_mensal: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          franquia_dados_mb?: number
+          id?: string
+          minutos_incluidos?: number
+          nome: string
+          operadora_id?: string | null
+          sms_incluidos?: number
+          tenant_id?: string | null
+          updated_at?: string
+          valor_mensal?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          franquia_dados_mb?: number
+          id?: string
+          minutos_incluidos?: number
+          nome?: string
+          operadora_id?: string | null
+          sms_incluidos?: number
+          tenant_id?: string | null
+          updated_at?: string
+          valor_mensal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planos_mvno_operadora_id_fkey"
+            columns: ["operadora_id"]
+            isOneToOne: false
+            referencedRelation: "operadoras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       processed_events: {
         Row: {
@@ -4260,6 +4818,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      current_tenant_id: { Args: never; Returns: string }
       detectar_ciclo_indicacao: {
         Args: { p_indicado_id: string; p_indicador_id: string }
         Returns: boolean
@@ -4546,6 +5105,49 @@ export type Database = {
         | "cancelled"
         | "blocked"
         | "inactive"
+      mvno_evento_tipo:
+        | "ativacao"
+        | "suspensao"
+        | "reativacao"
+        | "troca_plano"
+        | "pagamento"
+        | "inadimplencia"
+        | "cancelamento"
+        | "portabilidade"
+        | "importacao_fatura"
+        | "alteracao_admin"
+        | "criacao"
+      mvno_fatura_status:
+        | "aberta"
+        | "paga"
+        | "atrasada"
+        | "cancelada"
+        | "contestada"
+      mvno_item_categoria:
+        | "assinatura"
+        | "dados"
+        | "sms"
+        | "ligacoes"
+        | "roaming"
+        | "servicos_adicionais"
+        | "tributos"
+        | "desconto"
+        | "outros"
+      mvno_linha_status:
+        | "ativa"
+        | "suspensa"
+        | "bloqueada"
+        | "cancelada"
+        | "portabilidade"
+        | "em_ativacao"
+      mvno_parser_status:
+        | "pending"
+        | "processing"
+        | "done"
+        | "failed"
+        | "pending_ai"
+        | "canceled"
+      mvno_parser_tipo: "pdf" | "csv" | "xlsx" | "ocr"
       sms_status:
         | "pending"
         | "processing"
@@ -4743,6 +5345,54 @@ export const Constants = {
         "blocked",
         "inactive",
       ],
+      mvno_evento_tipo: [
+        "ativacao",
+        "suspensao",
+        "reativacao",
+        "troca_plano",
+        "pagamento",
+        "inadimplencia",
+        "cancelamento",
+        "portabilidade",
+        "importacao_fatura",
+        "alteracao_admin",
+        "criacao",
+      ],
+      mvno_fatura_status: [
+        "aberta",
+        "paga",
+        "atrasada",
+        "cancelada",
+        "contestada",
+      ],
+      mvno_item_categoria: [
+        "assinatura",
+        "dados",
+        "sms",
+        "ligacoes",
+        "roaming",
+        "servicos_adicionais",
+        "tributos",
+        "desconto",
+        "outros",
+      ],
+      mvno_linha_status: [
+        "ativa",
+        "suspensa",
+        "bloqueada",
+        "cancelada",
+        "portabilidade",
+        "em_ativacao",
+      ],
+      mvno_parser_status: [
+        "pending",
+        "processing",
+        "done",
+        "failed",
+        "pending_ai",
+        "canceled",
+      ],
+      mvno_parser_tipo: ["pdf", "csv", "xlsx", "ocr"],
       sms_status: [
         "pending",
         "processing",
