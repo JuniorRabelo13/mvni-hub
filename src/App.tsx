@@ -101,6 +101,20 @@ const BaseGlobal = lazy(() => import("./pages/master-admin/BaseGlobal"));
 const MasterConfig = lazy(() => import("./pages/master-admin/MasterConfig"));
 const MasterProdutos = lazy(() => import("./pages/master-admin/Produtos"));
 const MasterChips = lazy(() => import("./pages/master-admin/Chips"));
+const ImportCenter = lazy(() => import("./pages/master-admin/ImportCenter"));
+
+// Cliente MVNO
+const ClienteLayout = lazy(() => import("./pages/cliente/ClienteLayout"));
+const ClienteDashboard = lazy(() => import("./pages/cliente/Dashboard"));
+const ClienteMinhasLinhas = lazy(() => import("./pages/cliente/MinhasLinhas"));
+const ClienteLinhaDetalhes = lazy(() => import("./pages/cliente/LinhaDetalhes"));
+const ClienteMinhasFaturas = lazy(() => import("./pages/cliente/MinhasFaturas"));
+const ClienteFaturaDetalhes = lazy(() => import("./pages/cliente/FaturaDetalhes"));
+const ClienteConsumo = lazy(() => import("./pages/cliente/Consumo"));
+const ClientePagamentos = lazy(() => import("./pages/cliente/Pagamentos"));
+const ClienteHistorico = lazy(() => import("./pages/cliente/Historico"));
+const ClienteSuporte = lazy(() => import("./pages/cliente/Suporte"));
+const ClientePerfil = lazy(() => import("./pages/cliente/Perfil"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
