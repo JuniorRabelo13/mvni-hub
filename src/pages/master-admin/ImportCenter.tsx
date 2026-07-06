@@ -71,7 +71,7 @@ export default function ImportCenter() {
         .upload(path, file, { upsert: false });
       if (upErr) throw upErr;
 
-      const { error: insErr } = await supabase.from("mvno_uploads_faturas").insert({
+      const { error: insErr } = await (supabase.from("mvno_uploads_faturas") as any).insert({
         uploader_id: user.id,
         operadora_id: operadoraId,
         competencia,
