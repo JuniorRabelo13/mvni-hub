@@ -17,7 +17,7 @@ import { useMinhasLinhas } from "@/hooks/mvno/useMinhasLinhas";
 import { useMinhasFaturas } from "@/hooks/mvno/useMinhasFaturas";
 import { useConsumo } from "@/hooks/mvno/useConsumo";
 import { StatusFaturaBadge } from "@/components/mvno/StatusBadge";
-import SEO from "@/components/SEO";
+import { SEO } from "@/components/SEO";
 
 function fmtBRL(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
