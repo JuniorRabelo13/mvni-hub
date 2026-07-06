@@ -241,6 +241,21 @@ const AppContent = () => {
                     <Route path="/master/config" element={<MasterConfig />} />
                     <Route path="/master/produtos" element={<MasterProdutos />} />
                     <Route path="/master/chips" element={<MasterChips />} />
+                    <Route path="/master/import-center" element={<ImportCenter />} />
+                  </Route>
+
+                  {/* Central do Cliente MVNO */}
+                  <Route path="/cliente" element={<ClienteLayout />}>
+                    <Route index element={<ClienteDashboard />} />
+                    <Route path="linhas" element={<ClienteMinhasLinhas />} />
+                    <Route path="linhas/:id" element={<ClienteLinhaDetalhes />} />
+                    <Route path="faturas" element={<ClienteMinhasFaturas />} />
+                    <Route path="faturas/:id" element={<ClienteFaturaDetalhes />} />
+                    <Route path="consumo" element={<ClienteConsumo />} />
+                    <Route path="pagamentos" element={<ClientePagamentos />} />
+                    <Route path="historico" element={<ClienteHistorico />} />
+                    <Route path="suporte" element={<ClienteSuporte />} />
+                    <Route path="perfil" element={<ClientePerfil />} />
                   </Route>
 
                     <Route path="*" element={<NotFound />} />
