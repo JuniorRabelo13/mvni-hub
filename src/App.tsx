@@ -101,6 +101,20 @@ const BaseGlobal = lazy(() => import("./pages/master-admin/BaseGlobal"));
 const MasterConfig = lazy(() => import("./pages/master-admin/MasterConfig"));
 const MasterProdutos = lazy(() => import("./pages/master-admin/Produtos"));
 const MasterChips = lazy(() => import("./pages/master-admin/Chips"));
+const ImportCenter = lazy(() => import("./pages/master-admin/ImportCenter"));
+
+// Cliente MVNO
+const ClienteLayout = lazy(() => import("./pages/cliente/ClienteLayout"));
+const ClienteDashboard = lazy(() => import("./pages/cliente/Dashboard"));
+const ClienteMinhasLinhas = lazy(() => import("./pages/cliente/MinhasLinhas"));
+const ClienteLinhaDetalhes = lazy(() => import("./pages/cliente/LinhaDetalhes"));
+const ClienteMinhasFaturas = lazy(() => import("./pages/cliente/MinhasFaturas"));
+const ClienteFaturaDetalhes = lazy(() => import("./pages/cliente/FaturaDetalhes"));
+const ClienteConsumo = lazy(() => import("./pages/cliente/Consumo"));
+const ClientePagamentos = lazy(() => import("./pages/cliente/Pagamentos"));
+const ClienteHistorico = lazy(() => import("./pages/cliente/Historico"));
+const ClienteSuporte = lazy(() => import("./pages/cliente/Suporte"));
+const ClientePerfil = lazy(() => import("./pages/cliente/Perfil"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -227,6 +241,21 @@ const AppContent = () => {
                     <Route path="/master/config" element={<MasterConfig />} />
                     <Route path="/master/produtos" element={<MasterProdutos />} />
                     <Route path="/master/chips" element={<MasterChips />} />
+                    <Route path="/master/import-center" element={<ImportCenter />} />
+                  </Route>
+
+                  {/* Central do Cliente MVNO */}
+                  <Route path="/cliente" element={<ClienteLayout />}>
+                    <Route index element={<ClienteDashboard />} />
+                    <Route path="linhas" element={<ClienteMinhasLinhas />} />
+                    <Route path="linhas/:id" element={<ClienteLinhaDetalhes />} />
+                    <Route path="faturas" element={<ClienteMinhasFaturas />} />
+                    <Route path="faturas/:id" element={<ClienteFaturaDetalhes />} />
+                    <Route path="consumo" element={<ClienteConsumo />} />
+                    <Route path="pagamentos" element={<ClientePagamentos />} />
+                    <Route path="historico" element={<ClienteHistorico />} />
+                    <Route path="suporte" element={<ClienteSuporte />} />
+                    <Route path="perfil" element={<ClientePerfil />} />
                   </Route>
 
                     <Route path="*" element={<NotFound />} />
