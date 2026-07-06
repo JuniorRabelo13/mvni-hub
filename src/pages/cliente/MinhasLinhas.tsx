@@ -11,7 +11,7 @@ export default function MinhasLinhas() {
 
   return (
     <div className="space-y-6">
-      <SEO title="Minhas Linhas — MVNI" description="Todas as suas linhas telefônicas." />
+      <SEO title="Minhas Linhas — MVNI" description="Todas as suas linhas telefônicas." path="/cliente/linhas" />
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Minhas Linhas</h1>
         <p className="text-sm text-muted-foreground">

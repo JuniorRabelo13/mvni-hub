@@ -53,7 +53,7 @@ export default function ClienteDashboard() {
 
   return (
     <div className="space-y-6">
-      <SEO title="Central do Cliente — MVNI" description="Dashboard das suas linhas, faturas e consumo." />
+      <SEO title="Central do Cliente — MVNI" description="Dashboard das suas linhas, faturas e consumo." path="/cliente" />
 
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Central do Cliente</h1>
