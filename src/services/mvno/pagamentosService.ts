@@ -11,7 +11,7 @@ export type PixCharge = {
 };
 
 export async function criarPixParaFatura(faturaId: string): Promise<PixCharge> {
-  const { data, error } = await supabase.functions.invoke("mvno-pix-criar", {
+  const { data, error } = await supabase.functions.invoke("mvno-pagarme-pix-criar", {
     body: { fatura_id: faturaId },
   });
   if (error) {
