@@ -31,7 +31,7 @@ export default function MvnoPlanos() {
   const { data: operadoras } = useQuery({
     queryKey: ["mvno-operadoras-select"],
     queryFn: async () => {
-      const { data } = await supabase.from("operadoras").select("id, nome").eq("ativa", true).order("nome");
+      const { data } = await supabase.from("operadoras").select("id, nome").eq("ativo", true).order("nome");
       return data ?? [];
     },
   });

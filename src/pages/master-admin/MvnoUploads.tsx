@@ -19,7 +19,7 @@ export default function MvnoUploads() {
 
   const { data: operadoras } = useQuery({
     queryKey: ["mvno-op-uploads"],
-    queryFn: async () => (await supabase.from("operadoras").select("id, nome").eq("ativa", true).order("nome")).data ?? [],
+    queryFn: async () => (await supabase.from("operadoras").select("id, nome").eq("ativo", true).order("nome")).data ?? [],
   });
 
   const { data: uploads, isLoading, refetch } = useQuery({

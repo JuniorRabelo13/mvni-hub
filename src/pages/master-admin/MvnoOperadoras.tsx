@@ -17,7 +17,7 @@ type Operadora = {
   slug: string;
   cor: string | null;
   logo_url: string | null;
-  ativa: boolean;
+  ativo: boolean;
 };
 
 export default function MvnoOperadoras() {
@@ -48,7 +48,7 @@ export default function MvnoOperadoras() {
           slug: o.slug!,
           cor: o.cor ?? null,
           logo_url: o.logo_url ?? null,
-          ativa: o.ativa ?? true,
+          ativo: o.ativo ?? true,
         });
         if (error) throw error;
       }
@@ -83,7 +83,7 @@ export default function MvnoOperadoras() {
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEdit(null); }}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEdit({ ativa: true })}><Plus className="h-4 w-4 mr-2" />Nova</Button>
+            <Button onClick={() => setEdit({ ativo: true })}><Plus className="h-4 w-4 mr-2" />Nova</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{edit?.id ? "Editar" : "Nova"} Operadora</DialogTitle></DialogHeader>
@@ -92,7 +92,7 @@ export default function MvnoOperadoras() {
               <div><Label>Slug</Label><Input value={edit?.slug ?? ""} onChange={(e) => setEdit({ ...edit, slug: e.target.value })} /></div>
               <div><Label>Cor (hex)</Label><Input value={edit?.cor ?? ""} onChange={(e) => setEdit({ ...edit, cor: e.target.value })} placeholder="#000000" /></div>
               <div><Label>Logo URL</Label><Input value={edit?.logo_url ?? ""} onChange={(e) => setEdit({ ...edit, logo_url: e.target.value })} /></div>
-              <div className="flex items-center gap-2"><Switch checked={edit?.ativa ?? true} onCheckedChange={(v) => setEdit({ ...edit, ativa: v })} /><Label>Ativa</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={edit?.ativo ?? true} onCheckedChange={(v) => setEdit({ ...edit, ativo: v })} /><Label>Ativa</Label></div>
             </div>
             <DialogFooter>
               <Button onClick={() => save.mutate(edit!)} disabled={save.isPending}>Salvar</Button>
@@ -113,7 +113,7 @@ export default function MvnoOperadoras() {
                     <TableCell className="font-medium">{o.nome}</TableCell>
                     <TableCell>{o.slug}</TableCell>
                     <TableCell>{o.cor && <span className="inline-block w-4 h-4 rounded" style={{ background: o.cor }} />}</TableCell>
-                    <TableCell>{o.ativa ? "Sim" : "Não"}</TableCell>
+                    <TableCell>{o.ativo ? "Sim" : "Não"}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button size="sm" variant="ghost" onClick={() => { setEdit(o); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => confirm("Remover?") && del.mutate(o.id)}><Trash2 className="h-4 w-4" /></Button>
