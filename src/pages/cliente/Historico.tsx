@@ -3,6 +3,7 @@ import { useHistoricoTodasLinhas } from "@/hooks/mvno/useConsumo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/mvno/EmptyState";
+import { HistoryTimeline } from "@/components/mvno/HistoryTimeline";
 import { SEO } from "@/components/SEO";
 
 export default function Historico() {
@@ -23,19 +24,7 @@ export default function Historico() {
       ) : (
         <Card className="bg-card/60 border-border/60">
           <CardContent className="p-6">
-            <ol className="relative border-l border-border/60 ml-2 space-y-6">
-              {(data as any[]).map((h) => (
-                <li key={h.id} className="ml-4">
-                  <div className="absolute -left-1.5 h-3 w-3 rounded-full bg-primary/60 border border-primary" />
-                  <p className="text-xs text-muted-foreground">{new Date(h.created_at).toLocaleString("pt-BR")}</p>
-                  <p className="text-sm font-medium capitalize">
-                    {String(h.evento).replace(/_/g, " ")}
-                    {h.linha?.numero && <span className="text-muted-foreground"> · Linha {h.linha.numero}</span>}
-                  </p>
-                  {h.descricao && <p className="text-xs text-muted-foreground">{h.descricao}</p>}
-                </li>
-              ))}
-            </ol>
+            <HistoryTimeline eventos={data as any[]} />
           </CardContent>
         </Card>
       )}

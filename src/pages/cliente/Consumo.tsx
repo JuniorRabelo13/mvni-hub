@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { BarChart3 } from "lucide-react";
 import { useConsumo } from "@/hooks/mvno/useConsumo";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/mvno/EmptyState";
+import { ConsumptionCharts } from "@/components/mvno/ConsumptionCharts";
 import { SEO } from "@/components/SEO";
 
 export default function Consumo() {
@@ -14,19 +15,7 @@ export default function Consumo() {
     const totalDados = data.reduce((s: number, c: any) => s + Number(c.dados_mb ?? 0), 0);
     const totalSms = data.reduce((s: number, c: any) => s + Number(c.sms_qtd ?? 0), 0);
     const totalMin = data.reduce((s: number, c: any) => s + Number(c.minutos_qtd ?? 0), 0);
-    const porMes = new Map<string, { dados: number; sms: number; min: number }>();
-    for (const c of data as any[]) {
-      const k = c.competencia?.slice(0, 7) ?? "—";
-      const cur = porMes.get(k) ?? { dados: 0, sms: 0, min: 0 };
-      cur.dados += Number(c.dados_mb ?? 0);
-      cur.sms += Number(c.sms_qtd ?? 0);
-      cur.min += Number(c.minutos_qtd ?? 0);
-      porMes.set(k, cur);
-    }
-    const meses = Array.from(porMes.entries())
-      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-      .slice(0, 6);
-    return { totalDados, totalSms, totalMin, meses };
+    return { totalDados, totalSms, totalMin };
   }, [data]);
 
   return (
@@ -49,28 +38,7 @@ export default function Consumo() {
             <Stat label="Minutos" value={String(agregado!.totalMin)} />
           </div>
 
-          <Card className="bg-card/60 border-border/60">
-            <CardHeader><CardTitle className="text-base">Consumo por competência</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {agregado!.meses.map(([mes, v]) => {
-                const max = Math.max(...agregado!.meses.map(([, m]) => m.dados), 1);
-                const pct = (v.dados / max) * 100;
-                return (
-                  <div key={mes}>
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="font-medium">{mes}</span>
-                      <span className="text-muted-foreground">
-                        {(v.dados / 1024).toFixed(1)} GB · {v.sms} SMS · {v.min} min
-                      </span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-background/60 overflow-hidden">
-                      <div className="h-full bg-gradient-gold" style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
+          <ConsumptionCharts consumos={data as any[]} />
         </>
       )}
     </div>
