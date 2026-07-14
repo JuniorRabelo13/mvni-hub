@@ -2036,6 +2036,82 @@ export type Database = {
           },
         ]
       }
+      mvno_pagamentos: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          expires_at: string | null
+          fatura_id: string
+          id: string
+          linha_id: string | null
+          metadata: Json
+          paid_at: string | null
+          pix_copia_e_cola: string | null
+          pix_qr_code_base64: string | null
+          provider: string
+          provider_intent_id: string | null
+          status: Database["public"]["Enums"]["mvno_pagamento_status"]
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          fatura_id: string
+          id?: string
+          linha_id?: string | null
+          metadata?: Json
+          paid_at?: string | null
+          pix_copia_e_cola?: string | null
+          pix_qr_code_base64?: string | null
+          provider?: string
+          provider_intent_id?: string | null
+          status?: Database["public"]["Enums"]["mvno_pagamento_status"]
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          fatura_id?: string
+          id?: string
+          linha_id?: string | null
+          metadata?: Json
+          paid_at?: string | null
+          pix_copia_e_cola?: string | null
+          pix_qr_code_base64?: string | null
+          provider?: string
+          provider_intent_id?: string | null
+          status?: Database["public"]["Enums"]["mvno_pagamento_status"]
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvno_pagamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvno_pagamentos_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "mvno_faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvno_pagamentos_linha_id_fkey"
+            columns: ["linha_id"]
+            isOneToOne: false
+            referencedRelation: "mvno_linhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mvno_parser_jobs: {
         Row: {
           created_at: string
@@ -5140,6 +5216,12 @@ export type Database = {
         | "cancelada"
         | "portabilidade"
         | "em_ativacao"
+      mvno_pagamento_status:
+        | "pendente"
+        | "confirmado"
+        | "expirado"
+        | "cancelado"
+        | "falhou"
       mvno_parser_status:
         | "pending"
         | "processing"
@@ -5383,6 +5465,13 @@ export const Constants = {
         "cancelada",
         "portabilidade",
         "em_ativacao",
+      ],
+      mvno_pagamento_status: [
+        "pendente",
+        "confirmado",
+        "expirado",
+        "cancelado",
+        "falhou",
       ],
       mvno_parser_status: [
         "pending",

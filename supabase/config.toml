@@ -11,6 +11,9 @@ verify_jwt = false
 [functions.stripe-cancelar-assinatura]
 verify_jwt = false
 
+[functions.mvno-pix-webhook]
+verify_jwt = false
+
 
 
 
