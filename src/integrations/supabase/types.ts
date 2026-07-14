@@ -2042,12 +2042,19 @@ export type Database = {
           created_at: string
           expires_at: string | null
           fatura_id: string
+          gateway: string | null
+          gateway_status: string | null
+          gateway_transaction_id: string | null
           id: string
           linha_id: string | null
           metadata: Json
           paid_at: string | null
+          payload: Json | null
+          pix_copia_cola: string | null
           pix_copia_e_cola: string | null
           pix_qr_code_base64: string | null
+          pix_qrcode: string | null
+          processed_at: string | null
           provider: string
           provider_intent_id: string | null
           status: Database["public"]["Enums"]["mvno_pagamento_status"]
@@ -2059,12 +2066,19 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           fatura_id: string
+          gateway?: string | null
+          gateway_status?: string | null
+          gateway_transaction_id?: string | null
           id?: string
           linha_id?: string | null
           metadata?: Json
           paid_at?: string | null
+          payload?: Json | null
+          pix_copia_cola?: string | null
           pix_copia_e_cola?: string | null
           pix_qr_code_base64?: string | null
+          pix_qrcode?: string | null
+          processed_at?: string | null
           provider?: string
           provider_intent_id?: string | null
           status?: Database["public"]["Enums"]["mvno_pagamento_status"]
@@ -2076,12 +2090,19 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           fatura_id?: string
+          gateway?: string | null
+          gateway_status?: string | null
+          gateway_transaction_id?: string | null
           id?: string
           linha_id?: string | null
           metadata?: Json
           paid_at?: string | null
+          payload?: Json | null
+          pix_copia_cola?: string | null
           pix_copia_e_cola?: string | null
           pix_qr_code_base64?: string | null
+          pix_qrcode?: string | null
+          processed_at?: string | null
           provider?: string
           provider_intent_id?: string | null
           status?: Database["public"]["Enums"]["mvno_pagamento_status"]
