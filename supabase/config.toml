@@ -14,6 +14,9 @@ verify_jwt = false
 [functions.mvno-pix-webhook]
 verify_jwt = false
 
+[functions.mvno-pagarme-webhook]
+verify_jwt = false
+
 
 
 
