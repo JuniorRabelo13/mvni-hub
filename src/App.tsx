@@ -102,6 +102,10 @@ const MasterConfig = lazy(() => import("./pages/master-admin/MasterConfig"));
 const MasterProdutos = lazy(() => import("./pages/master-admin/Produtos"));
 const MasterChips = lazy(() => import("./pages/master-admin/Chips"));
 const ImportCenter = lazy(() => import("./pages/master-admin/ImportCenter"));
+const MvnoLinhasAdmin = lazy(() => import("./pages/master-admin/MvnoLinhas"));
+const MvnoPlanosAdmin = lazy(() => import("./pages/master-admin/MvnoPlanos"));
+const MvnoOperadorasAdmin = lazy(() => import("./pages/master-admin/MvnoOperadoras"));
+const MvnoUploadsAdmin = lazy(() => import("./pages/master-admin/MvnoUploads"));
 
 // Cliente MVNO
 const ClienteLayout = lazy(() => import("./pages/cliente/ClienteLayout"));
@@ -242,6 +246,10 @@ const AppContent = () => {
                     <Route path="/master/produtos" element={<MasterProdutos />} />
                     <Route path="/master/chips" element={<MasterChips />} />
                     <Route path="/master/import-center" element={<ImportCenter />} />
+                    <Route path="/master/mvno/linhas" element={<MvnoLinhasAdmin />} />
+                    <Route path="/master/mvno/planos" element={<MvnoPlanosAdmin />} />
+                    <Route path="/master/mvno/operadoras" element={<MvnoOperadorasAdmin />} />
+                    <Route path="/master/mvno/uploads" element={<MvnoUploadsAdmin />} />
                   </Route>
 
                   {/* Central do Cliente MVNO */}
