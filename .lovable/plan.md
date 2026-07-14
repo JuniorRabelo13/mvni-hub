@@ -1,97 +1,70 @@
-# MVNI HUB — Fase 2: Plataforma MVNO
+# PIX para Faturas MVNO — Confirmação automática via webhook
 
-Escopo enorme (14 fases). Entregar tudo em um único passo geraria migration gigante, risco alto de quebra e review inviável. Proponho **3 sprints sequenciais**, cada um com build limpo, tipos regenerados e testável de forma isolada. Nada existente (Stripe, checkout, comissões, indicação, AuthGuard, Dashboard atual, RLS atuais) é tocado.
+Aproveitar a integração **Stripe já ativa** no projeto (`STRIPE_SECRET_KEY` + `stripe-webhook`) sem alterar nenhum módulo existente. Todo o fluxo PIX vive em novos arquivos com prefixo `mvno-pix-*`.
 
----
+## Fluxo do usuário
 
-## Sprint 1 — Fundação (banco + RLS + storage + auditoria)
+1. Cliente abre `/cliente/pagamentos` (ou detalhe da fatura) → botão **Pagar com PIX** aparece em faturas `aberta` ou `atrasada`.
+2. Modal exibe QR Code + Copia-e-Cola + valor + expiração (30 min).
+3. Ao confirmar o PIX no banco, o webhook Stripe recebe `payment_intent.succeeded` → marca `mvno_pagamentos.status = confirmado` e `mvno_faturas.status = paga` com `pago_em = now()`.
+4. UI faz *polling* leve (a cada 5s) enquanto o modal está aberto; ao confirmar, toast de sucesso e recibo aparece no histórico.
+5. Aba **Pagos** de `/cliente/pagamentos` mostra o recibo (linha, competência, valor, `pago_em`, ID da transação) com botão **Baixar recibo** (HTML imprimível via `window.print`).
 
-**Migration única** cria toda a base normalizada, já preparada para White Label (`tenant_id UUID` em toda tabela, default `NULL`, índice — sem forçar multi-tenant agora, mas pronto):
+## Mudanças de banco (1 migration)
 
-Tabelas novas:
-- `operadoras` (nome, slug, cor, logo_url)
-- `planos_mvno` (operadora_id, nome, franquia_dados_mb, sms_incluidos, minutos_incluidos, valor_mensal, ativo)
-- `mvno_linhas` (numero, iccid, imsi, operadora_id, plano_id, cliente_id, user_id representante, status enum, ativada_em, proximo_vencimento, valor_mensal, tenant_id)
-- `mvno_linha_historico` (linha_id, evento enum, descricao, metadata jsonb, actor_id)
-- `mvno_faturas` (linha_id, cliente_id, competencia, valor, vencimento, pago_em, status enum, pdf_url, tenant_id)
-- `mvno_fatura_itens` (fatura_id, descricao, categoria enum, quantidade, valor_unit, valor_total)
-- `mvno_consumos` (linha_id, competencia, dados_mb, sms_qtd, minutos_qtd, roaming_mb)
-- `mvno_uploads_faturas` (uploader_id, operadora_id, competencia, arquivo_url, mime, status, total_linhas, processadas, erros_count)
-- `mvno_parser_jobs` (upload_id, tipo enum pdf/csv/xlsx/ocr, status, iniciado_em, finalizado_em, resultado jsonb)
-- `mvno_parser_logs` (job_id, nivel, mensagem, contexto jsonb)
-- `mvno_audit_logs` (actor_id, entidade, entidade_id, acao, antes jsonb, depois jsonb, ip, user_agent)
+Nova tabela `mvno_pagamentos`:
+- `fatura_id` (FK → `mvno_faturas`)
+- `cliente_id`, `linha_id` (denormalizados para RLS + histórico)
+- `provider` = `stripe_pix`
+- `provider_intent_id` (payment_intent id)
+- `valor`, `status` (`pendente` | `confirmado` | `expirado` | `cancelado`)
+- `pix_qr_code_base64`, `pix_copia_e_cola`, `expires_at`, `paid_at`, `metadata`
 
-Enums: `mvno_linha_status`, `mvno_fatura_status`, `mvno_evento_tipo`, `mvno_parser_status`, `mvno_item_categoria`.
+RLS:
+- Cliente lê seus próprios pagamentos (`cliente_id ∈ clientes.user_id`)
+- `service_role` faz insert/update (usado pelas edge functions)
+- Admin/master lê tudo via `has_role`
 
-**RLS por tabela:**
-- Cliente (via `clientes.user_id`) → SELECT em `mvno_linhas`/`mvno_faturas`/`mvno_consumos`/`mvno_linha_historico` apenas onde a linha pertence a um cliente dele.
-- Representante → SELECT nas linhas cujo `user_id = auth.uid()` (sem dados financeiros de terceiros: policy separa `mvno_faturas` — representante só vê faturas de linhas próprias).
-- Admin/master_admin → ALL via `has_role`/`is_master_admin`.
-- Uploads/parser/audit → apenas admin/master.
+Grants padrão em `authenticated` e `service_role`. **Nenhuma tabela existente é alterada.**
 
-**Storage:** bucket privado `mvno-faturas` para PDF da operadora e `mvno-faturas-pdf` para PDF individual por cliente. Policies limitam leitura ao owner/admin.
+## Novas Edge Functions (2)
 
-**Grants:** `authenticated` recebe DML nas tabelas de dados; `service_role` recebe ALL em tudo (edge functions).
+- `mvno-pix-criar`: valida sessão do cliente, checa ownership da fatura, chama `stripe.paymentIntents.create({ amount, currency: 'brl', payment_method_types: ['pix'] })`, confirma com `payment_method_data: { type: 'pix' }`, extrai `next_action.pix_display_qr_code`, insere linha em `mvno_pagamentos`, retorna QR + copia-e-cola.
+- `mvno-pix-webhook`: assinado com `STRIPE_WEBHOOK_SECRET` **dedicado do MVNO** (separado do webhook existente para não colidir). Trata `payment_intent.succeeded` e `payment_intent.payment_failed`. Idempotente via `provider_intent_id`.
 
----
+Se o `STRIPE_WEBHOOK_SECRET_MVNO` ainda não existir, peço via `add_secret` num passo separado (o usuário cadastra o endpoint da nova função no dashboard Stripe e cola o secret).
 
-## Sprint 2 — Área do cliente (frontend)
+## Frontend (todos novos, exceto integração pontual)
 
-Novas rotas dentro do `AuthGuard` (não gated por `cadastro_pago_em` — são áreas do cliente final, não do representante):
-- `/minhas-linhas` — lista com filtros por status, card por linha, drawer de detalhes com histórico timeline.
-- `/minhas-linhas/:id` — detalhe completo (número, ICCID, IMSI, plano, consumo, vencimento, timeline).
-- `/minhas-faturas` — lista paginada, filtros, download PDF (signed URL 5 min), botão "segunda via".
-- `/minhas-faturas/:id` — detalhamento por item + histórico.
+- `src/services/mvno/pagamentosService.ts` — `criarPix(faturaId)`, `getPagamentoByFatura(faturaId)`.
+- `src/hooks/mvno/usePagamentos.ts` — React Query com polling condicional (5s enquanto `status = pendente`).
+- `src/components/mvno/PixCheckoutDialog.tsx` — QR (img base64) + botão "Copiar código" + contador de expiração + estado ao vivo.
+- `src/components/mvno/ReciboPix.tsx` — layout imprimível do recibo (competência, linha, valor, tx id, data de confirmação).
+- `src/pages/cliente/Pagamentos.tsx` — adicionar botão **Pagar com PIX** nas abas "Pendentes"/"Atrasados" e **Ver recibo** em "Pagos". Sem remover nada do existente.
+- `src/pages/cliente/MinhasFaturas.tsx` e `FaturaDetalhes.tsx` — adicionar o mesmo botão em faturas abertas.
 
-Componentes novos:
-- `LinhaCard`, `LinhaStatusBadge`, `LinhaTimeline`, `FaturaRow`, `FaturaStatusBadge`, `FaturaDetalhe`, `ConsumoBarras`.
+## Segurança
 
-Hooks:
-- `useMinhasLinhas`, `useLinha(id)`, `useMinhasFaturas`, `useFatura(id)`, `useSignedFaturaUrl(fatura)`.
-
-Todos com React Query + paginação server-side (`.range()`) + empty/loading/error padronizados.
-
-Dashboard: adicionar bloco "Suas linhas" com cards (total, ativas, suspensas, bloqueadas, próxima fatura, valor mensal, dias restantes) — **novo bloco abaixo** do card de ativação atual, sem tocar no card existente.
-
----
-
-## Sprint 3 — Admin + parser stub + edge functions
-
-Rotas admin (protegidas por `MASTER_ONLY_ROUTES` já existente):
-- `/master/mvno/linhas` — CRUD, filtros, exportação CSV, ações (suspender/cancelar/trocar plano/transferir titularidade).
-- `/master/mvno/planos` — CRUD planos.
-- `/master/mvno/operadoras` — CRUD operadoras.
-- `/master/mvno/uploads` — upload de fatura da operadora, lista de jobs, logs, reprocessar.
-- `/master/mvno/auditoria` — visualizador de `mvno_audit_logs`.
-
-Edge Functions novas:
-- `mvno-fatura-upload` — recebe arquivo, cria `mvno_uploads_faturas` + `mvno_parser_jobs (status=pending)`, salva no bucket privado.
-- `mvno-fatura-parser` — **stub preparado** com switch por MIME (`pdf`/`csv`/`xlsx`). Implementa apenas CSV/XLSX básicos (leitura de colunas mapeadas). PDF/OCR retorna `status=pending_ai` para futura integração. Distribui itens para `mvno_faturas`/`mvno_fatura_itens`/`mvno_consumos` respeitando `cliente_id` — nunca vaza dados de outro CPF.
-- `mvno-fatura-signed-url` — gera signed URL 5 min para o cliente baixar seu PDF (verifica ownership via RLS + JWT).
-- Todas com CORS, validação Zod, `requireUser`/`requireRole` do `_shared/auth.ts`, logs em `mvno_audit_logs`.
-
-Cron opcional (não neste sprint): job diário que marca faturas vencidas como "atrasada".
-
----
-
-## Detalhes técnicos
-
-- **White Label ready:** coluna `tenant_id UUID NULL` + índice em toda tabela nova; RLS já referencia `tenant_id` via helper `current_tenant_id()` (function `stable` que hoje retorna NULL, mas pode ser trocada sem migration adicional de policy).
-- **Performance:** índices em `(cliente_id, status)`, `(user_id)`, `(linha_id, competencia)`, `(status, proximo_vencimento)`; paginação `.range()`; React Query com `staleTime: 30s`.
-- **Segurança:** ownership dupla (RLS + edge re-check), signed URLs com expiração curta, `service_role` só em edge, nenhuma coluna sensível exposta em policies de anon.
-- **UX:** padrão shadcn + tokens existentes; dark mode automático; loading/empty/error em todos os componentes; toasts em ações.
-- **Não implementar agora:** OCR real, OpenAI, integração APIs de operadora. Arquitetura fica pronta (`parser_jobs.tipo='ocr'` aceito, retorna `pending_ai`).
+- Ownership da fatura re-checado no `mvno-pix-criar` via `userClient` (RLS já bloqueia terceiros).
+- Webhook usa `serviceRoleClient` apenas para gravar status.
+- Valor sempre lido do banco (`mvno_faturas.valor`), nunca do body.
+- Idempotência por `provider_intent_id` (constraint UNIQUE).
 
 ## Não altero
 
-Stripe · webhook · checkout · comissões · indicação · AuthGuard (só adiciono rotas em `PUBLIC_ROUTES`? não — todas novas são autenticadas) · Dashboard atual (apenas **acrescento** um bloco novo abaixo) · Google login · RLS existentes · Edge Functions atuais.
+Stripe existente, `stripe-webhook`, `stripe-*`, `assinaturas`, `pagamentos` (tabela do fluxo de assinatura de representante), motor de comissão, `AuthGuard`, RLS existente, parser MVNO, upload center, edge functions atuais, tabelas MVNO já criadas.
 
-## Entrega ao fim de cada sprint
+## Requisitos externos (usuário precisa fazer 1 vez)
 
-- Sprint 1: 1 migration + relatório de tabelas/policies/grants + tipos regenerados.
-- Sprint 2: rotas cliente + Dashboard bloco + build limpo + validação Playwright em `/minhas-linhas` e `/minhas-faturas` (empty state).
-- Sprint 3: admin + 3 edge functions + relatório final com percentual.
+1. Ativar **PIX** como método de pagamento na conta Stripe (dashboard Stripe → Payment methods → PIX).
+2. Após deploy da função `mvno-pix-webhook`, cadastrar o endpoint dela no Stripe (Webhooks → Add endpoint → eventos `payment_intent.succeeded` e `payment_intent.payment_failed`) e colar o signing secret quando eu pedir via `add_secret` como `STRIPE_WEBHOOK_SECRET_MVNO`.
 
-## Confirmação
+## Entrega em ordem
 
-Aprovando este plano executo **Sprint 1** agora (só migration + storage + tipos). Sprints 2 e 3 seguem em respostas subsequentes para manter cada entrega auditável e revertível. Se preferir, posso comprimir os 3 sprints em uma única execução — mas o risco de erro cresce muito e reverter fica difícil.
+1. Migration `mvno_pagamentos` (aguarda aprovação).
+2. Edge functions `mvno-pix-criar` + `mvno-pix-webhook`.
+3. Pedir `STRIPE_WEBHOOK_SECRET_MVNO`.
+4. Serviços, hooks, componentes e integração nas páginas.
+5. Validação: TypeScript, RLS, ownership, botões visíveis somente nas faturas em aberto.
+
+Posso executar?
