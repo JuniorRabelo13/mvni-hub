@@ -2050,10 +2050,8 @@ export type Database = {
           metadata: Json
           paid_at: string | null
           payload: Json | null
-          pix_copia_cola: string | null
           pix_copia_e_cola: string | null
           pix_qr_code_base64: string | null
-          pix_qrcode: string | null
           processed_at: string | null
           provider: string
           provider_intent_id: string | null
@@ -2074,10 +2072,8 @@ export type Database = {
           metadata?: Json
           paid_at?: string | null
           payload?: Json | null
-          pix_copia_cola?: string | null
           pix_copia_e_cola?: string | null
           pix_qr_code_base64?: string | null
-          pix_qrcode?: string | null
           processed_at?: string | null
           provider?: string
           provider_intent_id?: string | null
@@ -2098,10 +2094,8 @@ export type Database = {
           metadata?: Json
           paid_at?: string | null
           payload?: Json | null
-          pix_copia_cola?: string | null
           pix_copia_e_cola?: string | null
           pix_qr_code_base64?: string | null
-          pix_qrcode?: string | null
           processed_at?: string | null
           provider?: string
           provider_intent_id?: string | null
