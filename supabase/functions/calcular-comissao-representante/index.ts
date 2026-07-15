@@ -37,7 +37,7 @@ serve(async (req) => {
     }
 
     if (simulate) {
-      const VALOR_ATIVACAO = 85.00;
+      const VALOR_ATIVACAO = 80.00;
       const VALOR_RECORRENCIA_DIRETA = 20.00;
       const multIndireto = (simDiretos || 0) > 40 ? 10.00 : 5.00;
       
@@ -83,8 +83,8 @@ serve(async (req) => {
       if (p.slug === "linha-celular") linhaCelularId = p.id;
     });
 
-    // Helpers — regra da linha celular preservada (R$ 85 ativação / R$ 20 recorrente / R$ 5-10 indireto)
-    const LC_ATIVACAO = 85.00;
+    // Helpers — regra da linha celular preservada (R$ 80 ativação / R$ 20 recorrente / R$ 10 indireto — ver public.config_comissoes)
+    const LC_ATIVACAO = 80.00;
     const LC_RECORRENTE = 20.00;
     const isLinhaCelular = (pid: string | null | undefined) =>
       !pid || (linhaCelularId && pid === linhaCelularId);

@@ -136,7 +136,7 @@ export default function Dashboard() {
 
   const simulacao = useMemo(() => {
     // REGRAS OFICIAIS SINCRONIZADAS COM O BACKEND
-    const VALOR_ATIVACAO = 85.00;
+    const VALOR_ATIVACAO = 80.00;
     const VALOR_RECORRENCIA_DIRETA = 20.00;
     const MULTIPLICADOR_INDIRETO = diretos > 40 ? 10.00 : 5.00;
 
@@ -289,7 +289,7 @@ export default function Dashboard() {
                 {loading ? "—" : fmt(s.ganhoTotal)}
               </p>
               <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-                <TrendingUp className="h-4 w-4 text-primary" /> R$ 85 por venda + R$ 20/mês recorrente
+                <TrendingUp className="h-4 w-4 text-primary" /> R$ 80 por venda + R$ 20/mês recorrente
               </p>
             </div>
             <div className="text-right">
@@ -321,7 +321,7 @@ export default function Dashboard() {
           <CardTitle>Quanto mais você ativa, mais você ganha</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>• Cada nova ativação gera R$ 85 imediatos.</p>
+          <p>• Cada nova ativação gera R$ 80 imediatos.</p>
           <p>• Cada associado ativo gera R$ 20/mês recorrente.</p>
           <p>• Bônus Indireto: De 21 até 40 associados diretos, você ganha R$ 5 por cada associado indireto.</p>
           <p>• Bônus Indireto Elite: Acima de 40 associados diretos, o bônus indireto dobra para R$ 10 por associado.</p>
