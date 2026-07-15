@@ -78,7 +78,7 @@ serve(async (req) => {
       body: JSON.stringify({
         key: saque.dados_bancarios.chave_pix,
         key_type: saque.dados_bancarios.tipo_chave,
-        amount: saque.valor,
+        amount: saque.valor_liquido ?? saque.valor, // valor_liquido = valor - taxa_saque (definido em aprovar_saque)
         description: `Saque LOVABLE SaaS - #${saque.id.slice(0,8)}`
       })
     })
