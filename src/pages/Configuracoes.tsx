@@ -66,7 +66,7 @@ export default function Configuracoes() {
 
     // Validação básica de valores numéricos para chaves de comissão/valor
     const invalidConfigs = configs.filter(c => 
-      !['asaas_api_key', 'whatsapp_api_url', 'whatsapp_api_token'].includes(c.chave) && (isNaN(Number(c.valor)) || Number(c.valor) < 0)
+      !['whatsapp_api_url', 'whatsapp_api_token'].includes(c.chave) && (isNaN(Number(c.valor)) || Number(c.valor) < 0)
     );
 
     if (invalidConfigs.length > 0) {
