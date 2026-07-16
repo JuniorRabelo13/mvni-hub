@@ -12,8 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/posthog";
-import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle, Activity, TrendingUp, Users, Wallet, AlertCircle, BarChart3, Mail, Phone, Hash, Calendar, PhoneCall, CreditCard, Sparkles } from "lucide-react";
-import { PixPaymentDialog } from "@/components/PixPaymentDialog";
+import { Plus, CheckCircle2, Clock, Loader2, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle, Activity, TrendingUp, Users, Wallet, AlertCircle, BarChart3, Mail, Phone, Hash, Calendar, PhoneCall, CreditCard, Sparkles } from "lucide-react";
 import { sanitize } from "@/lib/sanitize";
 import { useClientesPaginados, type Cliente } from "@/hooks/useClientesPaginados";
 import { PaginacaoControles } from "@/components/PaginacaoControles";
@@ -36,7 +35,6 @@ export default function Clientes() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [selectedPagamento, setSelectedPagamento] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativos" | "inadimplentes" | "suspensos" | "vencendo_hoje">("todos");
   const [currentPage, setCurrentPage] = useState(1);
@@ -218,7 +216,7 @@ export default function Clientes() {
     createClienteMutation.mutate(parsed.data);
   };
 
-  const pagarComPix = (pagamentoId: string) => setSelectedPagamento(pagamentoId);
+
 
   const getHealthScore = (cliente: Cliente) => {
     let score = 100;
@@ -325,7 +323,7 @@ export default function Clientes() {
                     {pendentes.map((p) => (
                       <div key={p.id} className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
                         <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /> {fmt(Number(p.valor))} • venc. {new Date(p.data_vencimento).toLocaleDateString("pt-BR")}</span>
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => pagarComPix(p.id)}><QrCode className="h-3.5 w-3.5" /> Pagar com PIX</Button>
+                        <Badge variant="outline">Pendente</Badge>
                       </div>
                     ))}
                     {pendentes.length === 0 && <p className="text-xs text-muted-foreground">Sem cobranças pendentes.</p>}
@@ -360,7 +358,7 @@ export default function Clientes() {
           <PaginacaoControles currentPage={currentPage} pageSize={pageSize} totalItems={totalCount} onPageChange={setCurrentPage} onPageSizeChange={(newSize) => { setPageSize(newSize); setCurrentPage(1); }} />
         </div>
       )}
-      <PixPaymentDialog pagamentoId={selectedPagamento} onOpenChange={(open) => !open && setSelectedPagamento(null)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ["clientes"] })} />
+      
       <Sheet open={!!selectedCliente} onOpenChange={(open) => !open && setSelectedCliente(null)}>
         <SheetContent className="sm:max-w-md overflow-y-auto">
           {selectedCliente && (

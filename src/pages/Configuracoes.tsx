@@ -66,7 +66,7 @@ export default function Configuracoes() {
 
     // Validação básica de valores numéricos para chaves de comissão/valor
     const invalidConfigs = configs.filter(c => 
-      !['asaas_api_key', 'whatsapp_api_url', 'whatsapp_api_token'].includes(c.chave) && (isNaN(Number(c.valor)) || Number(c.valor) < 0)
+      !['whatsapp_api_url', 'whatsapp_api_token'].includes(c.chave) && (isNaN(Number(c.valor)) || Number(c.valor) < 0)
     );
 
     if (invalidConfigs.length > 0) {
@@ -137,7 +137,7 @@ export default function Configuracoes() {
             <CardDescription>Defina os valores padrão para o plano e cálculos de rendimentos.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {configs.filter(c => !['asaas_api_key', 'whatsapp_api_url', 'whatsapp_api_token'].includes(c.chave)).map((config) => (
+            {configs.filter(c => !['whatsapp_api_url', 'whatsapp_api_token'].includes(c.chave)).map((config) => (
               <div key={config.chave} className="grid grid-cols-1 gap-1.5 md:grid-cols-2 md:items-center">
                 <div>
                   <Label htmlFor={config.chave} className="text-sm font-semibold">
@@ -165,7 +165,7 @@ export default function Configuracoes() {
             <CardDescription>Configurações de APIs e serviços externos.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {configs.filter(c => ['asaas_api_key', 'whatsapp_api_url', 'whatsapp_api_token'].includes(c.chave)).map((config) => (
+            {configs.filter(c => ['whatsapp_api_url', 'whatsapp_api_token'].includes(c.chave)).map((config) => (
               <div key={config.chave} className="space-y-1.5">
                 <Label htmlFor={config.chave}>{config.descricao}</Label>
                 <Input 
