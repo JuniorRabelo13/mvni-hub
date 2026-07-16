@@ -216,7 +216,7 @@ export default function Clientes() {
     createClienteMutation.mutate(parsed.data);
   };
 
-  const pagarComPix = (pagamentoId: string) => setSelectedPagamento(pagamentoId);
+
 
   const getHealthScore = (cliente: Cliente) => {
     let score = 100;
