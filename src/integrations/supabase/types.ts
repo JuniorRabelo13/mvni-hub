@@ -999,49 +999,23 @@ export type Database = {
           },
         ]
       }
-      commissions: {
+      config_comissoes: {
         Row: {
-          amount: number
-          created_at: string | null
-          description: string | null
-          id: string
-          paid_at: string | null
-          profile_id: string | null
-          reference_id: string | null
-          status: string | null
-          type: string
+          chave: string
+          updated_at: string
+          valor: number
         }
         Insert: {
-          amount: number
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          paid_at?: string | null
-          profile_id?: string | null
-          reference_id?: string | null
-          status?: string | null
-          type: string
+          chave: string
+          updated_at?: string
+          valor: number
         }
         Update: {
-          amount?: number
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          paid_at?: string | null
-          profile_id?: string | null
-          reference_id?: string | null
-          status?: string | null
-          type?: string
+          chave?: string
+          updated_at?: string
+          valor?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "commissions_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       configuracoes: {
         Row: {
@@ -1605,30 +1579,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      logs: {
-        Row: {
-          acao: string
-          created_at: string | null
-          detalhes: Json | null
-          id: string
-          user_id: string
-        }
-        Insert: {
-          acao: string
-          created_at?: string | null
-          detalhes?: Json | null
-          id?: string
-          user_id?: string
-        }
-        Update: {
-          acao?: string
-          created_at?: string | null
-          detalhes?: Json | null
-          id?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       master_permissions: {
         Row: {
@@ -2315,44 +2265,6 @@ export type Database = {
           },
         ]
       }
-      notificacoes_enviadas: {
-        Row: {
-          cliente_id: string
-          detalhes: string | null
-          enviado_em: string | null
-          id: string
-          referencia_mes: string
-          status: string
-          tipo: string
-        }
-        Insert: {
-          cliente_id: string
-          detalhes?: string | null
-          enviado_em?: string | null
-          id?: string
-          referencia_mes: string
-          status: string
-          tipo: string
-        }
-        Update: {
-          cliente_id?: string
-          detalhes?: string | null
-          enviado_em?: string | null
-          id?: string
-          referencia_mes?: string
-          status?: string
-          tipo?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notificacoes_enviadas_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       notificacoes_vencimento: {
         Row: {
           created_at: string | null
@@ -2677,36 +2589,6 @@ export type Database = {
           valor_mensal?: number | null
         }
         Relationships: []
-      }
-      profile_permissions: {
-        Row: {
-          permission_id: string
-          profile_id: string
-        }
-        Insert: {
-          permission_id: string
-          profile_id: string
-        }
-        Update: {
-          permission_id?: string
-          profile_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profile_permissions_permission_id_fkey"
-            columns: ["permission_id"]
-            isOneToOne: false
-            referencedRelation: "master_permissions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profile_permissions_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       profiles: {
         Row: {
@@ -3328,8 +3210,10 @@ export type Database = {
           processamento_iniciado_em: string | null
           solicitado_em: string | null
           status: string
+          taxa: number
           user_id: string
           valor: number
+          valor_liquido: number | null
           wallet_id: string
         }
         Insert: {
@@ -3342,8 +3226,10 @@ export type Database = {
           processamento_iniciado_em?: string | null
           solicitado_em?: string | null
           status?: string
+          taxa?: number
           user_id: string
           valor: number
+          valor_liquido?: number | null
           wallet_id: string
         }
         Update: {
@@ -3356,8 +3242,10 @@ export type Database = {
           processamento_iniciado_em?: string | null
           solicitado_em?: string | null
           status?: string
+          taxa?: number
           user_id?: string
           valor?: number
+          valor_liquido?: number | null
           wallet_id?: string
         }
         Relationships: [
@@ -3884,44 +3772,6 @@ export type Database = {
             columns: ["wallet_id"]
             isOneToOne: false
             referencedRelation: "wallets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_activity_logs: {
-        Row: {
-          action: string
-          created_at: string | null
-          details: Json | null
-          id: string
-          ip_address: string | null
-          profile_id: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          ip_address?: string | null
-          profile_id?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          ip_address?: string | null
-          profile_id?: string | null
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_activity_logs_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -4700,44 +4550,6 @@ export type Database = {
           },
         ]
       }
-      whatsapp_reconnect_logs: {
-        Row: {
-          attempt_number: number
-          backoff_seconds: number | null
-          created_at: string | null
-          id: string
-          instance_id: string | null
-          reason: string | null
-          success: boolean | null
-        }
-        Insert: {
-          attempt_number: number
-          backoff_seconds?: number | null
-          created_at?: string | null
-          id?: string
-          instance_id?: string | null
-          reason?: string | null
-          success?: boolean | null
-        }
-        Update: {
-          attempt_number?: number
-          backoff_seconds?: number | null
-          created_at?: string | null
-          id?: string
-          instance_id?: string | null
-          reason?: string | null
-          success?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_reconnect_logs_instance_id_fkey"
-            columns: ["instance_id"]
-            isOneToOne: false
-            referencedRelation: "whatsapp_instances"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       whatsapp_sessions: {
         Row: {
           agent_id: string | null
@@ -4913,6 +4725,10 @@ export type Database = {
       detectar_ciclo_indicacao: {
         Args: { p_indicado_id: string; p_indicador_id: string }
         Returns: boolean
+      }
+      estornar_transacao_wallet: {
+        Args: { p_transacao_id: string }
+        Returns: undefined
       }
       fail_import_chunk: {
         Args: { p_chunk_id: string; p_erro: string }
