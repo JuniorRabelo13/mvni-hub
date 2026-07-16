@@ -12,8 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/posthog";
-import { Plus, CheckCircle2, Clock, Loader2, QrCode, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle, Activity, TrendingUp, Users, Wallet, AlertCircle, BarChart3, Mail, Phone, Hash, Calendar, PhoneCall, CreditCard, Sparkles } from "lucide-react";
-import { PixPaymentDialog } from "@/components/PixPaymentDialog";
+import { Plus, CheckCircle2, Clock, Loader2, Search, X, ChevronLeft, ChevronRight, History, ChevronDown, ChevronUp, Check, AlertTriangle, Activity, TrendingUp, Users, Wallet, AlertCircle, BarChart3, Mail, Phone, Hash, Calendar, PhoneCall, CreditCard, Sparkles } from "lucide-react";
 import { sanitize } from "@/lib/sanitize";
 import { useClientesPaginados, type Cliente } from "@/hooks/useClientesPaginados";
 import { PaginacaoControles } from "@/components/PaginacaoControles";
