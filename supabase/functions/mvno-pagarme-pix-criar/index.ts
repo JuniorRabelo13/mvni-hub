@@ -163,8 +163,6 @@ Deno.serve(async (req) => {
         gateway_status: charge?.status ?? "pending",
         valor: Number(fatura.valor),
         status: "pendente",
-        pix_qrcode: qr_code_url,
-        pix_copia_cola: qr_code,
         pix_qr_code_base64: qr_code_url,
         pix_copia_e_cola: qr_code,
         expires_at: tx_expires_at,
