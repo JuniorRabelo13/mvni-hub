@@ -37,7 +37,7 @@ const CadastroSucesso = () => {
           return;
         }
         const { data } = await (supabase as any)
-          .from("usuarios")
+          .from("profiles")
           .select("cadastro_pago_em")
           .eq("id", user.id)
           .maybeSingle();
