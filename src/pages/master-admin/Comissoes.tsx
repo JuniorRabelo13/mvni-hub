@@ -24,7 +24,7 @@ const MasterComissoes = () => {
         .from("comissoes_mensais")
         .select(`
           *,
-          usuarios (
+          profiles!fk_comissoes_mensais_representante_profile (
             nome
           )
         `);
