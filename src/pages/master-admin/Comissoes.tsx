@@ -24,7 +24,7 @@ const MasterComissoes = () => {
         .from("comissoes_mensais")
         .select(`
           *,
-          usuarios (
+          profiles!fk_comissoes_mensais_representante_profile (
             nome
           )
         `);
@@ -65,7 +65,7 @@ const MasterComissoes = () => {
       .sort((a, b) => Number(b.valor_total) - Number(a.valor_total))
       .slice(0, 10)
       .map((c, i) => ({
-        name: c.usuarios?.nome || "Representante",
+        name: c.profiles?.nome || "Representante",
         total: Number(c.valor_total),
         paid: c.status === "pago" ? Number(c.valor_total) : 0,
         color: i === 0 ? "#10b981" : i === 1 ? "#3b82f6" : i === 2 ? "#8b5cf6" : "#f59e0b"
@@ -75,12 +75,12 @@ const MasterComissoes = () => {
   const recentCommissions = useMemo(() => {
     if (!commissionsData) return [];
     return commissionsData
-      .filter(c => !searchTerm || c.usuarios?.nome?.toLowerCase().includes(searchTerm.toLowerCase()))
+      .filter(c => !searchTerm || c.profiles?.nome?.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a, b) => b.mes_referencia.localeCompare(a.mes_referencia))
       .slice(0, 20)
       .map(c => ({
         id: c.id,
-        user: c.usuarios?.nome || "Representante",
+        user: c.profiles?.nome || "Representante",
         type: Number(c.valor_recorrencia_indireta) > 0 ? "Indireta" : "Direta",
         amount: Number(c.valor_total),
         status: c.status === "pago" ? "Pago" : "Pendente",

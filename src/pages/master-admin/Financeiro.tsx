@@ -149,7 +149,7 @@ export default function MasterFinanceiro() {
           status,
           clientes_diretos_ativos,
           clientes_indiretos_ativos,
-          usuarios (
+          profiles!fk_comissoes_mensais_representante_profile (
             nome
           )
         `)
@@ -163,7 +163,7 @@ export default function MasterFinanceiro() {
   });
 
   const handleMarcarComoPago = async (rep: any) => {
-    const confirmacao = window.confirm(`Confirmar pagamento para ${rep.usuarios?.nome} — ${fmt(Number(rep.valor_total))}?`);
+    const confirmacao = window.confirm(`Confirmar pagamento para ${rep.profiles?.nome} — ${fmt(Number(rep.valor_total))}?`);
     
     if (!confirmacao) return;
 
@@ -350,7 +350,7 @@ export default function MasterFinanceiro() {
                 ) : (
                   repasses?.map((rep, idx) => (
                     <TableRow key={idx}>
-                      <TableCell className="font-medium">{rep.usuarios?.nome}</TableCell>
+                      <TableCell className="font-medium">{rep.profiles?.nome}</TableCell>
                       <TableCell className="text-center">{rep.clientes_diretos_ativos || 0}</TableCell>
                       <TableCell className="text-center">{rep.clientes_indiretos_ativos || 0}</TableCell>
                       <TableCell>{fmt(Number(rep.valor_ativacoes) || 0)}</TableCell>

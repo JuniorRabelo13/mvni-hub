@@ -24,26 +24,37 @@ const MasterUsuarios = () => {
     setLoadingRep(true);
     setErrorRep(null);
     const { data, error } = await supabase
-      .from("usuarios")
-      .select(`
-        nome,
-        email,
-        telefone,
-        created_at,
-        status,
-        indicado_por (
-          nome
-        )
-      `)
+      .from("profiles")
+      .select("id, nome, email, telefone, created_at, status, indicador_id")
       .eq("role", "representante")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Erro ao buscar representantes:", error);
       setErrorRep(error);
-    } else {
-      setRepresentantes(data || []);
+      setLoadingRep(false);
+      return;
     }
+
+    // Resolve nomes dos indicadores em uma consulta separada
+    const indicadorIds = Array.from(
+      new Set((data ?? []).map((r: any) => r.indicador_id).filter(Boolean))
+    );
+    let indicadorMap: Record<string, string> = {};
+    if (indicadorIds.length > 0) {
+      const { data: indicadores } = await supabase
+        .from("profiles")
+        .select("id, nome")
+        .in("id", indicadorIds);
+      indicadorMap = Object.fromEntries((indicadores ?? []).map((i: any) => [i.id, i.nome]));
+    }
+
+    setRepresentantes(
+      (data ?? []).map((r: any) => ({
+        ...r,
+        indicado_por: r.indicador_id ? { nome: indicadorMap[r.indicador_id] } : null,
+      }))
+    );
     setLoadingRep(false);
   };
 
