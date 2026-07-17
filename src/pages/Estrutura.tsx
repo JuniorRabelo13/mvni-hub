@@ -29,9 +29,9 @@ export default function Estrutura() {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      // Get referral code from usuarios table
+      // Get referral code from profiles table
       const { data: userData } = await supabase
-        .from("usuarios")
+        .from("profiles")
         .select("codigo_indicacao")
         .eq("id", user.id)
         .maybeSingle();
