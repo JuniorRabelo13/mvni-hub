@@ -58,7 +58,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
               return;
             }
             const { data, error } = await (supabase as any)
-              .from("usuarios")
+              .from("profiles")
               .select("cadastro_pago_em")
               .eq("id", user.id)
               .maybeSingle();
