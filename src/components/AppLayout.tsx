@@ -54,7 +54,7 @@ export default function AppLayout() {
       }
       
       const { data, error } = await supabase
-        .from("usuarios")
+        .from("profiles")
         .select("role")
         .eq("id", user.id)
         .single();
