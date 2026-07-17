@@ -997,6 +997,13 @@ export type Database = {
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_comissoes_mensais_representante_profile"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       config_comissoes: {
@@ -2592,6 +2599,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          cadastro_pago_em: string | null
+          codigo_indicacao: string | null
+          cpf: string | null
           created_at: string
           email: string | null
           gestor_id: string | null
@@ -2606,6 +2616,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cadastro_pago_em?: string | null
+          codigo_indicacao?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string | null
           gestor_id?: string | null
@@ -2620,6 +2633,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cadastro_pago_em?: string | null
+          codigo_indicacao?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string | null
           gestor_id?: string | null
