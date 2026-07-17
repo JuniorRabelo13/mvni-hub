@@ -211,7 +211,7 @@ serve(async (req) => {
 
         // Ativar representante apenas se ainda não foi ativado
         const { error: asyncUpdErr } = await supabase
-          .from('usuarios')
+          .from('profiles')
           .update({ cadastro_pago_em: new Date().toISOString() })
           .eq('id', userId)
           .is('cadastro_pago_em', null)
