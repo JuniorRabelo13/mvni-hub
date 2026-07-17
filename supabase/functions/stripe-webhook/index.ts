@@ -144,13 +144,13 @@ serve(async (req) => {
 
         // Marca representante como cadastro pago (idempotente — set apenas se nulo)
         const { error: updErr } = await supabase
-          .from('usuarios')
+          .from('profiles')
           .update({ cadastro_pago_em: new Date().toISOString() })
           .eq('id', userId)
           .is('cadastro_pago_em', null)
 
         if (updErr) {
-          console.error('Erro ao marcar cadastro_pago_em em usuarios:', updErr.message)
+          console.error('Erro ao marcar cadastro_pago_em em profiles:', updErr.message)
           throw updErr
         }
 
