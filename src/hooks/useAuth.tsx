@@ -61,22 +61,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         // 2) Fallback APENAS para role de exibição (representante, vendedor, etc.).
         //    NUNCA usado por AuthGuard/rotas master — essas checam apenas master_admin/admin.
-        const { data: u } = await supabase
-          .from("usuarios")
+        const { data: p } = await supabase
+          .from("profiles")
           .select("role")
           .eq("id", userId)
           .maybeSingle();
-
-        if (u?.role) {
-          effectiveRole = u.role;
-        } else {
-          const { data: p } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", userId)
-            .maybeSingle();
-          effectiveRole = p?.role ?? "user";
-        }
+        effectiveRole = p?.role ?? "user";
       }
 
       console.log('[AUTH] Role loaded:', effectiveRole);
