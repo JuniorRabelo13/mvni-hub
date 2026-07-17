@@ -55,9 +55,9 @@ serve(async (req) => {
 
 
 
-    // 1. Validar se o email já existe
+    // 1. Validar se o email já existe em profiles
     const { data: existingEmail } = await supabase
-      .from("usuarios")
+      .from("profiles")
       .select("id")
       .eq("email", email)
       .maybeSingle();
@@ -69,11 +69,11 @@ serve(async (req) => {
       );
     }
 
-    // 2. Validar se o CPF já existe
+    // 2. Validar se o CPF já existe em profiles
     const { data: existingCPF } = await supabase
-      .from("usuarios")
+      .from("profiles")
       .select("id")
-      .eq("cpf", cpf)
+      .eq("cpf", cpfDigits)
       .maybeSingle();
 
     if (existingCPF) {
@@ -83,45 +83,52 @@ serve(async (req) => {
       );
     }
 
-    // 3. Buscar sponsor se codigo_indicador enviado
-    let sponsorId = null;
+    // 3. Buscar sponsor (indicador) via codigo_indicacao em profiles
+    let sponsorId: string | null = null;
     if (codigo_indicador) {
       const { data: sponsor } = await supabase
-        .from("usuarios")
+        .from("profiles")
         .select("id")
         .eq("codigo_indicacao", codigo_indicador)
         .maybeSingle();
-      
+
       if (sponsor) {
         sponsorId = sponsor.id;
       }
     }
 
-    // 4. Criar usuário no Auth via Service Role
+    // 4. Criar usuário no Auth — trigger handle_new_user popula profiles
+    //    a partir do user_metadata (nome, telefone, cpf, indicador_id, role).
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email,
       password: senha,
       email_confirm: true,
-      user_metadata: { nome, full_name: nome },
+      user_metadata: {
+        nome,
+        full_name: nome,
+        telefone,
+        cpf: cpfDigits,
+        indicador_id: sponsorId,
+        role: "representante",
+      },
     });
 
     if (authError) throw authError;
 
-    // 5. Inserir registro na tabela usuarios
+    // 5. Garante role/telefone/cpf caso o trigger não tenha propagado tudo
+    //    (idempotente — apenas reforça).
     const { error: dbError } = await supabase
-      .from("usuarios")
-      .insert({
-        id: authUser.user.id,
+      .from("profiles")
+      .update({
         nome,
-        cpf,
-        email,
         telefone,
+        cpf: cpfDigits,
         role: "representante",
-        indicado_por: sponsorId,
-      });
+        indicador_id: sponsorId,
+      })
+      .eq("id", authUser.user.id);
 
     if (dbError) {
-      // Cleanup auth user if DB insert fails
       await supabase.auth.admin.deleteUser(authUser.user.id);
       throw dbError;
     }
