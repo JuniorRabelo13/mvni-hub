@@ -149,7 +149,7 @@ export default function MasterFinanceiro() {
           status,
           clientes_diretos_ativos,
           clientes_indiretos_ativos,
-          usuarios (
+          profiles!fk_comissoes_mensais_representante_profile (
             nome
           )
         `)
