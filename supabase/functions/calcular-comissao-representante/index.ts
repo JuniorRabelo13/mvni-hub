@@ -133,9 +133,9 @@ serve(async (req) => {
 
     // 3. Representantes indicados (filhos diretos)
     const { data: subReps, error: subError } = await supabase
-      .from("usuarios")
+      .from("profiles")
       .select("id")
-      .eq("indicado_por", representante_id);
+      .eq("indicador_id", representante_id);
 
     if (subError) throw subError;
     const subRepIds = subReps?.map(r => r.id) || [];
