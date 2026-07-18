@@ -85,14 +85,17 @@
     <script>
       (function () {
         try {
+          window.__MVNI_BOOT_START__ = Date.now();
+          window.__MVNI_REACT_READY__ = false;
           setTimeout(function () {
+            if (window.__MVNI_REACT_READY__) return;
             var fb = document.getElementById("mvni-boot-fallback");
             if (!fb) return; // React já substituiu o #root
             var t = document.getElementById("mvni-boot-title");
             var m = document.getElementById("mvni-boot-message");
-            if (t) t.textContent = "O MVNI HUB demorou mais que o esperado para carregar.";
-            if (m) m.textContent = "Tente recarregar a página ou abrir /diagnostico para verificar o ambiente.";
-          }, 10000);
+            if (t) t.textContent = "O MVNI HUB está demorando para carregar.";
+            if (m) m.textContent = "Isso pode indicar rede lenta ou falha de inicialização. Aguarde alguns segundos ou recarregue a página.";
+          }, 25000);
         } catch (e) { /* noop */ }
       })();
     </script>
