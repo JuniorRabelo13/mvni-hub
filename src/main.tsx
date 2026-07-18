@@ -53,7 +53,7 @@ function handleEarlyError(source: string, detail: unknown) {
 window.addEventListener("error", (e) => handleEarlyError("window error", e.error || e.message));
 window.addEventListener("unhandledrejection", (e) => handleEarlyError("unhandled rejection", e.reason));
 
-const RENDER_TIMEOUT_MS = 12000;
+const RENDER_TIMEOUT_MS = 25000;
 const renderWatchdog = window.setTimeout(() => {
   if (reactMounted) return;
   const root = document.getElementById("root");
@@ -64,9 +64,22 @@ const renderWatchdog = window.setTimeout(() => {
   }
 }, RENDER_TIMEOUT_MS);
 
+function markReactReady(container: HTMLElement) {
+  if (reactMounted) return;
+  if (container.children.length === 0 || container.querySelector("#mvni-boot-fallback")) return;
+  reactMounted = true;
+  (window as unknown as { __MVNI_REACT_READY__?: boolean }).__MVNI_REACT_READY__ = true;
+  window.clearTimeout(renderWatchdog);
+  console.info(`${BOOT_TAG} render ok`);
+}
+
 try {
   const container = document.getElementById("root");
   if (!container) throw new Error("Elemento #root não encontrado no documento.");
+
+  // Remove o fallback estático antes do createRoot para garantir root limpo
+  const staticFb = container.querySelector("#mvni-boot-fallback");
+  if (staticFb) staticFb.remove();
 
   createRoot(container).render(
     <StrictMode>
@@ -78,17 +91,13 @@ try {
         </ErrorBoundary>
       </HelmetProvider>
     </StrictMode>,
-
   );
 
   console.info(`${BOOT_TAG} react mounted`);
-  requestAnimationFrame(() => {
-    if (container.children.length > 0 && !container.querySelector("#mvni-boot-fallback")) {
-      reactMounted = true;
-      window.clearTimeout(renderWatchdog);
-      console.info(`${BOOT_TAG} render ok`);
-    }
-  });
+  requestAnimationFrame(() => markReactReady(container));
+  // Segunda checagem para cobrir Suspense assíncrono
+  setTimeout(() => markReactReady(container), 500);
+  setTimeout(() => markReactReady(container), 2000);
 } catch (err) {
   window.clearTimeout(renderWatchdog);
   const message = err instanceof Error ? err.message : String(err);
