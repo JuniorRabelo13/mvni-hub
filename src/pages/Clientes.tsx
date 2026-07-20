@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/posthog";
@@ -27,6 +28,9 @@ const clienteSchema = z.object({
   telefone: z.string().trim().max(20).optional(),
   email: z.string().trim().email().max(255).optional().or(z.literal("")),
   msisdn: z.string().trim().max(20).optional(),
+  operadora_id: z.string().uuid({ message: "Selecione uma operadora" }),
+  tipo: z.enum(["esim", "fisico"], { errorMap: () => ({ message: "Selecione o tipo de linha" }) }),
+  ddd: z.string().trim().regex(/^\d{2}$/, "DDD deve ter 2 dígitos"),
 });
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -48,6 +52,17 @@ export default function Clientes() {
   const [recurringError, setRecurringError] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [selectedOperadoraId, setSelectedOperadoraId] = useState("");
+  const [selectedTipo, setSelectedTipo] = useState<"esim" | "fisico">("esim");
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+
+  const { data: operadorasAtivas = [] } = useQuery({
+    queryKey: ["operadoras-ativas"],
+    queryFn: async () => {
+      const { data } = await supabase.from("operadoras").select("id, nome").eq("ativo", true).order("nome");
+      return data ?? [];
+    },
+  });
 
   const handleActivateRecurring = async () => {
     if (!selectedCliente) return;
@@ -195,12 +210,26 @@ export default function Clientes() {
       if (e2 || !linha) throw new Error("Falha ao criar linha");
       return cli;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (cli, variables) => {
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
       trackEvent('cadastro_cliente_dashboard', { name: variables.nome });
       trackEvent('ativacao_linha', { msisdn: variables.msisdn });
       setOpen(false);
-      toast.success("Cliente cadastrado! Cobrança gerada (pendente).");
+      toast.success("Cliente cadastrado! Gerando cobrança…");
+
+      setIsCreatingCheckout(true);
+      try {
+        const { data: checkout, error: checkoutError } = await supabase.functions.invoke('stripe-checkout-nova-venda', {
+          body: { cliente_id: cli.id, operadora_id: variables.operadora_id, tipo: variables.tipo, ddd: variables.ddd },
+        });
+        if (checkoutError) throw new Error(checkoutError.message || "Erro ao gerar cobrança");
+        if (!checkout?.url) throw new Error("URL de pagamento não retornada");
+        window.location.href = checkout.url;
+      } catch (error: any) {
+        toast.error(`Cliente cadastrado, mas falhou ao gerar a cobrança: ${error.message}. Use "Ativar cobrança recorrente" no detalhe do cliente.`);
+      } finally {
+        setIsCreatingCheckout(false);
+      }
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -210,7 +239,7 @@ export default function Clientes() {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const data = { nome: fd.get("nome") as string, cpf: (fd.get("cpf") as string) || undefined, telefone: (fd.get("telefone") as string) || undefined, email: (fd.get("email") as string) || undefined, msisdn: (fd.get("msisdn") as string) || undefined };
+    const data = { nome: fd.get("nome") as string, cpf: (fd.get("cpf") as string) || undefined, telefone: (fd.get("telefone") as string) || undefined, email: (fd.get("email") as string) || undefined, msisdn: (fd.get("msisdn") as string) || undefined, operadora_id: selectedOperadoraId, tipo: selectedTipo, ddd: (fd.get("ddd") as string) || "" };
     const parsed = clienteSchema.safeParse(data);
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     createClienteMutation.mutate(parsed.data);
@@ -241,7 +270,7 @@ export default function Clientes() {
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Sua carteira</p>
           <h1 className="mt-1 text-3xl font-bold">Clientes</h1>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) { setSelectedOperadoraId(""); setSelectedTipo("esim"); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4" /> Novo cliente</Button>
           </DialogTrigger>
@@ -255,8 +284,32 @@ export default function Clientes() {
               </div>
               <div className="space-y-1.5"><Label htmlFor="email">E-mail</Label><Input id="email" name="email" type="email" /></div>
               <div className="space-y-1.5"><Label htmlFor="msisdn">Linha (MSISDN)</Label><Input id="msisdn" name="msisdn" placeholder="11999999999" /></div>
-              <p className="text-xs text-muted-foreground">Plano R$ 99,90 — comissão de R$ 80 ao confirmar pagamento.</p>
-              <Button type="submit" className="w-full" disabled={createClienteMutation.isPending}>{createClienteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Cadastrar</Button>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="operadora_id">Operadora</Label>
+                  <Select value={selectedOperadoraId} onValueChange={setSelectedOperadoraId}>
+                    <SelectTrigger id="operadora_id"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {operadorasAtivas.map((o: { id: string; nome: string }) => (
+                        <SelectItem key={o.id} value={o.id}>{o.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="tipo">Tipo de linha</Label>
+                  <Select value={selectedTipo} onValueChange={(v) => setSelectedTipo(v as "esim" | "fisico")}>
+                    <SelectTrigger id="tipo"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="esim">eSIM</SelectItem>
+                      <SelectItem value="fisico">Físico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5"><Label htmlFor="ddd">DDD desejado</Label><Input id="ddd" name="ddd" maxLength={2} placeholder="11" /></div>
+              <p className="text-xs text-muted-foreground">Plano R$ 99,90 — comissão de R$ 80 ao confirmar pagamento. Você será redirecionado para o pagamento do 1º mês.</p>
+              <Button type="submit" className="w-full" disabled={createClienteMutation.isPending || isCreatingCheckout}>{(createClienteMutation.isPending || isCreatingCheckout) && <Loader2 className="h-4 w-4 animate-spin" />} Cadastrar</Button>
             </form>
           </DialogContent>
         </Dialog>

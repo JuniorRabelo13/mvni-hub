@@ -108,6 +108,98 @@ serve(async (req) => {
           break
         }
 
+        // ── Fluxo primeira mensalidade de cliente (venda) ──
+        if (md.tipo_cobranca === 'primeira_mensalidade_cliente' && md.origem === 'mvni_hub') {
+          if (session.payment_status !== 'paid') break
+          const cliente_id = md.cliente_id
+          if (!cliente_id) break
+
+          const paymentIntentId: string | null = typeof session.payment_intent === 'string' ? session.payment_intent : null
+          const valor = typeof session.amount_total === 'number' ? session.amount_total / 100 : null
+          const operadora_id = md.operadora_id || null
+          const tipo = md.tipo || 'esim'
+          const ddd = md.ddd || null
+          const mes_referencia = mesRefFor(new Date())
+          const hoje = new Date().toISOString().split('T')[0]
+
+          // 1. Localizar a assinatura pendente criada por stripe-checkout-nova-venda e registrar o pagamento
+          const { data: assinatura, error: assinaturaErr } = await supabase
+            .from('assinaturas')
+            .select('id')
+            .eq('cliente_id', cliente_id)
+            .order('criado_em', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          if (assinaturaErr) throw assinaturaErr
+          if (!assinatura) throw new Error(`assinatura não encontrada para cliente ${cliente_id}`)
+
+          const { error: pagamentoErr } = await supabase
+            .from('pagamentos')
+            .insert({
+              assinatura_id: assinatura.id,
+              cliente_id,
+              stripe_payment_id: paymentIntentId,
+              valor,
+              status: 'pago',
+              data_vencimento: hoje,
+              data_pagamento: hoje,
+            })
+          if (pagamentoErr) throw pagamentoErr
+
+          const { data: cliente, error: clienteErr } = await supabase
+            .from('clientes')
+            .select('id, user_id, plano_id')
+            .eq('id', cliente_id)
+            .single()
+          if (clienteErr) throw clienteErr
+          const representante_id = cliente?.user_id
+          if (!representante_id) throw new Error('cliente sem representante (user_id)')
+
+          // 2. Motor financeiro + ativação de linha, com operadora/tipo/ddd reais (best-effort, não bloqueia webhook)
+          try {
+            let linha_id: string | null = null
+            try {
+              const { data: linhaRet, error: linhaErr } = await supabase.rpc(
+                'ativar_linha_pos_pagamento' as any,
+                {
+                  p_cliente_id: cliente.id,
+                  p_representante_id: representante_id,
+                  p_operadora_id: operadora_id,
+                  p_plano_id: cliente.plano_id ?? null,
+                  p_tipo: tipo,
+                  p_ddd: ddd,
+                }
+              )
+              if (linhaErr) throw linhaErr
+              linha_id = typeof linhaRet === 'string' ? linhaRet : (linhaRet as any)?.linha_id ?? null
+            } catch (e) {
+              await logSoftError(supabase, 'ativar_linha_pos_pagamento', { cliente_id, operadora_id, tipo, ddd }, e)
+            }
+
+            try {
+              const { error: rfErr } = await supabase.rpc(
+                'registrar_ativacao_financeira' as any,
+                {
+                  p_cliente_id: cliente.id,
+                  p_representante_id: representante_id,
+                  p_operadora_id: operadora_id,
+                  p_linha_id: linha_id,
+                  p_mes_referencia: mes_referencia,
+                }
+              )
+              if (rfErr) throw rfErr
+            } catch (e) {
+              await logSoftError(supabase, 'registrar_ativacao_financeira', { cliente_id, operadora_id, mes_referencia }, e)
+            }
+
+            console.log(`Primeira mensalidade confirmada para cliente ${cliente_id} (session ${session.id})`)
+          } catch (e) {
+            await logSoftError(supabase, 'primeira_mensalidade_cliente', { cliente_id }, e)
+          }
+
+          break
+        }
+
         // ── Fluxo cadastro de representante ──
         if (md.tipo_cobranca !== 'cadastro_representante' || md.origem !== 'mvni_hub') {
           console.log('checkout.session.completed: metadata não reconhecida, ignorando')
