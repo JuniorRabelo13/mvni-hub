@@ -49,18 +49,19 @@ export default function Estrutura() {
 
       const inicioMes = new Date();
       inicioMes.setDate(1); inicioMes.setHours(0, 0, 0, 0);
+      const mesRef = `${inicioMes.getFullYear()}-${String(inicioMes.getMonth() + 1).padStart(2, "0")}`;
 
       const [clientesRes, linhasRes, comRes] = await Promise.all([
         supabase.from("clientes").select("user_id").eq("ativo", true),
         supabase.from("linhas").select("user_id").eq("status", "ativa"),
-        supabase.from("comissoes").select("user_id, valor").gte("created_at", inicioMes.toISOString()),
+        supabase.from("comissoes_mensais").select("representante_id, valor_total").eq("mes_referencia", mesRef),
       ]);
 
       const acc: Record<string, Stats> = {};
       const ensure = (id: string) => (acc[id] ??= { clientesAtivos: 0, linhasAtivas: 0, ganhoMes: 0 });
-      (clientesRes.data ?? []).forEach((r: any) => ensure(r.user_id).clientesAtivos++);
-      (linhasRes.data ?? []).forEach((r: any) => ensure(r.user_id).linhasAtivas++);
-      (comRes.data ?? []).forEach((r: any) => (ensure(r.user_id).ganhoMes += Number(r.valor)));
+      ((clientesRes.data ?? []) as any[]).forEach((r: any) => ensure(r.user_id).clientesAtivos++);
+      ((linhasRes.data ?? []) as any[]).forEach((r: any) => ensure(r.user_id).linhasAtivas++);
+      ((comRes.data ?? []) as any[]).forEach((r: any) => (ensure(r.representante_id).ganhoMes += Number(r.valor_total ?? 0)));
       setStats(acc);
 
       // pagantes = quem tem ao menos 1 pagamento com status "pago"

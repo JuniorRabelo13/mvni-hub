@@ -165,19 +165,20 @@ export default function Dashboard() {
         inicioMes.setDate(1);
         inicioMes.setHours(0, 0, 0, 0);
 
+        const mesRef = `${inicioMes.getFullYear()}-${String(inicioMes.getMonth() + 1).padStart(2, "0")}`;
         const [clientes, linhas, comMes, comTotal, indic] = await Promise.all([
           supabase.from("clientes").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("ativo", true),
           supabase.from("linhas").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "ativa"),
-          supabase.from("comissoes").select("valor").eq("user_id", user.id).gte("created_at", inicioMes.toISOString()),
-          supabase.from("comissoes").select("valor").eq("user_id", user.id),
+          supabase.from("comissoes_mensais").select("valor_total").eq("representante_id", user.id).eq("mes_referencia", mesRef),
+          supabase.from("comissoes_mensais").select("valor_total").eq("representante_id", user.id),
           supabase.from("profiles").select("id", { count: "exact", head: true }).eq("indicador_id", user.id),
         ]);
 
         const stats = {
           clientesAtivos: clientes.count ?? 0,
           linhasAtivas: linhas.count ?? 0,
-          ganhoMes: (comMes.data ?? []).reduce((a, b) => a + Number(b.valor), 0),
-          ganhoTotal: (comTotal.data ?? []).reduce((a, b) => a + Number(b.valor), 0),
+          ganhoMes: ((comMes.data ?? []) as any[]).reduce((a, b: any) => a + Number(b.valor_total ?? 0), 0),
+          ganhoTotal: ((comTotal.data ?? []) as any[]).reduce((a, b: any) => a + Number(b.valor_total ?? 0), 0),
           indicados: indic.count ?? 0,
         };
 

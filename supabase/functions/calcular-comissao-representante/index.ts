@@ -102,13 +102,15 @@ serve(async (req) => {
       return Number(p.comissao_recorrente);
     };
 
-    // 1. Assinaturas ativas diretas (com produto_id quando existir)
+    // 1. Assinaturas ativas diretas — apenas as criadas ANTES do mês de referência
+    //    (bug corrigido: recorrência só a partir do 2º mês; o mês 1 vira ativação via `activations`)
     const { data: directActiveClients, error: directError } = await supabase
       .from("assinaturas")
       .select(`
         id,
         cliente_id,
         produto_id,
+        created_at,
         clientes!inner (
           id,
           nome,
@@ -116,6 +118,7 @@ serve(async (req) => {
         )
       `)
       .eq("status", "ativo")
+      .lt("created_at", startDate)
       .eq("clientes.user_id", representante_id);
 
     if (directError) throw directError;
@@ -148,6 +151,7 @@ serve(async (req) => {
           id,
           cliente_id,
           produto_id,
+          created_at,
           clientes!inner (
             id,
             nome,
@@ -155,6 +159,7 @@ serve(async (req) => {
           )
         `)
         .eq("status", "ativo")
+        .lt("created_at", startDate)
         .in("clientes.user_id", subRepIds);
 
       if (indError) throw indError;

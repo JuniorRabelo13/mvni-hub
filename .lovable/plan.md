@@ -1,70 +1,74 @@
-# PIX para Faturas MVNO — Confirmação automática via webhook
 
-Aproveitar a integração **Stripe já ativa** no projeto (`STRIPE_SECRET_KEY` + `stripe-webhook`) sem alterar nenhum módulo existente. Todo o fluxo PIX vive em novos arquivos com prefixo `mvno-pix-*`.
+# Plano — Implementação integral da Especificação MVNI HUB
 
-## Fluxo do usuário
+A especificação anexa contém **10 ajustes independentes** que abrangem banco, edge functions, Stripe e frontend. Vou executá-los na ordem sugerida pelo próprio documento, cada bloco validado antes do próximo. Nenhuma funcionalidade existente será removida — tudo aditivo/corretivo. A regra "não alterar Stripe/webhook/comissão" de prompts anteriores é **substituída explicitamente** pela autorização deste prompt de implementar os fluxos descritos.
 
-1. Cliente abre `/cliente/pagamentos` (ou detalhe da fatura) → botão **Pagar com PIX** aparece em faturas `aberta` ou `atrasada`.
-2. Modal exibe QR Code + Copia-e-Cola + valor + expiração (30 min).
-3. Ao confirmar o PIX no banco, o webhook Stripe recebe `payment_intent.succeeded` → marca `mvno_pagamentos.status = confirmado` e `mvno_faturas.status = paga` com `pago_em = now()`.
-4. UI faz *polling* leve (a cada 5s) enquanto o modal está aberto; ao confirmar, toast de sucesso e recibo aparece no histórico.
-5. Aba **Pagos** de `/cliente/pagamentos` mostra o recibo (linha, competência, valor, `pago_em`, ID da transação) com botão **Baixar recibo** (HTML imprimível via `window.print`).
+## Escopo confirmado
 
-## Mudanças de banco (1 migration)
+**AJUSTE 1** — Remover `.lovable/plan.md` (resíduo do PIX-via-Stripe abandonado).
 
-Nova tabela `mvno_pagamentos`:
-- `fatura_id` (FK → `mvno_faturas`)
-- `cliente_id`, `linha_id` (denormalizados para RLS + histórico)
-- `provider` = `stripe_pix`
-- `provider_intent_id` (payment_intent id)
-- `valor`, `status` (`pendente` | `confirmado` | `expirado` | `cancelado`)
-- `pix_qr_code_base64`, `pix_copia_e_cola`, `expires_at`, `paid_at`, `metadata`
+**AJUSTE 2** — Consolidar `planos` → `saas_plans`:
+- Migration: adicionar `features jsonb` a `saas_plans` se ausente.
+- Atualizar `src/components/SeletorPlano.tsx` para ler `saas_plans` com novos nomes de coluna.
+- Repointar FK `clientes.plano_id` para `saas_plans(id)`.
+- DROP `planos` após confirmar zero refs. Não tocar em `planos_mvno`.
 
-RLS:
-- Cliente lê seus próprios pagamentos (`cliente_id ∈ clientes.user_id`)
-- `service_role` faz insert/update (usado pelas edge functions)
-- Admin/master lê tudo via `has_role`
+**AJUSTE 3** — Unificar `/master/linhas` + `/master/mvno/linhas` numa única tela com abas ("Visão Geral" + "Gerenciar Linhas"). Remover entrada duplicada do sidebar.
 
-Grants padrão em `authenticated` e `service_role`. **Nenhuma tabela existente é alterada.**
+**AJUSTE 4** — `stripe-webhook` no `checkout.session.completed` do cadastro chama `stripe-criar-assinatura` automaticamente usando o dia do mês do cadastro como `dia_vencimento` (aniversário). `proration_behavior: none` mantido.
 
-## Novas Edge Functions (2)
+**AJUSTE 5** — Corrigir bug em `calcular-comissao-representante`: filtrar `valor_recorrencia_direta` para NÃO incluir assinaturas criadas dentro do próprio `mes_referencia` (recorrência só do mês 2 em diante).
 
-- `mvno-pix-criar`: valida sessão do cliente, checa ownership da fatura, chama `stripe.paymentIntents.create({ amount, currency: 'brl', payment_method_types: ['pix'] })`, confirma com `payment_method_data: { type: 'pix' }`, extrai `next_action.pix_display_qr_code`, insere linha em `mvno_pagamentos`, retorna QR + copia-e-cola.
-- `mvno-pix-webhook`: assinado com `STRIPE_WEBHOOK_SECRET` **dedicado do MVNO** (separado do webhook existente para não colidir). Trata `payment_intent.succeeded` e `payment_intent.payment_failed`. Idempotente via `provider_intent_id`.
+**AJUSTE 6** — Expandir avisos:
+- `disparar-notificacoes-dia`: novos tipos `pre_vencimento_5`, `pre_vencimento_2` (mantém `vencimento_hoje` e `pos_vencimento`).
+- Novo trigger/handler `pagamento_confirmado` disparado quando `pagamentos.status` vira `pago`.
+- `enviar-notificacao-vencimento`: mensagem própria para cada um dos 5 tipos.
 
-Se o `STRIPE_WEBHOOK_SECRET_MVNO` ainda não existir, peço via `add_secret` num passo separado (o usuário cadastra o endpoint da nova função no dashboard Stripe e cola o secret).
+**AJUSTE 7** — Adicionar cron em `supabase/config.toml`:
+```
+[cron.disparar-notificacoes-dia]
+schedule = "0 9 * * *"
+```
 
-## Frontend (todos novos, exceto integração pontual)
+**AJUSTE 8** — Ligar motor financeiro ao `stripe-webhook`:
+- 1º pagamento (cadastro/mês 1): `ativar_linha_pos_pagamento()` → guarda `linha_id` → `registrar_ativacao_financeira()`.
+- `invoke.payment_succeeded` para pagamentos recorrentes (mês 2+): apenas `registrar_recorrencia_financeira()` (nunca ativar linha de novo, nunca duplicar mês 1).
+- Erros de RPC não travam webhook — logam em `system_error_logs` para tratamento manual.
 
-- `src/services/mvno/pagamentosService.ts` — `criarPix(faturaId)`, `getPagamentoByFatura(faturaId)`.
-- `src/hooks/mvno/usePagamentos.ts` — React Query com polling condicional (5s enquanto `status = pendente`).
-- `src/components/mvno/PixCheckoutDialog.tsx` — QR (img base64) + botão "Copiar código" + contador de expiração + estado ao vivo.
-- `src/components/mvno/ReciboPix.tsx` — layout imprimível do recibo (competência, linha, valor, tx id, data de confirmação).
-- `src/pages/cliente/Pagamentos.tsx` — adicionar botão **Pagar com PIX** nas abas "Pendentes"/"Atrasados" e **Ver recibo** em "Pagos". Sem remover nada do existente.
-- `src/pages/cliente/MinhasFaturas.tsx` e `FaturaDetalhes.tsx` — adicionar o mesmo botão em faturas abertas.
+**AJUSTE 9** — Nova página `src/pages/master-admin/FinanceiroMvni.tsx` (rota `/master/financeiro-mvni` para não colidir com `/master/financeiro` existente):
+- Seletor de mês (default: atual).
+- Consome `get_mvni_financeiro_mensal(mes)` via `.rpc()`.
+- Cards: receita clientes, receita operadoras, custo operadoras, comissões pagas, descontos, **lucro líquido em destaque**.
+- Gráfico de composição (operadora vs parceiros vs lucro) com recharts.
+- Nova entrada no sidebar do master admin.
 
-## Segurança
+**AJUSTE 10** — Ads self-service completo (frontend, banco pronto):
+- `/anuncios/criar` — assistente 4 passos (criativo → posição → duração+preço via `calcular_preco_anuncio` → checkout Stripe único).
+- Edge function `criar-checkout-anuncio` para gerar sessão Stripe única; webhook marca anúncio como `pendente_aprovacao` ao confirmar pagamento.
+- `/anuncios/meus` — anúncios do usuário com contagem de impressões/cliques via `anuncios_eventos`.
+- `/master/anuncios` — fila de aprovação: aprovar (chama `aprovar_anuncio`) / rejeitar (chama `rejeitar_anuncio` + estorno Stripe).
+- Componente `<AdSlot posicao="dashboard_topo" />` — busca ativos vigentes, registra impressão/clique em `anuncios_eventos`.
+- Cron leve: ativar anúncios `aprovado` cuja `data_inicio <= now()` → status `ativo` (via cron diário já compartilhado).
 
-- Ownership da fatura re-checado no `mvno-pix-criar` via `userClient` (RLS já bloqueia terceiros).
-- Webhook usa `serviceRoleClient` apenas para gravar status.
-- Valor sempre lido do banco (`mvno_faturas.valor`), nunca do body.
-- Idempotência por `provider_intent_id` (constraint UNIQUE).
+## O que NÃO será alterado
 
-## Não altero
+- `planos_mvno`, catálogo MVNO, `mvno-pagarme-pix-criar`, `mvno-pagarme-webhook` — PIX MVNO continua no Pagar.me.
+- Fluxo Stripe de assinatura de representante permanece — apenas ganha automação e integração pós-pagamento.
+- RLS de tabelas fora do escopo (todas as tabelas de Ads/motor financeiro já têm RLS testada).
+- Nenhuma tabela nova além do que o próprio spec já criou (o motor financeiro e as tabelas de Ads já existem).
 
-Stripe existente, `stripe-webhook`, `stripe-*`, `assinaturas`, `pagamentos` (tabela do fluxo de assinatura de representante), motor de comissão, `AuthGuard`, RLS existente, parser MVNO, upload center, edge functions atuais, tabelas MVNO já criadas.
+## Ordem de execução
 
-## Requisitos externos (usuário precisa fazer 1 vez)
+1. Ajustes 1 → 7 → 6 → 5 → 4 → 8 (fluxo backend de cobrança, comissão e notificações)
+2. Ajustes 2 → 3 → 9 (consolidação e telas admin)
+3. Ajuste 10 (Ads — maior superfície de frontend)
 
-1. Ativar **PIX** como método de pagamento na conta Stripe (dashboard Stripe → Payment methods → PIX).
-2. Após deploy da função `mvno-pix-webhook`, cadastrar o endpoint dela no Stripe (Webhooks → Add endpoint → eventos `payment_intent.succeeded` e `payment_intent.payment_failed`) e colar o signing secret quando eu pedir via `add_secret` como `STRIPE_WEBHOOK_SECRET_MVNO`.
+Cada bloco é uma migration/edge function/PR isolado; se qualquer um falhar, os anteriores permanecem funcionais.
 
-## Entrega em ordem
+## Entregáveis finais (relatório)
 
-1. Migration `mvno_pagamentos` (aguarda aprovação).
-2. Edge functions `mvno-pix-criar` + `mvno-pix-webhook`.
-3. Pedir `STRIPE_WEBHOOK_SECRET_MVNO`.
-4. Serviços, hooks, componentes e integração nas páginas.
-5. Validação: TypeScript, RLS, ownership, botões visíveis somente nas faturas em aberto.
+Ao terminar entregarei: (1) arquivos criados, (2) reaproveitados, (3) migrations, (4) APIs/edge functions, (5) componentes React, (6) alterações Stripe (endpoints/eventos), (7) fluxo E2E (cadastro → pagamento → ativação linha → lançamento financeiro → comissão → notificação), (8) checklist de conformidade item-a-item com a especificação, (9) pendências que dependem de você (configuração Stripe/Pagar.me, secrets).
 
-Posso executar?
+---
+
+**Aprova para eu executar?** Assim que aprovar, começo pelo Ajuste 1 e sigo pela ordem acima sem parar entre blocos.

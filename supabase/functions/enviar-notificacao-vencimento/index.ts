@@ -39,15 +39,26 @@ serve(async (req) => {
     // 2. Montar a mensagem conforme o tipo
     let mensagem = ""
     const valorFormatado = Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    
-    if (tipo === 'pre_vencimento') {
-      mensagem = `Olá ${cliente.nome}, sua fatura MVNI de R$${valorFormatado} vence em 3 dias (${data_vencimento}). Pague em dia e mantenha sua linha ativa.`
-    } else if (tipo === 'vencimento_hoje') {
-      mensagem = `Olá ${cliente.nome}, sua fatura MVNI de R$${valorFormatado} vence hoje (${data_vencimento}). Evite a suspensão pagando agora.`
-    } else if (tipo === 'pos_vencimento') {
-      mensagem = `Olá ${cliente.nome}, sua fatura MVNI de R$${valorFormatado} está em atraso desde ${data_vencimento}. Regularize para evitar o cancelamento.`
-    } else {
-      throw new Error("Tipo de notificação inválido")
+
+    switch (tipo) {
+      case 'pre_vencimento_5':
+      case 'pre_vencimento': // legado (compat)
+        mensagem = `Olá ${cliente.nome}, sua fatura MVNI de R$${valorFormatado} vence em 5 dias (${data_vencimento}). Programe o pagamento e mantenha sua linha ativa. 🙌`
+        break
+      case 'pre_vencimento_2':
+        mensagem = `${cliente.nome}, faltam 2 dias para o vencimento da sua fatura MVNI de R$${valorFormatado} (${data_vencimento}). Pague em dia e evite bloqueios. 📱`
+        break
+      case 'vencimento_hoje':
+        mensagem = `Olá ${cliente.nome}, sua fatura MVNI de R$${valorFormatado} vence hoje (${data_vencimento}). Pague agora para não perder o sinal. ⏰`
+        break
+      case 'pos_vencimento':
+        mensagem = `${cliente.nome}, sua fatura MVNI de R$${valorFormatado} está em atraso desde ${data_vencimento}. Regularize para reativar sua linha. ⚠️`
+        break
+      case 'pagamento_confirmado':
+        mensagem = `${cliente.nome}, recebemos o pagamento da sua fatura MVNI de R$${valorFormatado}. Sua linha continua ativa e conectada. ✅ Obrigado!`
+        break
+      default:
+        throw new Error("Tipo de notificação inválido")
     }
 
     // 3. Enviar a mensagem via Z-API
