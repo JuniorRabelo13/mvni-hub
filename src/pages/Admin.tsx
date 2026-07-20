@@ -25,14 +25,15 @@ export default function AdminDashboard() {
   const { data: metrics, isLoading: loadingMetrics } = useQuery({
     queryKey: ["admin-metrics"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("admin_mrr_consolidado").select("*");
+      const { data, error } = await (supabase as any).from("admin_mrr_consolidado").select("*");
       if (error) throw error;
       
-      const totalMrr = data.reduce((acc, curr) => acc + Number(curr.mrr_atual), 0);
-      const totalClientes = data.reduce((acc, curr) => acc + Number(curr.clientes_ativos), 0);
-      const totalAfiliados = data.length;
-      
-      return { totalMrr, totalClientes, totalAfiliados, afiliados: data };
+      const rows = (data ?? []) as any[];
+      const totalMrr = rows.reduce((acc, curr: any) => acc + Number(curr.mrr_atual ?? 0), 0);
+      const totalClientes = rows.reduce((acc, curr: any) => acc + Number(curr.clientes_ativos ?? 0), 0);
+      const totalAfiliados = rows.length;
+
+      return { totalMrr, totalClientes, totalAfiliados, afiliados: rows as any[] };
     },
     enabled: !!user && isAdmin && isAuthReady
   });
@@ -194,16 +195,16 @@ export default function AdminDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {metrics?.afiliados.map((af) => (
+              {metrics?.afiliados.map((af: any) => (
                 <TableRow key={af.afiliado_id}>
                   <TableCell>
                     <div className="font-medium">{af.afiliado_email}</div>
-                    <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">ID: {af.afiliado_id.slice(0,8)}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">ID: {String(af.afiliado_id ?? '').slice(0,8)}</div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">{af.clientes_ativos}</Badge>
                   </TableCell>
-                  <TableCell className="font-bold">{fmt(Number(af.mrr_atual))}</TableCell>
+                  <TableCell className="font-bold">{fmt(Number(af.mrr_atual ?? 0))}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {af.ultimo_acesso ? new Date(af.ultimo_acesso).toLocaleDateString('pt-BR') : '—'}
                   </TableCell>

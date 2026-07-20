@@ -1022,7 +1022,7 @@ export type Database = {
             foreignKeyName: "clientes_plano_id_fkey"
             columns: ["plano_id"]
             isOneToOne: false
-            referencedRelation: "planos"
+            referencedRelation: "saas_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -2680,36 +2680,6 @@ export type Database = {
         }
         Relationships: []
       }
-      planos: {
-        Row: {
-          ativo: boolean | null
-          created_at: string | null
-          descricao: string | null
-          features: Json | null
-          id: string
-          nome: string
-          valor: number
-        }
-        Insert: {
-          ativo?: boolean | null
-          created_at?: string | null
-          descricao?: string | null
-          features?: Json | null
-          id?: string
-          nome: string
-          valor: number
-        }
-        Update: {
-          ativo?: boolean | null
-          created_at?: string | null
-          descricao?: string | null
-          features?: Json | null
-          id?: string
-          nome?: string
-          valor?: number
-        }
-        Relationships: []
-      }
       planos_mvno: {
         Row: {
           ativo: boolean
@@ -3132,6 +3102,7 @@ export type Database = {
           commission_rate: number
           created_at: string | null
           description: string | null
+          features: Json | null
           id: string
           is_active: boolean | null
           lines_limit: number
@@ -3145,6 +3116,7 @@ export type Database = {
           commission_rate?: number
           created_at?: string | null
           description?: string | null
+          features?: Json | null
           id?: string
           is_active?: boolean | null
           lines_limit?: number
@@ -3158,6 +3130,7 @@ export type Database = {
           commission_rate?: number
           created_at?: string | null
           description?: string | null
+          features?: Json | null
           id?: string
           is_active?: boolean | null
           lines_limit?: number
@@ -4862,17 +4835,6 @@ export type Database = {
       }
     }
     Views: {
-      admin_mrr_consolidado: {
-        Row: {
-          afiliado_email: string | null
-          afiliado_id: string | null
-          clientes_ativos: number | null
-          clientes_inativos: number | null
-          mrr_atual: number | null
-          ultimo_acesso: string | null
-        }
-        Relationships: []
-      }
       view_admin_alertas_fraude: {
         Row: {
           created_at: string | null

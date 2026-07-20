@@ -25,6 +25,17 @@ verify_jwt = false
 [functions.disparar-notificacoes-dia]
 verify_jwt = false
 
+[cron.disparar-notificacoes-dia]
+schedule = "0 9 * * *" # Todos os dias às 9h — avisos de vencimento (5d, 2d, hoje, pós-falha)
+
+[functions.criar-checkout-anuncio]
+verify_jwt = true
+
+[functions.stripe-anuncio-webhook]
+verify_jwt = false
+
+
+
 
 
 [cron.liberar-saldo-bloqueado]

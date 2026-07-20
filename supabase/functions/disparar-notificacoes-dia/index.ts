@@ -12,7 +12,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  // SECURITY: only the cron scheduler (shared secret) or admins may dispatch bulk notifications
   const _authResp = await requireCronOrAdmin(req)
   if (_authResp) return new Response(_authResp.body, { status: _authResp.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
@@ -25,22 +24,19 @@ serve(async (req) => {
     const today = new Date()
     const formatDate = (date: Date) => date.toISOString().split('T')[0]
     const formatDisplayDate = (date: Date) => date.toLocaleDateString('pt-BR')
+    const addDays = (n: number) => { const d = new Date(); d.setDate(today.getDate() + n); return d }
 
     const dateToday = formatDate(today)
-    
-    const threeDaysLater = new Date()
-    threeDaysLater.setDate(today.getDate() + 3)
-    const dateThreeDaysLater = formatDate(threeDaysLater)
-
-    const yesterday = new Date()
-    yesterday.setDate(today.getDate() - 1)
-    const dateYesterday = formatDate(yesterday)
+    const date5daysLater = formatDate(addDays(5))
+    const date2daysLater = formatDate(addDays(2))
+    const dateYesterday = formatDate(addDays(-1))
 
     const resumo = {
-      pre_vencimento: 0,
+      pre_vencimento_5: 0,
+      pre_vencimento_2: 0,
       vencimento_hoje: 0,
       pos_vencimento: 0,
-      erros: 0
+      erros: 0,
     }
 
     const baseFunctionUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/enviar-notificacao-vencimento`
@@ -60,69 +56,43 @@ serve(async (req) => {
             tipo,
             data_vencimento: formatDisplayDate(new Date(data_vencimento + 'T12:00:00')),
             valor,
-            fatura_id
-          })
+            fatura_id,
+          }),
         })
         return response.ok
       } catch (err) {
-        console.error(`Erro ao chamar enviar-notificacao-vencimento: ${err.message}`)
+        console.error(`Erro ao chamar enviar-notificacao-vencimento: ${(err as Error).message}`)
         return false
       }
     }
 
-    // 1. Pré-vencimento (hoje + 3 dias)
-    const { data: preVencimentoList } = await supabase
-      .from('pagamentos')
-      .select('id, cliente_id, valor, data_vencimento')
-      .eq('data_vencimento', dateThreeDaysLater)
-      .neq('status', 'pago')
-
-    if (preVencimentoList) {
-      for (const item of preVencimentoList) {
-        const success = await callNotification(item.cliente_id, 'pre_vencimento', item.data_vencimento, item.valor, item.id)
-        if (success) resumo.pre_vencimento++
+    const dispatchBatch = async (dateStr: string, tipo: 'pre_vencimento_5' | 'pre_vencimento_2' | 'vencimento_hoje' | 'pos_vencimento', extra?: { status?: string }) => {
+      let q = supabase
+        .from('pagamentos')
+        .select('id, cliente_id, valor, data_vencimento')
+        .eq('data_vencimento', dateStr)
+      if (extra?.status) q = q.eq('status', extra.status)
+      else q = q.neq('status', 'pago')
+      const { data } = await q
+      for (const item of (data ?? [])) {
+        const ok = await callNotification(item.cliente_id, tipo, item.data_vencimento, item.valor, item.id)
+        if (ok) resumo[tipo]++
         else resumo.erros++
       }
     }
 
-    // 2. Vencimento Hoje
-    const { data: hojeList } = await supabase
-      .from('pagamentos')
-      .select('id, cliente_id, valor, data_vencimento')
-      .eq('data_vencimento', dateToday)
-      .neq('status', 'pago')
-
-    if (hojeList) {
-      for (const item of hojeList) {
-        const success = await callNotification(item.cliente_id, 'vencimento_hoje', item.data_vencimento, item.valor, item.id)
-        if (success) resumo.vencimento_hoje++
-        else resumo.erros++
-      }
-    }
-
-    // 3. Pós-vencimento (ontem + status falhou)
-    const { data: ontemList } = await supabase
-      .from('pagamentos')
-      .select('id, cliente_id, valor, data_vencimento')
-      .eq('data_vencimento', dateYesterday)
-      .eq('status', 'falhou')
-
-    if (ontemList) {
-      for (const item of ontemList) {
-        const success = await callNotification(item.cliente_id, 'pos_vencimento', item.data_vencimento, item.valor, item.id)
-        if (success) resumo.pos_vencimento++
-        else resumo.erros++
-      }
-    }
+    await dispatchBatch(date5daysLater, 'pre_vencimento_5')
+    await dispatchBatch(date2daysLater, 'pre_vencimento_2')
+    await dispatchBatch(dateToday, 'vencimento_hoje')
+    await dispatchBatch(dateYesterday, 'pos_vencimento', { status: 'falhou' })
 
     return new Response(JSON.stringify({ success: true, resumo }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-
   } catch (error) {
     console.error('Erro na function disparar-notificacoes-dia:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })
