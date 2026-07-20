@@ -125,7 +125,7 @@ serve(async (req) => {
           // 1. Localizar a assinatura pendente criada por stripe-checkout-nova-venda e registrar o pagamento
           const { data: assinatura, error: assinaturaErr } = await supabase
             .from('assinaturas')
-            .select('id')
+            .select('id, stripe_customer_id')
             .eq('cliente_id', cliente_id)
             .order('criado_em', { ascending: false })
             .limit(1)
@@ -195,6 +195,67 @@ serve(async (req) => {
             console.log(`Primeira mensalidade confirmada para cliente ${cliente_id} (session ${session.id})`)
           } catch (e) {
             await logSoftError(supabase, 'primeira_mensalidade_cliente', { cliente_id }, e)
+          }
+
+          // 3. Criar automaticamente a cobrança recorrente (mesma lógica de stripe-criar-assinatura),
+          //    com dia_vencimento = dia deste pagamento. Best-effort: se falhar, fica como antes
+          //    (admin pode ativar manualmente pelo botão em Clientes.tsx).
+          try {
+            if (!assinatura.stripe_customer_id) throw new Error('assinatura sem stripe_customer_id')
+
+            const priceResponse = await fetch('https://api.stripe.com/v1/prices', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${stripeSecretKey}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: new URLSearchParams({
+                'unit_amount': '9990',
+                'currency': 'brl',
+                'recurring[interval]': 'month',
+                'product_data[name]': 'Assinatura MVNI Hub - Plano Premium',
+              }),
+            })
+            const priceData = await priceResponse.json()
+            if (!priceResponse.ok) throw new Error(`Erro ao criar preço no Stripe: ${JSON.stringify(priceData)}`)
+
+            // dia_vencimento = dia do mês deste próprio pagamento
+            const diaVencimento = new Date(hoje + 'T00:00:00').getDate()
+            const now = new Date()
+            const anchorDate = new Date(now.getFullYear(), now.getMonth(), diaVencimento)
+            if (anchorDate <= now) anchorDate.setMonth(anchorDate.getMonth() + 1)
+            const billingCycleAnchor = Math.floor(anchorDate.getTime() / 1000)
+
+            const subscriptionResponse = await fetch('https://api.stripe.com/v1/subscriptions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${stripeSecretKey}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: new URLSearchParams({
+                'customer': assinatura.stripe_customer_id,
+                'items[0][price]': priceData.id,
+                'billing_cycle_anchor': billingCycleAnchor.toString(),
+                'proration_behavior': 'none',
+              }),
+            })
+            const subscriptionData = await subscriptionResponse.json()
+            if (!subscriptionResponse.ok) throw new Error(`Erro ao criar assinatura no Stripe: ${JSON.stringify(subscriptionData)}`)
+
+            const { error: errAtivarAssinatura } = await supabase
+              .from('assinaturas')
+              .update({
+                stripe_subscription_id: subscriptionData.id,
+                status: 'ativo',
+                valor: 99.90,
+                data_proxima_cobranca: anchorDate.toISOString().split('T')[0],
+              })
+              .eq('id', assinatura.id)
+            if (errAtivarAssinatura) throw errAtivarAssinatura
+
+            console.log(`Assinatura recorrente criada automaticamente para cliente ${cliente_id}, dia_vencimento=${diaVencimento}, subscription=${subscriptionData.id}`)
+          } catch (e) {
+            await logSoftError(supabase, 'auto_criar_assinatura_recorrente', { cliente_id, assinatura_id: assinatura.id }, e)
           }
 
           break
