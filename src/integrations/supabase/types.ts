@@ -496,6 +496,122 @@ export type Database = {
           },
         ]
       }
+      anuncios: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          created_at: string
+          criado_por: string
+          data_fim: string | null
+          data_inicio: string | null
+          dias_contratados: number | null
+          id: string
+          imagem_url: string | null
+          link_destino: string | null
+          motivo_rejeicao: string | null
+          posicao: Database["public"]["Enums"]["anuncio_posicao"]
+          status: Database["public"]["Enums"]["anuncio_status"]
+          stripe_payment_id: string | null
+          titulo: string
+          updated_at: string
+          valor_pago: number | null
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          created_at?: string
+          criado_por: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          dias_contratados?: number | null
+          id?: string
+          imagem_url?: string | null
+          link_destino?: string | null
+          motivo_rejeicao?: string | null
+          posicao: Database["public"]["Enums"]["anuncio_posicao"]
+          status?: Database["public"]["Enums"]["anuncio_status"]
+          stripe_payment_id?: string | null
+          titulo: string
+          updated_at?: string
+          valor_pago?: number | null
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          created_at?: string
+          criado_por?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          dias_contratados?: number | null
+          id?: string
+          imagem_url?: string | null
+          link_destino?: string | null
+          motivo_rejeicao?: string | null
+          posicao?: Database["public"]["Enums"]["anuncio_posicao"]
+          status?: Database["public"]["Enums"]["anuncio_status"]
+          stripe_payment_id?: string | null
+          titulo?: string
+          updated_at?: string
+          valor_pago?: number | null
+        }
+        Relationships: []
+      }
+      anuncios_eventos: {
+        Row: {
+          anuncio_id: string
+          created_at: string
+          id: string
+          tipo: string
+          user_id: string | null
+        }
+        Insert: {
+          anuncio_id: string
+          created_at?: string
+          id?: string
+          tipo: string
+          user_id?: string | null
+        }
+        Update: {
+          anuncio_id?: string
+          created_at?: string
+          id?: string
+          tipo?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anuncios_eventos_anuncio_id_fkey"
+            columns: ["anuncio_id"]
+            isOneToOne: false
+            referencedRelation: "anuncios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anuncios_precos: {
+        Row: {
+          ativo: boolean
+          id: string
+          posicao: Database["public"]["Enums"]["anuncio_posicao"]
+          updated_at: string
+          valor_por_dia: number
+        }
+        Insert: {
+          ativo?: boolean
+          id?: string
+          posicao: Database["public"]["Enums"]["anuncio_posicao"]
+          updated_at?: string
+          valor_por_dia: number
+        }
+        Update: {
+          ativo?: boolean
+          id?: string
+          posicao?: Database["public"]["Enums"]["anuncio_posicao"]
+          updated_at?: string
+          valor_por_dia?: number
+        }
+        Relationships: []
+      }
       assinaturas: {
         Row: {
           cliente_id: string
@@ -593,15 +709,18 @@ export type Database = {
           data_envio: string | null
           data_recebimento: string | null
           data_reserva: string | null
+          ddd: string | null
           iccid: string
           id: string
           lote_id: string | null
           numero_linha: string | null
           observacoes: string | null
           operadora: string
+          prazo_entrega_dias: number
           produto_id: string | null
           representante_id: string | null
           status: string
+          tipo: string
           updated_at: string
         }
         Insert: {
@@ -613,15 +732,18 @@ export type Database = {
           data_envio?: string | null
           data_recebimento?: string | null
           data_reserva?: string | null
+          ddd?: string | null
           iccid: string
           id?: string
           lote_id?: string | null
           numero_linha?: string | null
           observacoes?: string | null
           operadora?: string
+          prazo_entrega_dias?: number
           produto_id?: string | null
           representante_id?: string | null
           status?: string
+          tipo?: string
           updated_at?: string
         }
         Update: {
@@ -633,15 +755,18 @@ export type Database = {
           data_envio?: string | null
           data_recebimento?: string | null
           data_reserva?: string | null
+          ddd?: string | null
           iccid?: string
           id?: string
           lote_id?: string | null
           numero_linha?: string | null
           observacoes?: string | null
           operadora?: string
+          prazo_entrega_dias?: number
           produto_id?: string | null
           representante_id?: string | null
           status?: string
+          tipo?: string
           updated_at?: string
         }
         Relationships: [
@@ -898,44 +1023,6 @@ export type Database = {
             columns: ["plano_id"]
             isOneToOne: false
             referencedRelation: "planos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      comissoes: {
-        Row: {
-          cliente_id: string
-          competencia: string
-          created_at: string
-          id: string
-          tipo: Database["public"]["Enums"]["comissao_tipo"]
-          user_id: string
-          valor: number
-        }
-        Insert: {
-          cliente_id: string
-          competencia?: string
-          created_at?: string
-          id?: string
-          tipo: Database["public"]["Enums"]["comissao_tipo"]
-          user_id: string
-          valor: number
-        }
-        Update: {
-          cliente_id?: string
-          competencia?: string
-          created_at?: string
-          id?: string
-          tipo?: Database["public"]["Enums"]["comissao_tipo"]
-          user_id?: string
-          valor?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "comissoes_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
         ]
@@ -1246,50 +1333,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      fraud_alerts: {
-        Row: {
-          created_at: string | null
-          details: Json | null
-          id: string
-          ip_address: string | null
-          is_resolved: boolean | null
-          profile_id: string | null
-          score_impact: number | null
-          severity: string
-          type: string
-        }
-        Insert: {
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          ip_address?: string | null
-          is_resolved?: boolean | null
-          profile_id?: string | null
-          score_impact?: number | null
-          severity: string
-          type: string
-        }
-        Update: {
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          ip_address?: string | null
-          is_resolved?: boolean | null
-          profile_id?: string | null
-          score_impact?: number | null
-          severity?: string
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fraud_alerts_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       import_chunks: {
         Row: {
@@ -1671,6 +1714,144 @@ export type Database = {
         }
         Relationships: []
       }
+      mvni_lancamentos_financeiros: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          descricao: string | null
+          direcao: Database["public"]["Enums"]["mvni_lancamento_direcao"]
+          id: string
+          linha_id: string | null
+          mes_referencia: string
+          metadata: Json | null
+          operadora_id: string | null
+          representante_id: string | null
+          tipo: Database["public"]["Enums"]["mvni_lancamento_tipo"]
+          valor: number
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          direcao: Database["public"]["Enums"]["mvni_lancamento_direcao"]
+          id?: string
+          linha_id?: string | null
+          mes_referencia: string
+          metadata?: Json | null
+          operadora_id?: string | null
+          representante_id?: string | null
+          tipo: Database["public"]["Enums"]["mvni_lancamento_tipo"]
+          valor: number
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          direcao?: Database["public"]["Enums"]["mvni_lancamento_direcao"]
+          id?: string
+          linha_id?: string | null
+          mes_referencia?: string
+          metadata?: Json | null
+          operadora_id?: string | null
+          representante_id?: string | null
+          tipo?: Database["public"]["Enums"]["mvni_lancamento_tipo"]
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvni_lancamentos_financeiros_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvni_lancamentos_financeiros_linha_id_fkey"
+            columns: ["linha_id"]
+            isOneToOne: false
+            referencedRelation: "mvno_linhas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvni_lancamentos_financeiros_operadora_id_fkey"
+            columns: ["operadora_id"]
+            isOneToOne: false
+            referencedRelation: "operadoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mvni_receitas_operadoras: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          data_recebimento: string | null
+          id: string
+          lancamento_financeiro_id: string | null
+          linha_id: string | null
+          mes_referencia: string
+          operadora_id: string
+          status: string
+          updated_at: string
+          valor_recebido: number
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          data_recebimento?: string | null
+          id?: string
+          lancamento_financeiro_id?: string | null
+          linha_id?: string | null
+          mes_referencia: string
+          operadora_id: string
+          status?: string
+          updated_at?: string
+          valor_recebido: number
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          data_recebimento?: string | null
+          id?: string
+          lancamento_financeiro_id?: string | null
+          linha_id?: string | null
+          mes_referencia?: string
+          operadora_id?: string
+          status?: string
+          updated_at?: string
+          valor_recebido?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvni_receitas_operadoras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvni_receitas_operadoras_lancamento_financeiro_id_fkey"
+            columns: ["lancamento_financeiro_id"]
+            isOneToOne: false
+            referencedRelation: "mvni_lancamentos_financeiros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvni_receitas_operadoras_linha_id_fkey"
+            columns: ["linha_id"]
+            isOneToOne: false
+            referencedRelation: "mvno_linhas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvni_receitas_operadoras_operadora_id_fkey"
+            columns: ["operadora_id"]
+            isOneToOne: false
+            referencedRelation: "operadoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mvno_audit_logs: {
         Row: {
           acao: string
@@ -1914,13 +2095,14 @@ export type Database = {
       mvno_linhas: {
         Row: {
           ativada_em: string | null
+          chip_estoque_id: string | null
           cliente_id: string | null
           created_at: string
           iccid: string | null
           id: string
           imsi: string | null
           metadata: Json
-          numero: string
+          numero: string | null
           observacoes: string | null
           operadora_id: string | null
           plano_id: string | null
@@ -1933,13 +2115,14 @@ export type Database = {
         }
         Insert: {
           ativada_em?: string | null
+          chip_estoque_id?: string | null
           cliente_id?: string | null
           created_at?: string
           iccid?: string | null
           id?: string
           imsi?: string | null
           metadata?: Json
-          numero: string
+          numero?: string | null
           observacoes?: string | null
           operadora_id?: string | null
           plano_id?: string | null
@@ -1952,13 +2135,14 @@ export type Database = {
         }
         Update: {
           ativada_em?: string | null
+          chip_estoque_id?: string | null
           cliente_id?: string | null
           created_at?: string
           iccid?: string | null
           id?: string
           imsi?: string | null
           metadata?: Json
-          numero?: string
+          numero?: string | null
           observacoes?: string | null
           operadora_id?: string | null
           plano_id?: string | null
@@ -1970,6 +2154,13 @@ export type Database = {
           valor_mensal?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "mvno_linhas_chip_estoque_id_fkey"
+            columns: ["chip_estoque_id"]
+            isOneToOne: false
+            referencedRelation: "chip_estoque"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "mvno_linhas_cliente_id_fkey"
             columns: ["cliente_id"]
@@ -2309,6 +2500,53 @@ export type Database = {
             columns: ["fatura_id"]
             isOneToOne: false
             referencedRelation: "pagamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operadora_acordos_comerciais: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          operadora_id: string
+          percentual_comissao_ativacao: number
+          updated_at: string
+          valor_comissao_ativacao: number | null
+          valor_plano_referencia: number
+          vigencia_fim: string | null
+          vigencia_inicio: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          operadora_id: string
+          percentual_comissao_ativacao: number
+          updated_at?: string
+          valor_comissao_ativacao?: number | null
+          valor_plano_referencia?: number
+          vigencia_fim?: string | null
+          vigencia_inicio?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          operadora_id?: string
+          percentual_comissao_ativacao?: number
+          updated_at?: string
+          valor_comissao_ativacao?: number | null
+          valor_plano_referencia?: number
+          vigencia_fim?: string | null
+          vigencia_inicio?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operadora_acordos_comerciais_operadora_id_fkey"
+            columns: ["operadora_id"]
+            isOneToOne: false
+            referencedRelation: "operadoras"
             referencedColumns: ["id"]
           },
         ]
@@ -4667,8 +4905,79 @@ export type Database = {
       }
     }
     Functions: {
+      aprovar_anuncio: {
+        Args: { p_anuncio_id: string }
+        Returns: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          created_at: string
+          criado_por: string
+          data_fim: string | null
+          data_inicio: string | null
+          dias_contratados: number | null
+          id: string
+          imagem_url: string | null
+          link_destino: string | null
+          motivo_rejeicao: string | null
+          posicao: Database["public"]["Enums"]["anuncio_posicao"]
+          status: Database["public"]["Enums"]["anuncio_status"]
+          stripe_payment_id: string | null
+          titulo: string
+          updated_at: string
+          valor_pago: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "anuncios"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       aprovar_saque: { Args: { p_saque_id: string }; Returns: undefined }
+      ativar_linha_pos_pagamento: {
+        Args: {
+          p_cliente_id: string
+          p_ddd?: string
+          p_operadora_id: string
+          p_plano_id?: string
+          p_representante_id: string
+          p_tipo?: string
+        }
+        Returns: {
+          ativada_em: string | null
+          chip_estoque_id: string | null
+          cliente_id: string | null
+          created_at: string
+          iccid: string | null
+          id: string
+          imsi: string | null
+          metadata: Json
+          numero: string | null
+          observacoes: string | null
+          operadora_id: string | null
+          plano_id: string | null
+          proximo_vencimento: string | null
+          status: Database["public"]["Enums"]["mvno_linha_status"]
+          tenant_id: string | null
+          updated_at: string
+          user_id: string | null
+          valor_mensal: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "mvno_linhas"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       auto_recover_alerts: { Args: never; Returns: undefined }
+      calcular_preco_anuncio: {
+        Args: {
+          p_dias: number
+          p_posicao: Database["public"]["Enums"]["anuncio_posicao"]
+        }
+        Returns: number
+      }
       calculate_next_day_volume: {
         Args: { current_level: number; error_rate: number; reply_rate: number }
         Returns: number
@@ -4855,6 +5164,18 @@ export type Database = {
           mrr_total: number
         }[]
       }
+      get_mvni_financeiro_mensal: {
+        Args: { p_mes_referencia: string }
+        Returns: {
+          comissoes_ativacao_pagas: number
+          comissoes_recorrencia_pagas: number
+          custo_operadoras: number
+          descontos_concedidos: number
+          lucro_liquido: number
+          receita_ativacao_operadoras: number
+          receita_clientes: number
+        }[]
+      }
       get_next_jobs: {
         Args: { p_limit?: number; p_queue: string; p_worker_id: string }
         Returns: {
@@ -4946,6 +5267,16 @@ export type Database = {
         }
         Returns: string
       }
+      registrar_ativacao_financeira: {
+        Args: {
+          p_cliente_id: string
+          p_linha_id?: string
+          p_mes_referencia?: string
+          p_operadora_id: string
+          p_representante_id: string
+        }
+        Returns: undefined
+      }
       registrar_fatura_idempotente: {
         Args: {
           p_cliente_id: string
@@ -4954,6 +5285,44 @@ export type Database = {
           p_valor: number
         }
         Returns: boolean
+      }
+      registrar_recorrencia_financeira: {
+        Args: {
+          p_cliente_id: string
+          p_linha_id?: string
+          p_mes_referencia?: string
+          p_operadora_id: string
+          p_representante_id: string
+        }
+        Returns: undefined
+      }
+      rejeitar_anuncio: {
+        Args: { p_anuncio_id: string; p_motivo: string }
+        Returns: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          created_at: string
+          criado_por: string
+          data_fim: string | null
+          data_inicio: string | null
+          dias_contratados: number | null
+          id: string
+          imagem_url: string | null
+          link_destino: string | null
+          motivo_rejeicao: string | null
+          posicao: Database["public"]["Enums"]["anuncio_posicao"]
+          status: Database["public"]["Enums"]["anuncio_status"]
+          stripe_payment_id: string | null
+          titulo: string
+          updated_at: string
+          valor_pago: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "anuncios"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       resume_import_job: { Args: { p_job_id: string }; Returns: undefined }
       sms_claim_messages: {
@@ -4994,6 +5363,20 @@ export type Database = {
       upsert_import_batch: { Args: { p_payloads: Json[] }; Returns: undefined }
     }
     Enums: {
+      anuncio_posicao:
+        | "dashboard_topo"
+        | "dashboard_lateral"
+        | "tela_vendas"
+        | "painel_ganhos"
+      anuncio_status:
+        | "rascunho"
+        | "aguardando_pagamento"
+        | "pendente_aprovacao"
+        | "aprovado"
+        | "rejeitado"
+        | "ativo"
+        | "pausado"
+        | "encerrado"
       app_role: "admin" | "user" | "master_admin"
       cobranca_status: "pendente" | "pago" | "atrasado" | "cancelado"
       comissao_tipo: "venda" | "recorrencia"
@@ -5028,6 +5411,15 @@ export type Database = {
         | "cancelled"
         | "blocked"
         | "inactive"
+      mvni_lancamento_direcao: "entrada" | "saida"
+      mvni_lancamento_tipo:
+        | "receita_cliente"
+        | "custo_operadora"
+        | "comissao_ativacao_parceiro"
+        | "comissao_recorrente_parceiro"
+        | "receita_ativacao_operadora"
+        | "desconto_chip_prepago"
+        | "outros"
       mvno_evento_tipo:
         | "ativacao"
         | "suspensao"
@@ -5236,6 +5628,22 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      anuncio_posicao: [
+        "dashboard_topo",
+        "dashboard_lateral",
+        "tela_vendas",
+        "painel_ganhos",
+      ],
+      anuncio_status: [
+        "rascunho",
+        "aguardando_pagamento",
+        "pendente_aprovacao",
+        "aprovado",
+        "rejeitado",
+        "ativo",
+        "pausado",
+        "encerrado",
+      ],
       app_role: ["admin", "user", "master_admin"],
       cobranca_status: ["pendente", "pago", "atrasado", "cancelado"],
       comissao_tipo: ["venda", "recorrencia"],
@@ -5273,6 +5681,16 @@ export const Constants = {
         "cancelled",
         "blocked",
         "inactive",
+      ],
+      mvni_lancamento_direcao: ["entrada", "saida"],
+      mvni_lancamento_tipo: [
+        "receita_cliente",
+        "custo_operadora",
+        "comissao_ativacao_parceiro",
+        "comissao_recorrente_parceiro",
+        "receita_ativacao_operadora",
+        "desconto_chip_prepago",
+        "outros",
       ],
       mvno_evento_tipo: [
         "ativacao",
