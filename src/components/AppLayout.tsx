@@ -80,6 +80,7 @@ export default function AppLayout() {
     { to: "/pagamentos", label: "Pagamentos", icon: Receipt },
     { to: "/configuracoes", label: "Configurações", icon: Settings },
     { to: "/sms/dashboard", label: "SMS Marketing", icon: MessageSquare },
+    { to: "/anuncios/meus", label: "Meus Anúncios", icon: BarChart4 },
   ];
 
   const waItems = [
@@ -95,6 +96,7 @@ export default function AppLayout() {
     { to: "/master/dashboard", label: "BI Executivo", icon: BarChart4 },
     { to: "/master/projecoes", label: "Projeções Futuras", icon: TrendingUp },
     { to: "/master/financeiro", label: "Financeiro Global", icon: Wallet },
+    { to: "/master/financeiro-mvni", label: "Financeiro MVNI", icon: Wallet },
     { to: "/master/comissoes", label: "Gestão Comissões", icon: TrendingUp },
     { to: "/master/afiliados", label: "Rede Afiliados", icon: Users },
     { to: "/master/clientes", label: "Base Global", icon: Users },
@@ -104,6 +106,7 @@ export default function AppLayout() {
     { to: "/master/alertas", label: "Centro Crítico", icon: AlertTriangle },
     { to: "/master/antifraude", label: "Antifraude & Risco", icon: ShieldAlert },
     { to: "/master/auditoria", label: "Auditoria Global", icon: ClipboardList },
+    { to: "/master/anuncios", label: "Aprovar Anúncios", icon: ShieldCheck },
     { to: "/master/usuarios", label: "Usuários & Permissões", icon: ShieldCheck },
     { to: "/master/produtos", label: "Expansão de Produtos", icon: Package },
     { to: "/master/chips", label: "Controle de Chips", icon: Smartphone },

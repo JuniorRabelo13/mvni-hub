@@ -106,6 +106,12 @@ const MvnoLinhasAdmin = lazy(() => import("./pages/master-admin/MvnoLinhas"));
 const MvnoPlanosAdmin = lazy(() => import("./pages/master-admin/MvnoPlanos"));
 const MvnoOperadorasAdmin = lazy(() => import("./pages/master-admin/MvnoOperadoras"));
 const MvnoUploadsAdmin = lazy(() => import("./pages/master-admin/MvnoUploads"));
+const FinanceiroMvni = lazy(() => import("./pages/master-admin/FinanceiroMvni"));
+const AprovarAnuncios = lazy(() => import("./pages/master-admin/AprovarAnuncios"));
+
+// Ads self-service
+const AnuncioNovo = lazy(() => import("./pages/anuncios/AnuncioNovo"));
+const MeusAnuncios = lazy(() => import("./pages/anuncios/MeusAnuncios"));
 
 // Cliente MVNO
 const ClienteLayout = lazy(() => import("./pages/cliente/ClienteLayout"));
@@ -250,6 +256,12 @@ const AppContent = () => {
                     <Route path="/master/mvno/planos" element={<MvnoPlanosAdmin />} />
                     <Route path="/master/mvno/operadoras" element={<MvnoOperadorasAdmin />} />
                     <Route path="/master/mvno/uploads" element={<MvnoUploadsAdmin />} />
+                    <Route path="/master/financeiro-mvni" element={<FinanceiroMvni />} />
+                    <Route path="/master/anuncios" element={<AprovarAnuncios />} />
+
+                    {/* Ads self-service (qualquer usuário logado) */}
+                    <Route path="/anuncios/criar" element={<AnuncioNovo />} />
+                    <Route path="/anuncios/meus" element={<MeusAnuncios />} />
                   </Route>
 
                   {/* Central do Cliente MVNO */}
